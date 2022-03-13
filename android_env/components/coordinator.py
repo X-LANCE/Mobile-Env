@@ -126,7 +126,7 @@ class Coordinator():
     # Reset the task.
     try:
       self._task_manager.reset_task()
-      self._simulator.update_device_orientation()
+      self._simulator.update_device_orientation() # ZDY_COMMENT: device orientation updated only during reset
     except errors.StepCommandError:
       logging.exception('Failed to reset the task. Restarting simulator.')
       self._log_dict['restart_count_simulator_reset'] += 1
@@ -252,7 +252,7 @@ class Coordinator():
     # Read necessary transition information and return it to the agent.
     try:
       self._latest_observation_time = time.time()
-      observation = self._simulator.get_observation() # ZDY_BOOKMARK
+      observation = self._simulator.get_observation()
       reward = self._task_manager.get_current_reward()
       task_extras = self._task_manager.get_current_extras()
       episode_end = self._task_manager.check_if_episode_ended()

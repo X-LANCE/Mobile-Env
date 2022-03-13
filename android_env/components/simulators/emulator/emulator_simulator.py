@@ -145,7 +145,10 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     assert self._emulator_stub, 'Emulator stub has not been initialized yet.'
     assert self._image_format, 'ImageFormat has not been initialized yet.'
     image_proto = self._emulator_stub.getScreenshot(self._image_format)
-    print("ZDY:", image_proto) # zdy
+    with open("screenshot.dump", "a") as f: # zdy
+        print("ZDY: Image Proto Dumped.") # zdy
+        print("ZDY:", image_proto, file=f) # zdy
+    raise KeyboardInterrupt("Dumped!") # zdy
     h, w = image_proto.format.height, image_proto.format.width
     image = np.frombuffer(image_proto.image, dtype='uint8', count=h * w * 3)
     image.shape = (h, w, 3)

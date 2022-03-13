@@ -23,6 +23,7 @@ from android_env.components import app_screen_checker as screen_checker
 from android_env.components import thread_function
 
 AppScreenChecker = screen_checker.AppScreenChecker
+# ZDY_COMMENT: check match according to the view hierarchy path
 
 
 class DumpsysThread(thread_function.ThreadFunction):
