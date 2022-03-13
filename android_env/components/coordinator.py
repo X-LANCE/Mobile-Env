@@ -252,7 +252,7 @@ class Coordinator():
     # Read necessary transition information and return it to the agent.
     try:
       self._latest_observation_time = time.time()
-      observation = self._simulator.get_observation()
+      observation = self._simulator.get_observation() # ZDY_BOOKMARK
       reward = self._task_manager.get_current_reward()
       task_extras = self._task_manager.get_current_extras()
       episode_end = self._task_manager.check_if_episode_ended()

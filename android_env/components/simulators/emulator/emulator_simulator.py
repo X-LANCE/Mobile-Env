@@ -97,6 +97,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
       self._get_emulator_stub = functools.partial(
           emulator_launcher.EmulatorLauncher.create_emulator_stub,
           grpc_port=self._grpc_port)
+    # ZDY_COMMENT: to create an emulator stub is to establish a gRPC connection to the emulator daemon
 
   def adb_device_name(self) -> str:
     return 'emulator-%s' % (self._adb_port - 1)
@@ -144,6 +145,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     assert self._emulator_stub, 'Emulator stub has not been initialized yet.'
     assert self._image_format, 'ImageFormat has not been initialized yet.'
     image_proto = self._emulator_stub.getScreenshot(self._image_format)
+    print("ZDY:", image_proto) # zdy
     h, w = image_proto.format.height, image_proto.format.width
     image = np.frombuffer(image_proto.image, dtype='uint8', count=h * w * 3)
     image.shape = (h, w, 3)

@@ -48,6 +48,7 @@ def load(task_path: str,
   """
 
   # Create simulator.
+  #print("ZDY: BEFORE Simulator Initialization")
   simulator = emulator_simulator.EmulatorSimulator(
       adb_controller_args=dict(
           adb_path=os.path.expanduser(adb_path),
@@ -63,6 +64,7 @@ def load(task_path: str,
           gpu_mode='swiftshader_indirect',
       ),
   )
+  #print("ZDY: AFTER Simulator Initialization")
 
   # Prepare task.
   task = task_pb2.Task()

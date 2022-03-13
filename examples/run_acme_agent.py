@@ -62,7 +62,7 @@ def main(_):
       avd_name=FLAGS.avd_name,
       adb_path=FLAGS.adb_path,
       task_path=FLAGS.task_path,
-      run_headless=False) as env:
+      run_headless=True) as env:
 
     env = apply_wrappers(env)
     env_spec = specs.make_environment_spec(env)

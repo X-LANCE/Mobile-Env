@@ -34,7 +34,7 @@ flags.DEFINE_string('emulator_path',
                     '~/Android/Sdk/emulator/emulator', 'Path to emulator.')
 flags.DEFINE_string('adb_path',
                     '~/Android/Sdk/platform-tools/adb', 'Path to ADB.')
-flags.DEFINE_bool('run_headless', False,
+flags.DEFINE_bool('run_headless', True,
                   'Whether to display the emulator window.')
 
 # Environment args.
