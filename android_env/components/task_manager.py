@@ -289,6 +289,7 @@ class TaskManager():
       reward = float(match.group(1))
       with self._lock:
         self._latest_values['reward'] += reward
+        # ZDY_COMMENT: `_latest_values['reward']` is cleared during revoking `get_current_reward`
 
     for regexp in regexps.reward:
       listeners.append(logcat_thread.EventListener(
@@ -296,6 +297,7 @@ class TaskManager():
           handler_fn=_reward_handler))
 
     # RewardEvent listeners
+    # ZDY_COMMENT: RewardEvent returns a constant reward regardless of the log detail
     for reward_event in regexps.reward_event:
 
       def get_reward_event_handler(reward):
@@ -310,6 +312,7 @@ class TaskManager():
           handler_fn=get_reward_event_handler(reward_event.reward)))
 
     # Score listener
+    # ZDY_COMMENT: the increment of the score constructs the reward
     def _score_handler(event, match):
       del event
       current_score = float(match.group(1))
@@ -341,6 +344,8 @@ class TaskManager():
       if extra:
         try:
           extra = ast.literal_eval(extra)
+          # ZDY_BOOKMARK: What's exatly in this
+          # ZDY_COMMENT: oh, got it, maybe a list of basic type elements
         # Except all to avoid unnecessary crashes, only log error.
         except Exception:  # pylint: disable=broad-except
           logging.exception('Could not parse extra: %s', extra)
@@ -383,6 +388,7 @@ class TaskManager():
         else:
           latest_extras[extra_name] = [extra]
         self._latest_values['extra'] = latest_extras
+    # ZDY_COMMENT: multiple latest extras are buffered, maybe for the purpose to preserve the information of dynamics
 
     return listeners
 
