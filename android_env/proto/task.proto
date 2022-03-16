@@ -114,6 +114,7 @@ message ArraySpec {
 }
 
 // zdy
+// new message `Event` {{{ 
 message Event {
     // floats in range [0, 1]
     message Rect {
@@ -150,7 +151,8 @@ message Event {
     }
 
     message LogEvent {
-        string pattern = 1;
+        repeated string filters = 1;
+        string pattern = 2;
     }
 
     message EventGroup {
@@ -176,59 +178,62 @@ message Event {
     // e.g., use expression like "3" to indicate the constant transformation
     repeated string transformation = 15;
 }
+// }}} new message `Event` 
 
-message LogParsingConfig {
-
-  // `filters` are tags used by the app's logging system so that we can
-  // identify them in logcat's output. It's the first argument to logging calls
-  // such as Log.e("ActivityManager", "My message").
-  // Example: "ActivityManager"
-  repeated string filters = 1;
-
-  // Regular expressions that define how we can extract RL information such as
-  // score, extras and episode end from raw logcat messages.
-  message LogRegexps {
-
-    // Regexp expected to match:
-    // ...a floating point value which gets accumulated over time.
-    // A delta in 'score' corresponds to the reward.
-    string score = 1;
-
-    // Regexp expected to match:
-    // ...a floating point value directly forwarded by the environment.
-    repeated string reward = 2;
-
-    // Regexp expected to match:
-    // ...a signal marking the end of an episode.
-    repeated string episode_end = 3;
-
-    // Regexp expected to match:
-    // ...a string representing pairs of extra names and values.
-    repeated string extra = 4;
-
-    // Regexp expected to match:
-    // ...a dict of extra names and values in json format.
-    repeated string json_extra = 5;
-
-    // Attaches rewards to arbitrary log messages, for example:
-    // {event: "coin_collected" reward: 2.3}
-    // {event: "car_crashed" reward: -1.4}
-    message RewardEvent{
-
-      // If `event` is matched, the environment will give `reward`.
-      string event = 1;
-
-      // Numerical value to give as reward if `event` is matched.
-      float reward = 2;
-    }
-
-    repeated RewardEvent reward_event = 6;
-
-  }
-
-  LogRegexps log_regexps = 2;
-
-}
+// original `LogParsingConfig` {{{ 
+//message LogParsingConfig {
+//
+  //// `filters` are tags used by the app's logging system so that we can
+  //// identify them in logcat's output. It's the first argument to logging calls
+  //// such as Log.e("ActivityManager", "My message").
+  //// Example: "ActivityManager"
+  //repeated string filters = 1;
+//
+  //// Regular expressions that define how we can extract RL information such as
+  //// score, extras and episode end from raw logcat messages.
+  //message LogRegexps {
+//
+    //// Regexp expected to match:
+    //// ...a floating point value which gets accumulated over time.
+    //// A delta in 'score' corresponds to the reward.
+    //string score = 1;
+//
+    //// Regexp expected to match:
+    //// ...a floating point value directly forwarded by the environment.
+    //repeated string reward = 2;
+//
+    //// Regexp expected to match:
+    //// ...a signal marking the end of an episode.
+    //repeated string episode_end = 3;
+//
+    //// Regexp expected to match:
+    //// ...a string representing pairs of extra names and values.
+    //repeated string extra = 4;
+//
+    //// Regexp expected to match:
+    //// ...a dict of extra names and values in json format.
+    //repeated string json_extra = 5;
+//
+    //// Attaches rewards to arbitrary log messages, for example:
+    //// {event: "coin_collected" reward: 2.3}
+    //// {event: "car_crashed" reward: -1.4}
+    //message RewardEvent{
+//
+      //// If `event` is matched, the environment will give `reward`.
+      //string event = 1;
+//
+      //// Numerical value to give as reward if `event` is matched.
+      //float reward = 2;
+    //}
+//
+    //repeated RewardEvent reward_event = 6;
+//
+  //}
+//
+  //LogRegexps log_regexps = 2;
+//
+//}
+// }}} original `LogParsingConfig` 
 
 // Description of a reinforcement learning task to be solved by an agent.
 message Task {
@@ -261,7 +266,8 @@ message Task {
   int32 max_num_steps = 8;
 
   // Defines parameters for parsing messages from logcat.
-  LogParsingConfig log_parsing_config = 9;
+  //LogParsingConfig log_parsing_config = 9;
+  repeated Event event_listeners = 9;
 
   // (Optional): The task may also define extras to help the RL agent.
   // An Extra in AndroidEnv is any information that apps may send to aid the
