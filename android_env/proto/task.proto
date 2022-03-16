@@ -141,13 +141,17 @@ message Event {
 
     message ViewHierarchyEvent {
         repeated string view_hierarchy_path = 1;
-        string property_name = 2;
-        oneof property_value {
-            bool boolean = 3;
-            string pattern = 4;
-            int32 integer = 5;
-            float floating = 6;
+
+        message Property {
+            string property_name = 1;
+            oneof property_value {
+                bool boolean = 2;
+                string pattern = 3;
+                int32 integer = 4;
+                float floating = 5;
+            }
         }
+        repeated Property properties;
     }
 
     message LogEvent {
@@ -171,11 +175,16 @@ message Event {
         ViewHierarchyEvent view_hierarchy_event = 9;
         LogEvent log_event = 10;
     }
-    // python expression that could be evaluated by `eval` function
-    // use `x` to indicate the input variable
-    // as many transformations as pattern groups should be provided
+    // Python expression that could be evaluated by `eval` function. Use `x`
+    // to indicate the input variable. As many transformations as pattern groups
+    // should be provided.
+    //
     // e.g., use "x" to indicate the identity transformation
     // e.g., use expression like "3" to indicate the constant transformation
+    //
+    // NOTE: for `and`, use `x[i]` to indicate the input from the i-th event
+    // NOTE: for `or`, use `x` to represent the input from the exclusive active
+    // event
     repeated string transformation = 15;
 }
 // }}} new message `Event` 
