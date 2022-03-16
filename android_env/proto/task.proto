@@ -113,6 +113,69 @@ message ArraySpec {
   DataType dtype = 3;
 }
 
+// zdy
+message Event {
+    // floats in range [0, 1]
+    message Rect {
+        float x0 = 2;
+        float y0 = 3;
+        float x1 = 4;
+        float y1 = 5;
+    }
+    // recognize the given text
+    message TextEvent {
+        string expect = 1;
+        Rect rect = 2;
+    }
+    // recognize the icon of the given class
+    message IconRecogEvent {
+        string class = 1;
+        Rect rect = 2;
+    }
+    // match to the given icon
+    message IconMatchEvent {
+        string path = 1;
+        Rect rect = 2;
+    }
+
+    message ViewHierarchyEvent {
+        repeated string view_hierarchy_path = 1;
+        string property_name = 2;
+        oneof property_value {
+            bool boolean = 3;
+            string pattern = 4;
+            int32 integer = 5;
+            float floating = 6;
+        }
+    }
+
+    message LogEvent {
+        string pattern = 1;
+    }
+
+    message EventGroup {
+        repeated Event events = 1;
+    }
+
+    oneof event {
+        EventGroup and = 1;
+        EventGroup or = 2;
+        TextEvent text_recognize = 3;
+        TextEvent text_detect = 4;
+        IconRecogEvent icon_recognize = 5;
+        IconRecogEvent icon_detect = 6;
+        IconMatchEvent icon_match = 7;
+        IconMatchEvent icon_detect_match = 8;
+        ViewHierarchyEvent view_hierarchy_event = 9;
+        LogEvent log_event = 10;
+    }
+    // python expression that could be evaluated by `eval` function
+    // use `x` to indicate the input variable
+    // as many transformations as pattern groups should be provided
+    // e.g., use "x" to indicate the identity transformation
+    // e.g., use expression like "3" to indicate the constant transformation
+    repeated string transformation = 15;
+}
 
 message LogParsingConfig {
 
