@@ -76,6 +76,14 @@ class TaskManager():
         'restart_count_max_bad_states': 0,
     }
 
+    # ZDY_COMMENT: TODO:
+    # add event listeners for various events
+    # organize the listeners in two ways:
+    # + according to the information type
+    # + according to the semantic events
+
+    # ZDY_COMMENT: TODO: instantiate models according to requirements
+
     # Initialize internal state
     self._task_start_time = None
     self._episode_steps = 0
