@@ -256,3 +256,34 @@ class IconMatchEvent(RegionEvent):
     #  }}} class `IconMatchEvent` # 
 
 # TODO: `ViewHierarchyEvent` and `LogEvent`
+
+class ViewHierarchyEvent(Event):
+    #  class `ViewHierarchyEvent` {{{ # 
+    class Property(abc.ABC):
+        #  class `Property` {{{ # 
+        def __init__(self, name):
+            #  method `__init__` {{{ # 
+            """
+            name - str
+            """
+
+            self._name = name
+            #  }}} method `__init__` # 
+
+        @property
+        def name(self):
+            return self._name
+
+        @abc.abstractmethod
+        def match(self, value):
+            #  abstract method `match` {{{ # 
+            """
+            value - something
+
+            return bool
+            """
+
+            raise NotImplementedError
+            #  }}} abstract method `match` # 
+        #  }}} class `Property` # 
+    #  }}} class `ViewHierarchyEvent` # 
