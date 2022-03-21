@@ -286,4 +286,101 @@ class ViewHierarchyEvent(Event):
             raise NotImplementedError
             #  }}} abstract method `match` # 
         #  }}} class `Property` # 
+
+    class PureProperty(Property):
+        #  class `PureProperty` {{{ # 
+        def __init__(self, name):
+            super(PureProperty, self).__init__(name)
+
+        def match(self, value):
+            return True
+        #  }}} class `PureProperty` # 
+
+    class ScalarProperty(Property):
+        #  class `ScalarProperty` {{{ # 
+        def __init__(self, name, value):
+            #  method `__init__` {{{ # 
+            """
+            name - str
+            value - something
+            """
+
+            super(ScalarProperty, self).__init__(name)
+            self._value = value
+            #  }}} method `__init__` # 
+
+        def match(self, value):
+            #  method `match` {{{ # 
+            """
+            value - something
+
+            return bool
+            """
+
+            return self._value==value
+            #  }}} method `match` # 
+        #  }}} class `ScalarProperty` # 
+
+    class StringProperty(Property):
+        #  class `StringProperty` {{{ # 
+        def __init__(self, name, pattern):
+            #  method `__init__` {{{ # 
+            """
+            name - str
+            pattern - str
+            """
+
+            super(StringProperty, self).__init__(name)
+            self._pattern = re.compile(pattern)
+            #  }}} method `__init__` # 
+
+        def match(self, value):
+            #  method `match` {{{ # 
+            """
+            value - str
+
+            return bool
+            """
+
+            return self._pattern.match(value) is not None
+            #  }}} method `match` # 
+        #  }}} class `StringProperty` # 
+
+    def __init__(self, vh_path, vh_property,
+            transformation=None, cast=None):
+        #  method `__init__` {{{ # 
+        """
+        vh_path - iterable of str
+        vh_property - Property
+        transformation - str or None
+        cast - callable accepting something returning something else or None
+        """
+
+        super(ViewHierarchyEvent, self).__init__(transformation, cast)
+
+        self._vh_path = list(vh_path)
+        self._vh_property = vh_property
+        self._property_name = vh_property.name
+        #  }}} method `__init__` # 
+
+    # ZDY_COMMENT: I'd like to leave the view hierarchy match job to the
+    # dumpsys thread
+
+    @property
+    def path(self):
+        return self._vh_path
+    @property
+    def property_name(self):
+        return self._property_name
+
+    def set(self, value):
+        #  method `set` {{{ # 
+        """
+        value - the same type as the second argument of `self._vh_property.match`
+        """
+
+        if self._vh_property.match(value):
+            self._value = value
+            self._flag = True
+        #  }}} method `set` # 
     #  }}} class `ViewHierarchyEvent` # 
