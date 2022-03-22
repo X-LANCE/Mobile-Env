@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,9 +37,6 @@ from android_env.proto import task_pb2
 from android_env.components import event_listeners
 import numpy as np
 
-def parse_event_listeners(task_pb2.Event):
-
-
 class TaskManager():
   """Handles all events and information related to the task."""
 
@@ -49,6 +47,7 @@ class TaskManager():
       dumpsys_check_frequency: int = 150,
       max_failed_current_activity: int = 10,
   ):
+    #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
 
     Args:
@@ -101,6 +100,19 @@ class TaskManager():
     }
 
     logging.info('Task config: %s', self._task)
+    #  }}} method `__init__` # 
+
+  # zdy
+  def parse_event_listeners(event_definition):
+    #  function `parse_event_listeners` {{{ # 
+    """
+    event_definition - task_pb2.Event
+
+    return event_listeners.Event
+    """
+
+    # TODO: fill the list of events by media during parsing
+    #  }}} function `parse_event_listeners` # 
 
   def task(self) -> task_pb2.Task:
     return self._task
