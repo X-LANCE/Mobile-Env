@@ -151,7 +151,7 @@ message Event {
                 float floating = 5;
             }
         }
-        repeated Property properties;
+        repeated Property properties = 2;
     }
 
     message LogEvent {
@@ -276,7 +276,11 @@ message Task {
 
   // Defines parameters for parsing messages from logcat.
   //LogParsingConfig log_parsing_config = 9;
-  repeated Event event_listeners = 9;
+  Event score_listener = 11;
+  Event reward_listener = 12;
+  Event episode_end_listener = 13;
+  Event extra_listener = 14;
+  Event json_extra_listener = 15;
   // ZDY_COMMENT: TODO: add listeners for different semantic events
 
   // (Optional): The task may also define extras to help the RL agent.

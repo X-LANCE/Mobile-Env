@@ -33,7 +33,10 @@ from android_env.components import log_stream as log_stream_lib
 from android_env.components import logcat_thread
 from android_env.components import setup_step_interpreter
 from android_env.proto import task_pb2
+from android_env.components import event_listeners
 import numpy as np
+
+def parse_event_listeners(task_pb2.Event):
 
 
 class TaskManager():
