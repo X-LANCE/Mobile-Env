@@ -186,7 +186,7 @@ class TextEvent(RegionEvent):
 
         match_ = self.expect.match(text)
         if match_ is not None:
-            self.value = match_.groups()
+            self._value = match_.groups()
             self._flag = True
         #  }}} method `set` # 
     #  }}} class `TextEvent` # 
@@ -254,8 +254,6 @@ class IconMatchEvent(RegionEvent):
             self._flag = True
         #  }}} method `set` # 
     #  }}} class `IconMatchEvent` # 
-
-# TODO: `ViewHierarchyEvent` and `LogEvent`
 
 class ViewHierarchyEvent(Event):
     #  class `ViewHierarchyEvent` {{{ # 
@@ -384,3 +382,41 @@ class ViewHierarchyEvent(Event):
             self._flag = True
         #  }}} method `set` # 
     #  }}} class `ViewHierarchyEvent` # 
+
+class LogEvent(Event):
+    #  class `LogEvent` {{{ # 
+    def __init__(self, filters, pattern,
+            transformation=None, cast=None):
+        #  method `__init__` {{{ # 
+        """
+        filters - iterable of str
+        pattern - str
+        transformation - str of None
+        cast - callable accepting str returning something except str or None
+        """
+
+        super(LogEvent, self).__init__(transformation, cast)
+
+        self._filters = list(filters)
+        self._pattern = re.compile(pattern)
+        #  }}} method `__init__` # 
+
+    @property
+    def filters(self):
+        return self._filters
+    @property
+    def pattern(self):
+        return self._pattern
+
+    def set(self, line):
+        #  method `set` {{{ # 
+        """
+        line - str
+        """
+
+        match_ = self._pattern.match(line)
+        if match_ is not None:
+            self._value = match_.groups()
+            self._flag = True
+        #  }}} method `set` # 
+    #  }}} class `LogEvent` # 
