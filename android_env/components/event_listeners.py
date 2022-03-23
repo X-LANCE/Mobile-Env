@@ -344,12 +344,12 @@ class ViewHierarchyEvent(Event):
             #  }}} method `match` # 
         #  }}} class `StringProperty` # 
 
-    def __init__(self, vh_path, vh_property,
+    def __init__(self, vh_path, vh_properties,
             transformation=None, cast=None):
         #  method `__init__` {{{ # 
         """
         vh_path - iterable of str
-        vh_property - Property
+        vh_property - iterable of Property
         transformation - str or None
         cast - callable accepting something returning something else or None
         """
@@ -357,8 +357,8 @@ class ViewHierarchyEvent(Event):
         super(ViewHierarchyEvent, self).__init__(transformation, cast)
 
         self._vh_path = list(vh_path)
-        self._vh_property = vh_property
-        self._property_name = vh_property.name
+        self._vh_properties = list(vh_properties)
+        self._property_names = list(map(lambda prpt: prpt.name, vh_properties))
         #  }}} method `__init__` # 
 
     # ZDY_COMMENT: I'd like to leave the view hierarchy match job to the
@@ -368,17 +368,18 @@ class ViewHierarchyEvent(Event):
     def path(self):
         return self._vh_path
     @property
-    def property_name(self):
-        return self._property_name
+    def property_names(self):
+        return self._property_names
 
-    def set(self, value):
+    def set(self, values):
         #  method `set` {{{ # 
         """
-        value - the same type as the second argument of `self._vh_property.match`
+        value - list with the same length as `self._vh_properties`
         """
 
-        if self._vh_property.match(value):
-            self._value = value
+        if all(map(lambda p: p[0].match(p[1]),
+                itertools.zip_longest(self._vh_properties, values))):
+            self._value = values
             self._flag = True
         #  }}} method `set` # 
     #  }}} class `ViewHierarchyEvent` # 

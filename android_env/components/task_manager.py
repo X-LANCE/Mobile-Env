@@ -84,6 +84,24 @@ class TaskManager():
     # + according to the information type
     # + according to the semantic events
 
+    self._text_events = []
+    self._icon_events = []
+    self._icon_match_events = []
+    self._view_hierarchy_events = []
+    self._log_events = []
+    self._log_filters = set()
+
+    if task.HasField("score_listener"):
+      self._score_event = self.parse_event_listeners(task.score_listener, cast=int)
+    if task.HasField("reward_listener"):
+      self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int)
+    if task.HasField("episode_end_listener"):
+      self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)
+    if task.HasField("extra_listener"):
+      self._extra_event = self.parse_event_listeners(task.extra_listener)
+    if task.HasField("json_extra_listener"):
+      self.json_extra_event = self.parse_event_listeners(task.json_extra_listener)
+
     # ZDY_COMMENT: TODO: instantiate models according to requirements
 
     # Initialize internal state
@@ -103,16 +121,105 @@ class TaskManager():
     #  }}} method `__init__` # 
 
   # zdy
-  def parse_event_listeners(event_definition):
-    #  function `parse_event_listeners` {{{ # 
+  def parse_event_listeners(self, event_definition, cast=None):
+    #  method `parse_event_listeners` {{{ # 
     """
     event_definition - task_pb2.Event
+    cast - callable accepting something returning something else or None
 
     return event_listeners.Event
     """
 
+    def _rect_to_list(rect):
+      #  function `_rect_to_list` {{{ # 
+      """
+      rect - task_pb2.Event.Rect
+
+      return list of four floats
+      """
+
+      return [rect.x0, rect.y0, rect.x1, rect.y1]
+      #  }}} function `_rect_to_list` # 
+
     # TODO: fill the list of events by media during parsing
-    #  }}} function `parse_event_listeners` # 
+    #  Text Events {{{ # 
+    if event_definition.HasField("text_recognize"):
+      event = event_listeners.TextEvent(event_definition.text_recognize.expect,
+          _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
+          transformation=event_definition.transformation, cast=cast)
+      self._text_events.append(event)
+      return event
+    if event_definition.HasField("text_detect"):
+      event = event_listeners.TextEvent(event_definition.text_detect.expect,
+          _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
+          transformation=event_definition.transformation, cast=cast)
+      self._text_events.append(event)
+      return event
+    #  }}} Text Events # 
+
+    #  Icon Events {{{ # 
+    if event_definition.HasField("icon_recognize"):
+      event = event_listeners.IconRecogEvent(event_definition.icon_recognize.class,
+          _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
+          transformation=event_definition.transformation)
+      self._icon_events.append(event)
+      return event
+    if event_definition.HasField("icon_detect"):
+      event = event_listeners.IconRecogEvent(event_definition.icon_detect.class,
+          _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
+          transformation=event_definition.transformation)
+      self._icon_events.append(event)
+      return event
+    #  }}} Icon Events # 
+
+    #  Icon Match Events {{{ # 
+    if event_definition.HasField("icon_match"):
+      event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
+          _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
+          transformation=event_definition.transformation)
+      self._icon_match_events.append(event)
+      return event
+    if event_definition.HasField("icon_detect_match"):
+      event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
+          _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
+          transformation=event_definition.transformation)
+      self._icon_match_events.append(event)
+      return event
+    #  }}} Icon Match Events # 
+
+    #  Other Events {{{ # 
+    if event_definition.HasField("view_hierarchy_event"):
+      properties = []
+      for prpt in event_definition.view_hierarchy_event.properties:
+        if not prpt.HasField("property_value"):
+          property_ = event_listeners.ViewHierarchyEvent.PureProperty(prpt.property_name)
+        elif prpt.HasField("pattern"):
+          property_ = event_listeners.ViewHierarchyEvent.StringProperty(prpt.property_name, prpt.pattern)
+        else:
+          property_ = event_listeners.ViewHierarchyEvent.ScalarProperty(prpt.property_name,
+              getattr(prpt, prpt.WhichOneof("property_value")))
+        properties.append(property_)
+      event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
+          properties, transformation=event_definition.transformation, cast=cast)
+      self._view_hierarchy_events.append(event)
+      return event
+    if event_definition.HasField("log_event"):
+      self._log_filters |= set(event_definition.log_event.filters)
+      event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
+          transformation=event_definition.transformation, cast=cast)
+      self._log_events.append(event)
+      return event
+    #  }}} Other Events # 
+
+    #  Combined Events {{{ # 
+    if event_definition.HasField("or"):
+      sub_events = list(map(self.parse_event_listeners, getattr(event_definition, "or").events))
+      return event_listeners.Or(sub_events, event_definition.transformation, cast)
+    if event_definition.HasField("and"):
+      sub_events = list(map(self.parse_event_listeners, getattr(event_definition, "and").events))
+      return event_listeners.And(sub_events, event_definition.transformation, cast)
+    #  }}} Combined Events # 
+    #  }}} method `parse_event_listeners` # 
 
   def task(self) -> task_pb2.Task:
     return self._task
