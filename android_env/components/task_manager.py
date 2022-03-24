@@ -78,12 +78,6 @@ class TaskManager():
         'restart_count_max_bad_states': 0,
     }
 
-    # ZDY_COMMENT: TODO:
-    # add event listeners for various events
-    # organize the listeners in two ways:
-    # + according to the information type
-    # + according to the semantic events
-
     self._text_events = []
     self._icon_events = []
     self._icon_match_events = []
@@ -121,6 +115,7 @@ class TaskManager():
     #  }}} method `__init__` # 
 
   # zdy
+  # TODO: test the correctness
   def parse_event_listeners(self, event_definition, cast=None):
     #  method `parse_event_listeners` {{{ # 
     """
