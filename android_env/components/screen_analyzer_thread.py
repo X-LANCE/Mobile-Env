@@ -3,6 +3,10 @@ import enum
 
 from android_env.proto import emulator_controller_pb2
 from android_env.proto import emulator_controller_pb2_grpc
+import numpy as np
+import torch
+#import torchvision.ops as tvops
+import torchvision.io as tvio
 
 # mainly taken from `DumpsysThread`
 class ScreenAnalyzerThread(thread_function.ThreadFunction):
@@ -11,7 +15,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         #  enum `Signal` {{{ # 
         CHECK_SCREEN = 0
         DID_NOT_CHECK = 1
-        OK = 2
+        CHECK_ERROR = 2
+        OK = 4
         #  }}} enum `Signal` # 
 
     def __init__(self,
@@ -23,21 +28,35 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
             block_input, block_output, name="screen_analyzer"):
         #  method `__init__` {{{ # 
         """
-        text_detector - callable accepting tensor with shape (3, width, height)
-          as screenshot and returning list of str as detected texts
-        text_recognizer - callable accepting tensor with shape (3, width, height)
-          and returning str
+        text_detector - callable accepting
+          + tensor of float32 with shape (3, height, width) as screenshot
+          + list of tensor of float32 with shape (1, 4) with length nb_bboxes
+          and returning list of [[list of str]] with length nb_bboxes as
+          detected texts
+        text_recognizer - callable accepting
+          + tensor of float32 with shape (3, height, width)
+          + list of tensor of float32 with shape (1, 4) with length nb_bboxes
+          and returning list of str with length nb_bboxes
 
-        icon_detector - callable accepting tensor with shape (3, width, height)
+        icon_detector - callable accepting
+          + tensor of float32 with shape (3, height, width)
+          + list of tensor of float32 with shape (1, 4) with length nb_bboxes
           and returning
-          + tensor of float32 with shape (nb_icons, 4)
-          + list of str with length nb_icons as recognized icon classes
-        icon_recognizer - callable accepting tensor with shape (3, width, height)
-          and returning str as recognized icon class
+          + tensor of float32 with shape (nb_bboxes, nb_candidates, 4)
+          + list of [[list of str with length nb_candidates]] with length
+            nb_bboxes as recognized icon classes
+        icon_recognizer - callable accepting
+          + tensor of float32 with shape (3, height, width)
+          + list of tensor of float32 with shape (1, 4) with length nb_bboxes
+          and returning list of str with length nb_bboxes as recognized icon
+          class
         icon_matcher - callable accepting
-          + tensor with shape (nb_candidates, 3, width, height)
-          + tensor with shape (3, width, height)
-          and returning list of bool
+          + tensor of float32 with shape (3, height, width) as the screenshot
+          + list of tensor of float32 with shape (3, height_, width_) with length
+            nb_bboxes as the targets
+          + tensor of float32 with shape (nb_bboxes, nb_candidates, 4)
+          and returning list [[list of bool with length nb_candidates]] with
+          length nb_bboxes
 
         emulator_stub - emulator_controller_pb2_grpc.EmulatorControllerStub
         image_format - emulator_controller_pb2.ImageFormat
@@ -53,7 +72,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         super(ScreenAnalyzerThread, self).__init__(block_input, block_output, name)
 
         self._text_detector = text_detector
-        self._test_recognizer = text_recognizer
+        self._text_recognizer = text_recognizer
         self._icon_detector = icon_detector
         self._icon_recognizer = icon_recognizer
         self._icon_matcher = icon_matcher
@@ -61,9 +80,12 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         self._emulator_stub = emulator_stub
         self._image_format = image_format
 
-        self._text_event_listeners = []
-        self._icon_event_listeners = []
+        self._text_recog_event_listeners = []
+        self._text_detect_event_listeners = []
+        self._icon_recog_event_listeners = []
+        self._icon_detect_event_listeners = []
         self._icon_match_event_listeners = []
+        self._icon_detect_match_event_listeners = []
 
         #self._main_loop_counter = 0
         #self._check_frequency = check_frequency
@@ -77,35 +99,193 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         event_listeners - list of event_listeners.TextEvent
         """
 
-        self._text_event_listeners += event_listeners
+        for lstn in event_listeners:
+            if lstn.needs_detection:
+                self._text_detect_event_listeners.append(lstn)
+            else:
+                self._text_recog_event_listeners.append(lstn)
 
     def add_icon_event_listeners(self, *event_listeners):
         """
         event_listeners - list of event_listeners.IconRecogEvent
         """
 
-        self._icon_event_listeners += event_listeners
+        for lstn in event_listeners:
+            if lstn.needs_detection:
+                self._icon_detect_event_listeners.append(lstn)
+            else:
+                self._icon_recog_event_listeners.append(lstn)
 
     def add_icon_match_event_listeners(self, *event_listeners):
         """
         event_listeners - list of event_listeners.IconMatchEvent
         """
 
-        self._icon_match_event_listeners += event_listeners
+        for lstn in event_listeners:
+            if lstn.needs_detection:
+                self._icon_detect_match_event_listeners.append(lstn)
+            else:
+                self._icon_match_event_listeners.append(lstn)
     #  }}} Methods to Add Event Listeners # 
 
     def get_screenshot(self):
+        #  method `get_screenshot` {{{ # 
         """
-        return tensor of uint8 with shape (3, width, height)
+        return tensor of float32 with shape (3, height, width)
         """
 
         image_proto = self._emulator_stub.getScreenshot(self._image_format)
+        height = image_proto.format.height
+        width = image_proto.format.width
+        image = np.frombuffer(image_proto.image, dtype=np.uint8, count=height*width*3)
+        image.shape = (height, width, 3)
+        image = np.transpose(image, axes=(2, 0, 1))
+        return torch.tensor(image, dtype=torch.float32)
+        #  }}} method `get_screenshot` # 
 
     #  Methods to Match Registered Events {{{ # 
-    def match_text_events(self):
+    @torch.no_grad()
+    def match_text_events(self, screen):
         #  method `match_text_events` {{{ # 
-        pass
+        """
+        screen - tensor of float32 with shape (3, heigh, width)
+        """
+
+        _, height, width = screen.shape
+
+        # first, for detection
+        bboxes = []
+        for lstn in self._text_detect_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+        results = self._text_detector(screen, bboxes)
+        for lstn, rslts in zip(self._text_detect_event_listeners, results):
+            for cddt in rslts:
+                lstn.set(cddt)
+                if lstn.is_set():
+                    break
+
+        # then, for pure recognize
+        bboxes = []
+        for lstn in self._text_recog_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+        results = self._text_recognizer(screen, bboxes)
+        for lstn, rslt in zip(self._text_recog_event_listeners, results):
+            lstn.set(rslt)
         #  }}} method `match_text_events` # 
+
+    @torch.no_grad()
+    def match_icon_events(self, screen):
+        #  method `match_icon_events` {{{ # 
+        """
+        screen - tensor of float32 with shape (3, heigh, width)
+        """
+
+        _, height, width = screen.shape
+
+        # first, for detection
+        bboxes = []
+        for lstn in self._icon_detect_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+        _, results = self._icon_detector(screen, bboxes)
+        for lstn, rslts in zip(self._icon_detect_event_listeners, results):
+            for cddt in rslts:
+                lstn.set(cddt)
+                if lstn.is_set():
+                    break
+
+        # then, for pure recognize
+        bboxes = []
+        for lstn in self._icon_recog_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+        results = self._icon_recognizer(screen, bboxes)
+        for lstn, rslt in zip(self._icon_recog_event_listeners, results):
+            lstn.set(rslt)
+        #  }}} method `match_icon_events` # 
+
+    @torch.no_grad()
+    def match_icon_match_events(self, screen):
+        #  method `match_icon_match_events` {{{ # 
+        """
+        screen - tensor of float32 with shape (3, heigh, width)
+        """
+
+        _, height, width = screen.shape
+
+        # first, for detection
+        bboxes = []
+        target_images = []
+        for lstn in self._icon_detect_match_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+
+            image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
+            target_images.append(image_tensor)
+        candidate_bboxes, _ = self._icon_detector(screen, bboxes)
+
+        base_bboxes = torch.cat(bboxes)[:, None, :]
+        candidate_bboxes[:, :, 0] += base_bboxes[:, :, 0]
+        candidate_bboxes[:, :, 2] += base_bboxes[:, :, 0]
+        candidate_bboxes[:, :, 1] += base_bboxes[:, :, 1]
+        candidate_bboxes[:, :, 3] += base_bboxes[:, :, 1]
+        results = self._icon_matcher(screen, target_images, candidate_bboxes)
+        for lstn, rslts in zip(self._icon_detect_match_event_listeners, results):
+            if any(rslts):
+                lstn.set(True)
+
+        # then, for pure recognize
+        bboxes = []
+        target_images = []
+        for lstn in self._icon_match_event_listeners:
+            x0, y0, x1, y1 = lstn.region
+            bboxes.append(torch.tensor(
+                [
+                    x0*height,
+                    y0*width,
+                    x1*height,
+                    y1*width
+                ])[None, :])
+
+            image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
+            target_images.append(image_tensor)
+        bboxes = torch.cat(bboxes)[:, None, :]
+        results = self._icon_matcher(screen, target_images, bboxes)
+        for lstn, rslt in zip(self._icon_recog_event_listeners, results):
+            lstn.set(rslt[0])
+        #  }}} method `match_icon_match_events` # 
     #  }}} Methods to Match Registered Events # 
 
     def main(self):
@@ -122,10 +302,16 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
             #return
         #self._main_loop_counter = 0
 
-        screen = self.get_screenshot()
 
-        self.match_text_events()
-        self.match_icon_events()
-        self.match_icon_match_events()
+        try:
+            screen = self.get_screenshot()
+
+            self.match_text_events(screen)
+            self.match_icon_events(screen)
+            self.match_icon_match_events(screen)
+
+            self._write_value(ScreenAnalyzerThread.Signal.OK)
+        except:
+            self._write_value(ScreenAnalyzerThread.Signal.CHECK_ERROR
         #  }}} method `main` # 
     #  }}} class `ScreenAnalyzerThread` # 
