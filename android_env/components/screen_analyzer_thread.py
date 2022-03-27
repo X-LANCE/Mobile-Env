@@ -52,7 +52,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
           class
         icon_matcher - callable accepting
           + tensor of float32 with shape (3, height, width) as the screenshot
-          + list of tensor of float32 with shape (3, height_, width_) with length
+          + list of tensor of float32 with shape (3, height', width') with length
             nb_bboxes as the targets
           + tensor of float32 with shape (nb_bboxes, nb_candidates, 4)
           and returning list [[list of bool with length nb_candidates]] with
@@ -148,7 +148,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
     def match_text_events(self, screen):
         #  method `match_text_events` {{{ # 
         """
-        screen - tensor of float32 with shape (3, heigh, width)
+        screen - tensor of float32 with shape (3, height, width)
         """
 
         _, height, width = screen.shape
@@ -191,7 +191,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
     def match_icon_events(self, screen):
         #  method `match_icon_events` {{{ # 
         """
-        screen - tensor of float32 with shape (3, heigh, width)
+        screen - tensor of float32 with shape (3, height, width)
         """
 
         _, height, width = screen.shape
@@ -234,7 +234,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
     def match_icon_match_events(self, screen):
         #  method `match_icon_match_events` {{{ # 
         """
-        screen - tensor of float32 with shape (3, heigh, width)
+        screen - tensor of float32 with shape (3, height, width)
         """
 
         _, height, width = screen.shape
