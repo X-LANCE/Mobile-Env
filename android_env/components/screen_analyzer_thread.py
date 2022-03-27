@@ -55,7 +55,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
           + list of tensor of float32 with shape (3, height', width') with length
             nb_bboxes as the targets
           + tensor of float32 with shape (nb_bboxes, nb_candidates, 4)
-          and returning list [[list of bool with length nb_candidates]] with
+          and returning list of [[list of bool with length nb_candidates]] with
           length nb_bboxes
 
         emulator_stub - emulator_controller_pb2_grpc.EmulatorControllerStub
