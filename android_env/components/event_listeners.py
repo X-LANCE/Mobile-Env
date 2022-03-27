@@ -2,6 +2,12 @@ import abc
 import re
 import itertools
 
+# The general data flow for the event flag classes:
+# value -> cast -> transform -> update
+#        \\_________________/        /
+#         \    _transform           /
+#          \_______________________/
+
 class Event(abc.ABC):
     #  abstract class `Event` {{{ # 
     def __init__(self, transformation=None, cast=None, update=None):
@@ -20,7 +26,8 @@ class Event(abc.ABC):
 
         self._transformation_str = transformation
         self._cast = cast or (lambda x: x)
-        self._update = update or (lambda x, y: y)
+        update = update or (lambda x, y: y)
+        self._update = lambda x, y: update(x, y) if x is not None else y
 
         self._flag = False
         self._value = None

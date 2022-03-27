@@ -25,6 +25,7 @@ import re
 import threading
 from typing import Any, Dict
 import functools
+import operator
 
 from absl import logging
 from android_env.components import adb_controller as adb_control
@@ -93,6 +94,7 @@ class TaskManager():
     }
 
     # zdy
+    #  Event Infrastructures {{{ # 
     self._text_events = []
     self._icon_events = []
     self._icon_match_events = []
@@ -102,14 +104,41 @@ class TaskManager():
 
     self._score_event = self.parse_event_listeners(task.score_listener, cast=int)\
         if task.HasField("score_listener") else event_listeners.EmptyEvent()
-    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int)\
+    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int,
+          update=operator.add)\
         if task.HasField("reward_listener") else event_listeners.EmptyEvent()
     self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)\
         if task.HasField("episode_end_listener") else event_listeners.EmptyEvent()
-    self._extra_event = self.parse_event_listeners(task.extra_listener)\
+
+    def _update_dict(buffer_size_limit, dict1, dict2):
+      for k in dict2:
+        if k in dict1:
+          dict1[k] += dict2[k]
+        else:
+          dict1[k] = dict2[k]
+        if len(dict1[k])>buffer_size_limit:
+          dict1[k] = dict1[k][-buffer_size_limit:]
+      return dict1
+    self._extra_event = self.parse_event_listeners(task.extra_listener,
+          update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("extra_listener") else event_listeners.EmptyEvent()
-    self._json_extra_event = self.parse_event_listeners(task.json_extra_listener)\
+
+    def _update_json_extra(buffer_size_limit, extra1, extra2):
+      try:
+        extra1 = extra1 if isinstance(extra1, dict) else dict(json.loads(extra1))
+      except ValueError:
+        logging.error('JSON string could not be parsed: %s', extra1)
+        extra1 = {}
+      try:
+        extra2 = dict(json.loads(extra2))
+      except ValueError:
+        logging.error('JSON string could not be parsed: %s', extra2)
+        extra2 = {}
+      return _update_dict(buffer_size_limit, extra1, extra2)
+    self._json_extra_event = self.parse_event_listeners(task.json_extra_listener,
+          update=functools.partial(_update_json_extra, self._extras_max_buffer_size))\
         if task.HasField("json_extra_listener") else event_listeners.EmptyEvent()
+    #  }}} Event Infrastructures # 
 
     # Initialize internal state
     self._task_start_time = None
@@ -118,10 +147,10 @@ class TaskManager():
     self._is_bad_episode = False
 
     self._latest_values = {
-        'reward': 0.0,
+        #'reward': 0.0,
         'score': 0.0,
-        'extra': {},
-        'episode_end': False,
+        #'extra': {},
+        #'episode_end': False,
     }
 
     logging.info('Task config: %s', self._task)
@@ -129,11 +158,15 @@ class TaskManager():
 
   # zdy
   # TODO: test the correctness
-  def parse_event_listeners(self, event_definition, cast=None):
+  def parse_event_listeners(self, event_definition, cast=None, update=None):
     #  method `parse_event_listeners` {{{ # 
     """
     event_definition - task_pb2.Event
     cast - callable accepting something returning something else or None
+    update - callable accepting
+      + something as `self._value`
+      + something as the new value
+      and returning something
 
     return event_listeners.Event
     """
@@ -149,18 +182,17 @@ class TaskManager():
       return [rect.x0, rect.y0, rect.x1, rect.y1]
       #  }}} function `_rect_to_list` # 
 
-    # TODO: fill the list of events by media during parsing
     #  Text Events {{{ # 
     if event_definition.HasField("text_recognize"):
       event = event_listeners.TextEvent(event_definition.text_recognize.expect,
           _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
-          transformation=event_definition.transformation, cast=cast)
+          transformation=event_definition.transformation, cast=cast, update=update)
       self._text_events.append(event)
       return event
     if event_definition.HasField("text_detect"):
       event = event_listeners.TextEvent(event_definition.text_detect.expect,
           _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
-          transformation=event_definition.transformation, cast=cast)
+          transformation=event_definition.transformation, cast=cast, update=update)
       self._text_events.append(event)
       return event
     #  }}} Text Events # 
@@ -169,13 +201,13 @@ class TaskManager():
     if event_definition.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(event_definition.icon_recognize.class,
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
-          transformation=event_definition.transformation)
+          transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
       return event
     if event_definition.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(event_definition.icon_detect.class,
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
-          transformation=event_definition.transformation)
+          transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
       return event
     #  }}} Icon Events # 
@@ -184,13 +216,13 @@ class TaskManager():
     if event_definition.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
           _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
-          transformation=event_definition.transformation)
+          transformation=event_definition.transformation, update=update)
       self._icon_match_events.append(event)
       return event
     if event_definition.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
           _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
-          transformation=event_definition.transformation)
+          transformation=event_definition.transformation, update=update)
       self._icon_match_events.append(event)
       return event
     #  }}} Icon Match Events # 
@@ -208,13 +240,13 @@ class TaskManager():
               getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
-          properties, transformation=event_definition.transformation, cast=cast)
+          properties, transformation=event_definition.transformation, cast=cast, update=update)
       self._view_hierarchy_events.append(event)
       return event
     if event_definition.HasField("log_event"):
       self._log_filters |= set(event_definition.log_event.filters)
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
-          transformation=event_definition.transformation, cast=cast)
+          transformation=event_definition.transformation, cast=cast, update=update)
       self._log_events.append(event)
       return event
     #  }}} Other Events # 
@@ -222,14 +254,14 @@ class TaskManager():
     #  Combined Events {{{ # 
     if event_definition.HasField("or"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast),
+          map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "or").events))
-      return event_listeners.Or(sub_events, event_definition.transformation, cast)
+      return event_listeners.Or(sub_events, event_definition.transformation, cast, update)
     if event_definition.HasField("and"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast),
+          map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "and").events))
-      return event_listeners.And(sub_events, event_definition.transformation, cast)
+      return event_listeners.And(sub_events, event_definition.transformation, cast, update)
     #  }}} Combined Events # 
     #  }}} method `parse_event_listeners` # 
 
@@ -244,6 +276,7 @@ class TaskManager():
     log_dict.update(self._setup_step_interpreter.log_dict())
     return log_dict
 
+  #  Episode Management {{{ # 
   def _reset_counters(self):
     """Reset counters at the end of an RL episode."""
 
@@ -254,12 +287,12 @@ class TaskManager():
     self._episode_steps = 0
     self._task_start_time = datetime.datetime.now()
     with self._lock:
-      #self._latest_values = {
+      self._latest_values = {
           #'reward': 0.0,
-          #'score': 0.0,
+          'score': 0.0,
           #'extra': {},
           #'episode_end': False,
-      #}
+      }
       self._score_event.clear()
       self._reward_event.clear()
       self._episode_end_event.clear()
@@ -286,28 +319,59 @@ class TaskManager():
 
   def pause_task(self) -> None:
     self._stop_dumpsys_thread()
-    self._stop_screen_analyzer_thread()
+    self._stop_screen_analyzer_thread() # zdy
 
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
-    self._start_screen_analyzer_thread()
+    self._start_screen_analyzer_thread() # zdy
+  #  }}} Episode Management # 
 
+  #  Interaction Methods {{{ # 
   def get_current_reward(self) -> float:
     """Returns total reward accumulated since the last step."""
 
     with self._lock:
-      reward = self._latest_values['reward']
-      self._latest_values['reward'] = 0.0
+      #reward = self._latest_values['reward']
+      #self._latest_values['reward'] = 0.0
+      score = self._score_event.get() if self._score_event.is_set() else 0 # zdy
+      reward = score - self._latest_values["score"]
+      self._latest_values["score"] = score
+      self._score_event.clear()
+
+      reward += self._reward_event.get() if self._reward_event.is_set() else 0 # zdy
+      self._reward_event.clear() # zdy
     return reward
 
   def get_current_extras(self) -> Dict[str, Any]:
     """Returns task extras accumulated since the last step."""
 
     with self._lock:
-      extras = {}
-      for name, values in self._latest_values['extra'].items():
+      # zdy
+      extras = self._extra_event.get() if self._extra_event.is_set() else {}
+      self._extra_event.clear()
+
+      if self._json_extra_event.is_set():
+        json_extras = self._json_extra_event.get()
+
+        if not isinstance(json_extras, dict):
+          try:
+            json_extras = json.loads(json_extras)
+          except ValueError:
+            logging.error('JSON string could not be parsed: %s', json_extras)
+            json_extras = {}
+
+        for k in json_extras:
+          if k in extras:
+            extras[k] += json_extras[k]
+          else:
+            extras[k] = json_extras[k]
+
+        self._json_extra_event.clear()
+
+      #for name, values in self._latest_values['extra'].items(): # zdy
+      for name, values in extras.items(): # zdy
         extras[name] = np.stack(values)
-      self._latest_values['extra'] = {}
+      #self._latest_values['extra'] = {} # zdy
       return extras
 
   def check_if_episode_ended(self) -> bool:
@@ -322,7 +386,8 @@ class TaskManager():
 
     # Check if episode has ended
     with self._lock:
-      if self._latest_values['episode_end']:
+      #if self._latest_values['episode_end']: # zdy
+      if self._episode_end_event.is_set(): # zdy
         self._log_dict['reset_count_episode_end'] += 1
         logging.info('End of episode from logcat! Ending episode.')
         logging.info('************* END OF EPISODE *************')
@@ -374,6 +439,7 @@ class TaskManager():
         raise errors.PlayerExitedViewHierarchyError()
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
+  #  }}} Interaction Methods # 
 
   #  Methods to Start and Stop the Assistant Threads {{{ # 
   def _start_setup_step_interpreter(self):
