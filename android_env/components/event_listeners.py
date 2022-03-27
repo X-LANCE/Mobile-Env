@@ -4,7 +4,7 @@ import itertools
 
 class Event(abc.ABC):
     #  abstract class `Event` {{{ # 
-    def __init__(self, transformation=None, cast=None):
+    def __init__(self, transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         transformation - str representing a python expression that can be
@@ -12,10 +12,15 @@ class Event(abc.ABC):
           "x" should be used to indicate the input variable. `x` could be a
           scalar or a list.
         cast - callable accepting something returning something else or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
         self._transformation_str = transformation
         self._cast = cast or (lambda x: x)
+        self._update = update or (lambda x, y: y)
 
         self._flag = False
         self._value = None
@@ -40,9 +45,14 @@ class Event(abc.ABC):
         value - the same type as `self._value`
         """
 
-        self._value = value
-        self._flag = True
+        self._set(self, value)
         #  }}} method `set` # 
+    def _set(self, value):
+        #  method `_set` {{{ # 
+        value = self._transform(value)
+        self._value = self._update(self._value, value)
+        self._flag = True
+        #  }}} method `_set` # 
     def clear(self):
         #  method `clear` {{{ # 
         self._flag = False
@@ -56,21 +66,38 @@ class Event(abc.ABC):
         return the same type as `self._transform` returns if `this.is_set()` else None
         """
 
-        return self._transform(self._value) if self.is_set() else None
+        return self._value if self.is_set() else None
         #  }}} method `get` # 
     #  }}} abstract class `Event` # 
 
+class EmptyEvent(Event):
+    #  class `EmptyEvent` {{{ # 
+    def __init__(self):
+        super(EmptyEvent, self).__init__()
+    def set(self, value):
+        pass
+    def is_set(self):
+        return False
+    def get(self):
+        return None
+    #  }}} class `EmptyEvent` # 
+
 class Or(Event):
     #  class `Or` {{{ # 
-    def __init__(self, events, transformation=None, cast=None):
+    def __init__(self, events, transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         events - iterable of Event
         transformation - str or None
         cast - callable accepting something returning something else or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(Or, self).__init__(transformation, cast)
+        update = update or (lambda x, y: x)
+        super(Or, self).__init__(transformation, cast, update)
 
         self._events = list(events)
         #  }}} method `__init__` # 
@@ -90,24 +117,31 @@ class Or(Event):
         return the same type as `self._transform` returns or None
         """
 
+        value = None
+        is_set = False
         for evt in self._events:
             if evt.is_set():
-                return self._transform(evt.get())
-        return None
+                is_set = True
+                value = self._update(value, evt.get())
+        return self._transform(value) if is_set else None
         #  }}} method `get` # 
     #  }}} class `Or` # 
 
 class And(Event):
     #  class `And` {{{ # 
-    def __init__(self, events, transformation=None, cast=None):
+    def __init__(self, events, transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         events - iterable of Event
         transformation - str of None
         cast - callable accepting something returning something else or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(And, self).__init__(transformation, cast)
+        super(And, self).__init__(transformation, cast, update)
 
         self._events = list(events)
         #  }}} method `__init__` # 
@@ -137,16 +171,20 @@ class And(Event):
 class RegionEvent(Event, abc.ABC):
     #  abstract class `RegionEvent` {{{ # 
     def __init__(self, region, needs_detection=False,
-            transformation=None, cast=None):
+            transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         region - iterable of four floats as [x0, y0, x1, y1]
         needs_detection - bool
         transformation - str of None
         cast - callable accepting something returning something else or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(RegionEvent, self).__init__(transformation, cast)
+        super(RegionEvent, self).__init__(transformation, cast, update)
         self._region = list(itertools.islice(region, 4))
         self._needs_detection = needs_detection
         #  }}} method `__init__` # 
@@ -163,7 +201,7 @@ class TextEvent(RegionEvent):
     #  class `TextEvent` {{{ # 
     def __init__(self, expect,
             region, needs_detection=False,
-            transformation=None, cast=None):
+            transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         expect - str
@@ -171,9 +209,13 @@ class TextEvent(RegionEvent):
         needs_detection - bool
         transformation - str or None
         cast - callable accepting str returning something except str or None
+        update - callable accepting
+          + str as `self._value`
+          + str as the new value
+          and returning str
         """
 
-        super(TextEvent, self).__init__(region, needs_detection, transformation, cast)
+        super(TextEvent, self).__init__(region, needs_detection, transformation, cast, update)
 
         self._expect = re.compile(expect)
         #  }}} method `__init__` # 
@@ -186,8 +228,10 @@ class TextEvent(RegionEvent):
 
         match_ = self.expect.match(text)
         if match_ is not None:
-            self._value = match_.groups()
-            self._flag = True
+            self._set(match_.groups())
+            #value = self._transform(match_.groups())
+            #self._value = self._update(self._value, value)
+            #self._flag = True
         #  }}} method `set` # 
     #  }}} class `TextEvent` # 
 
@@ -195,16 +239,20 @@ class IconRecogEvent(RegionEvent):
     #  class `IconRecogEvent` {{{ # 
     def __init__(self, icon_class,
             region, needs_detection=False,
-            transformation=None):
+            transformation=None, update=None):
         #  method `__init__` {{{ # 
         """
         icon_class - str
         region - iterable of four floats as [x0, y0, x1, y1]
         needs_detection - bool
         transformation - str of None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(IconRecogEvent, self).__init__(region, needs_detection, transformation, None)
+        super(IconRecogEvent, self).__init__(region, needs_detection, transformation, None, update)
 
         self._icon_class = icon_class
         #  }}} method `__init__` # 
@@ -216,8 +264,9 @@ class IconRecogEvent(RegionEvent):
         """
 
         if icon_class==self._icon_class:
-            self._value = True
-            self._flag = True
+            self._set(True)
+            #self._value = self._update(self._value, self._transform(True))
+            #self._flag = True
         #  }}} method `set` # 
     #  }}} class `IconRecogEvent` # 
 
@@ -225,16 +274,20 @@ class IconMatchEvent(RegionEvent):
     #  class `IconMatchEvent` {{{ # 
     def __init__(self, path,
             region, needs_detection=False,
-            transformation=None):
+            transformation=None, update=None):
         #  method `__init__` {{{ # 
         """
         path - str
         region - iterable of four floats as [x0, y0, x1, y1]
         needs_detection - bool
         transformation - str or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(IconMatchEvent, self).__init__(region, needs_detection, transformation, None)
+        super(IconMatchEvent, self).__init__(region, needs_detection, transformation, None, update)
 
         self._path = path
         #  }}} method `__init__` # 
@@ -250,8 +303,9 @@ class IconMatchEvent(RegionEvent):
         """
 
         if set_flag:
-            self._value = True
-            self._flag = True
+            self._set(True)
+            #self._value = self._update(self._value, self._transform(True))
+            #self._flag = True
         #  }}} method `set` # 
     #  }}} class `IconMatchEvent` # 
 
@@ -345,16 +399,20 @@ class ViewHierarchyEvent(Event):
         #  }}} class `StringProperty` # 
 
     def __init__(self, vh_path, vh_properties,
-            transformation=None, cast=None):
+            transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         vh_path - iterable of str
         vh_property - iterable of Property
         transformation - str or None
         cast - callable accepting something returning something else or None
+        update - callable accepting
+          + something as `self._value`
+          + something as the new value
+          and returning something
         """
 
-        super(ViewHierarchyEvent, self).__init__(transformation, cast)
+        super(ViewHierarchyEvent, self).__init__(transformation, cast, update)
 
         self._vh_path = list(vh_path)
         self._vh_properties = list(vh_properties)
@@ -379,8 +437,9 @@ class ViewHierarchyEvent(Event):
 
         if all(map(lambda p: p[0].match(p[1]),
                 itertools.zip_longest(self._vh_properties, values))):
-            self._value = values
-            self._flag = True
+            self._set(values)
+            #self._value = values
+            #self._flag = True
         #  }}} method `set` # 
     #  }}} class `ViewHierarchyEvent` # 
 
@@ -417,7 +476,8 @@ class LogEvent(Event):
 
         match_ = self._pattern.match(line)
         if match_ is not None:
-            self._value = match_.groups()
-            self._flag = True
+            self._set(match_.groups())
+            #self._value = match_.groups()
+            #self._flag = True
         #  }}} method `set` # 
     #  }}} class `LogEvent` # 

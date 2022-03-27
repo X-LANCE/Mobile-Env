@@ -24,17 +24,27 @@ import queue
 import re
 import threading
 from typing import Any, Dict
+import functools
 
 from absl import logging
 from android_env.components import adb_controller as adb_control
+
 from android_env.components import app_screen_checker
 from android_env.components import dumpsys_thread
 from android_env.components import errors
+
 from android_env.components import log_stream as log_stream_lib
 from android_env.components import logcat_thread
+
+# zdy
+from android_env.components.tools import naive_functions
+from android_env.proto import emulator_controller_pb2
+from android_env.proto import emulator_controller_pb2_grpc
+from android_env.components import screen_analyzer_thread
+
 from android_env.components import setup_step_interpreter
 from android_env.proto import task_pb2
-from android_env.components import event_listeners
+from android_env.components import event_listeners # zdy
 import numpy as np
 
 class TaskManager():
@@ -46,6 +56,8 @@ class TaskManager():
       max_bad_states: int = 3,
       dumpsys_check_frequency: int = 150,
       max_failed_current_activity: int = 10,
+      emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub = None, # zdy
+      image_format: emulator_controller_pb2.ImageFormat, # zdy
   ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
@@ -58,6 +70,7 @@ class TaskManager():
         current_activity and view hierarchy
       max_failed_current_activity: The maximum number of tries for extracting
         the current activity before forcing the episode to restart.
+      emulator_stub: Used by the screen analyzer to capture the screenshot.
     """
     self._task = task
     self._max_bad_states = max_bad_states
@@ -68,6 +81,7 @@ class TaskManager():
     self._extras_max_buffer_size = 100
     self._adb_controller = None
     self._setup_step_interpreter = None
+    self._emulator_stub = emulator_stub # zdy
 
     # Logging settings
     self._log_dict = {
@@ -78,6 +92,7 @@ class TaskManager():
         'restart_count_max_bad_states': 0,
     }
 
+    # zdy
     self._text_events = []
     self._icon_events = []
     self._icon_match_events = []
@@ -85,18 +100,16 @@ class TaskManager():
     self._log_events = []
     self._log_filters = set()
 
-    if task.HasField("score_listener"):
-      self._score_event = self.parse_event_listeners(task.score_listener, cast=int)
-    if task.HasField("reward_listener"):
-      self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int)
-    if task.HasField("episode_end_listener"):
-      self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)
-    if task.HasField("extra_listener"):
-      self._extra_event = self.parse_event_listeners(task.extra_listener)
-    if task.HasField("json_extra_listener"):
-      self.json_extra_event = self.parse_event_listeners(task.json_extra_listener)
-
-    # ZDY_COMMENT: TODO: instantiate models according to requirements
+    self._score_event = self.parse_event_listeners(task.score_listener, cast=int)\
+        if task.HasField("score_listener") else event_listeners.EmptyEvent()
+    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int)\
+        if task.HasField("reward_listener") else event_listeners.EmptyEvent()
+    self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)\
+        if task.HasField("episode_end_listener") else event_listeners.EmptyEvent()
+    self._extra_event = self.parse_event_listeners(task.extra_listener)\
+        if task.HasField("extra_listener") else event_listeners.EmptyEvent()
+    self._json_extra_event = self.parse_event_listeners(task.json_extra_listener)\
+        if task.HasField("json_extra_listener") else event_listeners.EmptyEvent()
 
     # Initialize internal state
     self._task_start_time = None
@@ -208,10 +221,14 @@ class TaskManager():
 
     #  Combined Events {{{ # 
     if event_definition.HasField("or"):
-      sub_events = list(map(self.parse_event_listeners, getattr(event_definition, "or").events))
+      sub_events = list(
+          map(functools.partial(self.parse_event_listeners, cast=cast),
+            getattr(event_definition, "or").events))
       return event_listeners.Or(sub_events, event_definition.transformation, cast)
     if event_definition.HasField("and"):
-      sub_events = list(map(self.parse_event_listeners, getattr(event_definition, "and").events))
+      sub_events = list(
+          map(functools.partial(self.parse_event_listeners, cast=cast),
+            getattr(event_definition, "and").events))
       return event_listeners.And(sub_events, event_definition.transformation, cast)
     #  }}} Combined Events # 
     #  }}} method `parse_event_listeners` # 
@@ -237,12 +254,17 @@ class TaskManager():
     self._episode_steps = 0
     self._task_start_time = datetime.datetime.now()
     with self._lock:
-      self._latest_values = {
-          'reward': 0.0,
-          'score': 0.0,
-          'extra': {},
-          'episode_end': False,
-      }
+      #self._latest_values = {
+          #'reward': 0.0,
+          #'score': 0.0,
+          #'extra': {},
+          #'episode_end': False,
+      #}
+      self._score_event.clear()
+      self._reward_event.clear()
+      self._episode_end_event.clear()
+      self._extra_event.clear()
+      self._json_extra_event.clear()
 
   def setup_task(self,
                  adb_controller: adb_control.AdbController,
@@ -264,9 +286,11 @@ class TaskManager():
 
   def pause_task(self) -> None:
     self._stop_dumpsys_thread()
+    self._stop_screen_analyzer_thread()
 
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
+    self._start_screen_analyzer_thread()
 
   def get_current_reward(self) -> float:
     """Returns total reward accumulated since the last step."""
@@ -351,6 +375,7 @@ class TaskManager():
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
 
+  #  Methods to Start and Stop the Assistant Threads {{{ # 
   def _start_setup_step_interpreter(self):
     self._setup_step_interpreter = setup_step_interpreter.SetupStepInterpreter(
         adb_controller=self._adb_controller,
@@ -373,6 +398,25 @@ class TaskManager():
         block_input=True,
         block_output=True)
 
+  # zdy
+  def _start_screen_analyzer_thread(self):
+    #  method `_start_screen_analyzer_thread` {{{ # 
+    # ZDY_COMMENT: TODO: instantiate models according to requirements
+
+    text_detector = naive_functions.naive_text_detector
+    text_recognizer = naive_functions.naive_text_recognizer
+    icon_detector = naive_functions.naive_icon_detector
+    icon_recognizer = naive_functions.naive_icon_recognizer
+    icon_matcher = naive_functions.naive_icon_matcher
+
+    self._screen_analyzer_thread = screen_analyzer_thread.ScreenAnalyzerThread(
+        text_detector, text_recognizer,
+        icon_detector, icon_recognizer, icon_matcher,
+        self._emulator_stub, self._image_format,
+        block_input=True, block_output=True)
+
+    #  }}} method `_start_screen_analyzer_thread` # 
+
   def _stop_logcat_thread(self):
     if hasattr(self, '_logcat_thread'):
       self._logcat_thread.kill()
@@ -380,6 +424,12 @@ class TaskManager():
   def _stop_dumpsys_thread(self):
     if hasattr(self, '_dumpsys_thread'):
       self._dumpsys_thread.kill()
+
+  # zdy
+  def _stop_screen_analyzer_thread(self):
+    if hasattr(self, "_screen_analyzer_thread"):
+      self._screen_analyzer_thread.kill()
+  #  }}} Methods to Start and Stop the Assistant Threads # 
 
   def _increment_bad_state(self) -> None:
     """Increments the bad state counter.
@@ -522,3 +572,6 @@ class TaskManager():
       self._logcat_thread.kill()
     if hasattr(self, '_dumpsys_thread'):
       self._dumpsys_thread.kill()
+    # zdy
+    if hasattr(self, "_screen_analyzer_thread"):
+      self._screen_analyzer_thread.kill()
