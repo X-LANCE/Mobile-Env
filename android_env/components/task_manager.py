@@ -480,6 +480,9 @@ class TaskManager():
         icon_detector, icon_recognizer, icon_matcher,
         self._emulator_stub, self._image_format,
         block_input=True, block_output=True)
+    self._screen_analyzer_thread.add_text_event_listeners(self._text_events)
+    self._screen_analyzer_thread.add_icon_event_listeners(self._icon_events)
+    self._screen_analyzer_thread.add_icon_match_event_listeners(self._icon_match_events)
 
     #  }}} method `_start_screen_analyzer_thread` # 
 
@@ -517,7 +520,9 @@ class TaskManager():
     else:
       logging.warning('Max bad states not set, bad states will be ignored.')
 
+  # ZDY_COMMENT: I think it is time to obsolete this method
   def _logcat_listeners(self):
+    #  method `_logcat_listeners` {{{ # 
     """Creates list of EventListeners for logcat thread."""
 
     # Defaults to 'a^' since that regex matches no string by definition.
@@ -632,6 +637,7 @@ class TaskManager():
     # ZDY_COMMENT: multiple latest extras are buffered, maybe for the purpose to preserve the information of dynamics
 
     return listeners
+    #  }}} method `_logcat_listeners` # 
 
   def close(self):
     if hasattr(self, '_logcat_thread'):

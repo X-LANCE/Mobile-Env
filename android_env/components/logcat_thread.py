@@ -28,9 +28,9 @@ from android_env.components import thread_function
 from android_env.proto import task_pb2
 
 
-class EventListener(NamedTuple):
-  regexp: Pattern[str]
-  handler_fn: Callable[[Pattern[str], Match[str]], None]
+#class EventListener(NamedTuple):
+  #regexp: Pattern[str]
+  #handler_fn: Callable[[Pattern[str], Match[str]], None]
 
 
 class LogcatThread(thread_function.ThreadFunction):
@@ -53,8 +53,9 @@ class LogcatThread(thread_function.ThreadFunction):
       name: Name of the thread.
     """
 
-    self._regexps = log_parsing_config.log_regexps
-    self._listeners = {}
+    #self._regexps = log_parsing_config.log_regexps # zdy
+    #self._listeners = {}
+    self._listeners = [] # zdy
     self._desired_event = None
     self._thread_event = threading.Event()
     self._max_buffer_size = 100
