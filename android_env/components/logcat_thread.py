@@ -93,7 +93,7 @@ class LogcatThread(thread_function.ThreadFunction):
     except ValueError:
       logging.error('Event: %r is not registered.', event_regexp)
 
-  # ZDY_COMMENT: will response to the events happened before the revocation but
+  # ZDY_COMMENT: will response to the events happened before the invocation but
   # not being handled yet as well
   def wait(self,
            #event: Optional[Pattern[str]] = None, # zdy
