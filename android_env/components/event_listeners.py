@@ -453,7 +453,7 @@ class ViewHierarchyEvent(Event):
 class LogEvent(Event):
     #  class `LogEvent` {{{ # 
     def __init__(self, filters, pattern,
-            transformation=None, cast=None):
+            transformation=None, cast=None, update=None):
         #  method `__init__` {{{ # 
         """
         filters - iterable of str
@@ -462,7 +462,7 @@ class LogEvent(Event):
         cast - callable accepting str returning something except str or None
         """
 
-        super(LogEvent, self).__init__(transformation, cast)
+        super(LogEvent, self).__init__(transformation, cast, update)
 
         self._filters = list(filters)
         self._pattern = re.compile(pattern)

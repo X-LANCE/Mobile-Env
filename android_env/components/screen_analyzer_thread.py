@@ -72,8 +72,6 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         name - str
         """
 
-        super(ScreenAnalyzerThread, self).__init__(block_input, block_output, name)
-
         self._text_detector = text_detector
         self._text_recognizer = text_recognizer
         self._icon_detector = icon_detector
@@ -96,6 +94,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         #self._check_frequency = check_frequency
         #self._max_failed_activity_extraction = max_failed_current_activity
         #self._num_failed_activity_extraction = 0
+
+        super(ScreenAnalyzerThread, self).__init__(block_input, block_output, name)
         #  }}} method `__init__` # 
 
     #  Methods to Add Event Listeners {{{ # 

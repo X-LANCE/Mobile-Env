@@ -26,6 +26,7 @@ from android_env.components import adb_controller as adb_control
 from android_env.components import app_screen_checker
 from android_env.components import errors
 from android_env.components import logcat_thread
+from android_env.components import event_listeners
 from android_env.proto import adb_pb2
 from android_env.proto import task_pb2
 
@@ -276,20 +277,24 @@ class SetupStepInterpreter():
 
     message = wait_for_message.message
     logging.info('Waiting for message: %s...', message)
-    event = re.compile(message)
-    got_message = False
+    #event = re.compile(message) # zdy
+    #got_message = False # zdy
 
-    def f(ev, match):
-      del ev, match
-      nonlocal got_message
-      got_message = True
+    # zdy
+    #def f(ev, match):
+      #del ev, match
+      #nonlocal got_message
+      #got_message = True
 
-    listener = logcat_thread.EventListener(regexp=event, handler_fn=f)
+    #listener = logcat_thread.EventListener(regexp=event, handler_fn=f)
+    listener = event_listeners.LogEvent([], message) # zdy
     self._logcat_thread.add_event_listener(listener)
     self._logcat_thread.wait(
-        event=event, timeout_sec=wait_for_message.timeout_sec)
+        event=listener, timeout_sec=wait_for_message.timeout_sec) # zdy
+        #event=event, timeout_sec=wait_for_message.timeout_sec)
     self._logcat_thread.remove_event_listener(listener)
-    if got_message:
+    #if got_message:
+    if listener.is_set(): # zdy
       logging.info('Message received: [%r]', message)
     else:
       logging.error('Failed to wait for message: [%r].', message)

@@ -58,7 +58,7 @@ class TaskManager():
       dumpsys_check_frequency: int = 150,
       max_failed_current_activity: int = 10,
       emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub = None, # zdy
-      image_format: emulator_controller_pb2.ImageFormat, # zdy
+      image_format: emulator_controller_pb2.ImageFormat = None, # zdy
   ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
@@ -72,6 +72,7 @@ class TaskManager():
       max_failed_current_activity: The maximum number of tries for extracting
         the current activity before forcing the episode to restart.
       emulator_stub: Used by the screen analyzer to capture the screenshot.
+      image_format: Used by the screen analyzer to parse the screenshot
     """
     self._task = task
     self._max_bad_states = max_bad_states
@@ -448,11 +449,16 @@ class TaskManager():
         logcat=self._logcat_thread)
 
   def _start_logcat_thread(self, log_stream: log_stream_lib.LogStream):
+    #self._logcat_thread = logcat_thread.LogcatThread(
+        #log_stream=log_stream,
+        #log_parsing_config=self._task.log_parsing_config)
+    # zdy
     self._logcat_thread = logcat_thread.LogcatThread(
         log_stream=log_stream,
-        log_parsing_config=self._task.log_parsing_config)
+        log_filter=self._log_filters)
 
-    for event_listener in self._logcat_listeners():
+    #for event_listener in self._logcat_listeners():
+    for event_listener in self._log_events: # zdy
       self._logcat_thread.add_event_listener(event_listener)
 
   def _start_dumpsys_thread(self):

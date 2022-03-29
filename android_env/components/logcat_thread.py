@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,12 +21,13 @@ import threading
 # `typing.Pattern` has been deprecated in Python 3.9 in favor of `re.Pattern`,
 # but it is not available even in slightly older Python versions.
 # Please see https://www.python.org/dev/peps/pep-0585/
-from typing import Callable, Match, NamedTuple, Optional, Pattern
+from typing import Callable, Match, NamedTuple, Optional, Pattern, Iterable
 
 from absl import logging
 from android_env.components import log_stream as log_stream_lib
 from android_env.components import thread_function
 from android_env.proto import task_pb2
+from android_env.components import event_listeners
 
 
 #class EventListener(NamedTuple):
@@ -39,7 +41,8 @@ class LogcatThread(thread_function.ThreadFunction):
   def __init__(
       self,
       log_stream: log_stream_lib.LogStream,
-      log_parsing_config: task_pb2.LogParsingConfig,
+      #log_parsing_config: task_pb2.LogParsingConfig,
+      log_filter: Iterable[str],
       name: str = 'logcat'):
     """Initializes this LogcatThread with optional filters.
 
@@ -48,41 +51,53 @@ class LogcatThread(thread_function.ThreadFunction):
 
     Args:
       log_stream: Stream of logs from simulator.
-      log_parsing_config: Determines the types of messages we want logcat to
-        match. Contains `filters` and `log_regexps`.
+      #log_parsing_config: Determines the types of messages we want logcat to
+        #match. Contains `filters` and `log_regexps`.
+      log_filter: Log filters given as an itrable of string.
       name: Name of the thread.
     """
 
     #self._regexps = log_parsing_config.log_regexps # zdy
     #self._listeners = {}
     self._listeners = [] # zdy
+
     self._desired_event = None
     self._thread_event = threading.Event()
-    self._max_buffer_size = 100
+
+    #self._max_buffer_size = 100 # zdy
     self._log_stream = log_stream
-    self._log_stream.set_log_filters(list(log_parsing_config.filters))
+    #self._log_stream.set_log_filters(list(log_parsing_config.filters))
+    self._log_stream.set_log_filters(list(log_filter))
 
     self._stdout = self._log_stream.get_stream_output()
 
     super().__init__(block_input=True, block_output=False, name=name)
 
-  def add_event_listener(self, event_listener: EventListener) -> None:
+  def add_event_listener(self, event_listener: event_listeners.LogEvent) -> None:
     """Adds `fn` to the list of handlers to call when `event` occurs."""
-    event_regexp = event_listener.regexp
-    if event_regexp not in self._listeners:
-      self._listeners[event_regexp] = []
-    self._listeners[event_regexp].append(event_listener.handler_fn)
+    #event_regexp = event_listener.regexp
+    #if event_regexp not in self._listeners:
+      #self._listeners[event_regexp] = []
+    #self._listeners[event_regexp].append(event_listener.handler_fn)
+    self._listeners.append(event_listener) # zdy
 
-  def remove_event_listener(self, event_listener: EventListener) -> None:
+  def remove_event_listener(self, event_listener: event_listeners.LogEvent) -> None:
     """Removes `fn` from the list of handlers to call when `event` occurs."""
-    event_regexp = event_listener.regexp
-    if event_regexp not in self._listeners:
+    #event_regexp = event_listener.regexp
+    #if event_regexp not in self._listeners:
+      #logging.error('Event: %r is not registered.', event_regexp)
+      #return
+    #self._listeners[event_regexp].remove(event_listener.handler_fn)
+    try:
+      self._listeners.remove(event_listener)
+    except ValueError:
       logging.error('Event: %r is not registered.', event_regexp)
-      return
-    self._listeners[event_regexp].remove(event_listener.handler_fn)
 
+  # ZDY_COMMENT: will response to the events happened before the revocation but
+  # not being handled yet as well
   def wait(self,
-           event: Optional[Pattern[str]] = None,
+           #event: Optional[Pattern[str]] = None, # zdy
+           event: event_listeners.LogEvent = None,
            timeout_sec: Optional[float] = None) -> None:
     """Blocks (caller) execution for up to `timeout_sec` until `event` is fired.
 
@@ -134,22 +149,32 @@ class LogcatThread(thread_function.ThreadFunction):
 
       # We're currently only consuming `message`, but we may use the other
       # fields in the future.
+      # ZDY_COMMENT: Actually, I wondered if all the Android comments satisfy
+      # the desired format. Maybe it is. I'd better to confirm that. e.g.,
+      # export a running log and have a check.
       matches = logline_re.match(line)
       if not matches or len(matches.groups()) != 6:
         continue
 
       content = matches.group('message')
-      for ev, listeners in self._listeners.items():
-        ev_matches = ev.match(content)
-        if ev_matches:
-          # Unblock consumers that may be waiting for events.
-          if not self._thread_event.is_set():
-            if self._desired_event:
-              if self._desired_event == ev:
-                self._thread_event.set()
-            else:
-              self._thread_event.set()
+      for evnt_lstn in self._listeners:
+        evnt_lstn.set(content)
+        if evnt_lstn.is_set():
+          if self._desired_event is not None and self._desired_event is evnt_lstn or\
+              self._desired_event is None:
+            self._thread_event.set()
 
-          # Notify listeners.
-          for listener in listeners:
-            listener(ev, ev_matches)
+      #for ev, listeners in self._listeners.items():
+        #ev_matches = ev.match(content)
+        #if ev_matches:
+          ## Unblock consumers that may be waiting for events.
+          #if not self._thread_event.is_set():
+            #if self._desired_event:
+              #if self._desired_event == ev:
+                #self._thread_event.set()
+            #else:
+              #self._thread_event.set()
+#
+          ## Notify listeners.
+          #for listener in listeners:
+            #listener(ev, ev_matches)
