@@ -118,6 +118,12 @@ class Or(Event):
         return any(map(lambda x: x.is_set(), self._events))
         #  }}} method `is_set` # 
 
+    def clear(self):
+        #  method `clear` {{{ # 
+        for evt in self._events:
+            evt.clear()
+        #  }}} method `clear` # 
+
     def get(self):
         #  method `get` {{{ # 
         """
@@ -129,8 +135,8 @@ class Or(Event):
         for evt in self._events:
             if evt.is_set():
                 is_set = True
-                value = self._update(value, evt.get())
-        return self._transform(value) if is_set else None
+                value = self._update(value, self._transform(evt.get()))
+        return value if is_set else None
         #  }}} method `get` # 
     #  }}} class `Or` # 
 
@@ -145,7 +151,7 @@ class And(Event):
         update - callable accepting
           + something as `self._value`
           + something as the new value
-          and returning something
+          and returning something, has no effect for `And` event.
         """
 
         super(And, self).__init__(transformation, cast, update)
@@ -161,6 +167,18 @@ class And(Event):
 
         return all(map(lambda x: x.is_set(), self._events))
         #  }}} method `is_set` # 
+
+    def clear(self):
+        #  method `clear` {{{ # 
+        if self.is_set():
+            for evt in self._events:
+                evt.clear()
+        #  }}} method `clear` # 
+    def force_clear(self):
+        #  method `force_clear` {{{ # 
+        for evt in self._events:
+            evt.clear()
+        #  }}} method `force_clear` # 
 
     def get(self):
         #  method `get` {{{ # 
