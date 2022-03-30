@@ -187,6 +187,7 @@ class AppScreenChecker():
   def __init__(self,
                adb_controller: adb_control.AdbController,
                expected_app_screen: task_pb2.AppScreen):
+
     self._adb_controller = adb_controller
     self._expected_activity = expected_app_screen.activity
     self._expected_view_hierarchy_path = [

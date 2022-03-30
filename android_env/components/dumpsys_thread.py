@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +17,13 @@
 """A ThreadFunction that runs and parses adb dumpsys."""
 
 import enum
+import threading
 
 from absl import logging
 
 from android_env.components import app_screen_checker as screen_checker
 from android_env.components import thread_function
+from android_env.components import event_listeners
 
 AppScreenChecker = screen_checker.AppScreenChecker
 # ZDY_COMMENT: check match according to the view hierarchy path
@@ -47,10 +50,12 @@ class DumpsysThread(thread_function.ThreadFunction):
       app_screen_checker: AppScreenChecker,
       check_frequency: int,
       max_failed_current_activity: int,
+      lock: threading.Lock, # zdy
       block_input: bool,
       block_output: bool,
       name: str = 'dumpsys',
   ):
+    #  method `__init__` {{{ # 
     """Initializes the dumpsys reader thread.
 
     This loops forever waiting for inputs from the main thread and outputting
@@ -67,11 +72,15 @@ class DumpsysThread(thread_function.ThreadFunction):
           but sometimes it fails. If it fails more than
           `max_failed_current_activity` consecutive times, we declare that the
           user has exited `expected_activity`.
+      lock: Lock for consistency during set flags of events.
       block_input: Whether to block this thread when reading its input queue.
       block_output: Whether to block this thread when writing to its output
         queue.
       name: Name of the thread.
     """
+
+    self._event_listeners = []
+    self._lock = lock
 
     self._app_screen_checker = app_screen_checker
     self._main_loop_counter = 0
@@ -80,12 +89,25 @@ class DumpsysThread(thread_function.ThreadFunction):
     self._num_failed_activity_extraction = 0
     super().__init__(
         block_input=block_input, block_output=block_output, name=name)
+    #  }}} method `__init__` # 
+
+  def add_event_listeners(self, *event_listeners):
+    #  method `add_event_listeners` {{{ # 
+    """
+    event_listeners - list of event_listeners.ViewHierarchyEvent
+    """
+
+    self._event_listeners += event_listeners
+    #  }}} method `add_event_listeners` # 
 
   def main(self):
+    #  method `main` {{{ # 
     v = self._read_value()
     if v != DumpsysThread.Signal.FETCH_DUMPSYS:
       self._write_value(DumpsysThread.Signal.DID_NOT_CHECK)
       return
+
+    # The reward signals should be checked anyway, I think.
 
     # Update and check loop_counter against check_frequency.
     self._main_loop_counter += 1
@@ -126,3 +148,4 @@ class DumpsysThread(thread_function.ThreadFunction):
     elif outcome == AppScreenChecker.Outcome.UNEXPECTED_VIEW_HIERARCHY:
       self._write_value(DumpsysThread.Signal.USER_EXITED_VIEW_HIERARCHY)
       return
+    #  }}} method `main` # 

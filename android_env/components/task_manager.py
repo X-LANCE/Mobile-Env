@@ -525,9 +525,9 @@ class TaskManager():
         icon_detector, icon_recognizer, icon_matcher,
         self._emulator_stub, self._image_format,
         block_input=True, block_output=True)
-    self._screen_analyzer_thread.add_text_event_listeners(self._text_events)
-    self._screen_analyzer_thread.add_icon_event_listeners(self._icon_events)
-    self._screen_analyzer_thread.add_icon_match_event_listeners(self._icon_match_events)
+    self._screen_analyzer_thread.add_text_event_listeners(*self._text_events)
+    self._screen_analyzer_thread.add_icon_event_listeners(*self._icon_events)
+    self._screen_analyzer_thread.add_icon_match_event_listeners(*self._icon_match_events)
 
     #  }}} method `_start_screen_analyzer_thread` # 
 
