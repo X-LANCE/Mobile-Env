@@ -150,6 +150,7 @@ class TaskManager():
     self._latest_values = {
         #'reward': 0.0,
         'score': 0.0,
+        "player_exited": False,
         #'extra': {},
         #'episode_end': False,
     }
@@ -291,6 +292,7 @@ class TaskManager():
       self._latest_values = {
           #'reward': 0.0,
           'score': 0.0,
+          "player_exited": False,
           #'extra': {},
           #'episode_end': False,
       }
@@ -329,7 +331,15 @@ class TaskManager():
 
   #  Interaction Methods {{{ # 
   def get_current_reward(self) -> float:
+  #  method `get_current_reward` {{{ # 
     """Returns total reward accumulated since the last step."""
+
+    # zdy
+    self._run_screen_analyzer()
+    try:
+      self._run_dumpsys()
+    except errors.NotAllowedError:
+      self._latest_values["player_exited"] = True
 
     with self._lock:
       #reward = self._latest_values['reward']
@@ -342,8 +352,10 @@ class TaskManager():
       reward += self._reward_event.get() if self._reward_event.is_set() else 0 # zdy
       self._reward_event.clear() # zdy
     return reward
+  #  }}} method `get_current_reward` # 
 
   def get_current_extras(self) -> Dict[str, Any]:
+    #  method `get_current_extras` {{{ # 
     """Returns task extras accumulated since the last step."""
 
     with self._lock:
@@ -374,12 +386,14 @@ class TaskManager():
         extras[name] = np.stack(values)
       #self._latest_values['extra'] = {} # zdy
       return extras
+    #  }}} method `get_current_extras` # 
 
   def check_if_episode_ended(self) -> bool:
     """Determines whether the episode should be terminated and reset."""
 
     # Check if player existed the task
-    if self._check_player_exited():
+    #if self._check_player_exited():
+    if self._latest_values["player_exited"]:
       self._log_dict['reset_count_player_exited'] += 1
       logging.warning('Player exited the game. Ending episode.')
       logging.info('************* END OF EPISODE *************')
@@ -413,15 +427,20 @@ class TaskManager():
 
     return False
 
-  def _check_player_exited(self) -> bool:
-    """Returns whether the player has exited the game."""
-    try:
-      self._check_player_exited_impl()
-      return False
-    except errors.NotAllowedError:
-      return True
+  #  Deprecated `_check_player_exited` method {{{ # 
+  # zdy
+  #def _check_player_exited(self) -> bool:
+    #"""Returns whether the player has exited the game."""
+    #try:
+      #self._check_player_exited_impl()
+      #return False
+    #except errors.NotAllowedError:
+      #return True
+  #  }}} Deprecated `_check_player_exited` method # 
 
-  def _check_player_exited_impl(self):
+  #def _check_player_exited_impl(self):
+  def _run_dumpsys(self): # zdy
+    #  method `_run_dumpsys` {{{ # 
     """Raises an error if the OS is not in an allowed state."""
 
     if not hasattr(self, '_dumpsys_thread'):
@@ -431,7 +450,7 @@ class TaskManager():
         dumpsys_thread.DumpsysThread.Signal.FETCH_DUMPSYS)
 
     try:
-      v = self._dumpsys_thread.read(block=False)
+      v = self._dumpsys_thread.read(block=False) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
       if v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_ACTIVITY:
         self._increment_bad_state()
         raise errors.PlayerExitedActivityError()
@@ -440,6 +459,26 @@ class TaskManager():
         raise errors.PlayerExitedViewHierarchyError()
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
+    #  }}} method `_run_dumpsys` # 
+
+  # zdy
+  def _run_screen_analyzer(self):
+    #  method `_run_screen_analyzer` {{{ # 
+    if not hasattr(self, "_screen_analyzer_thread"):
+      return
+
+    self._screen_analyzer_thread.write(
+      screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_SCREEN)
+
+    try:
+      status = self._screen_analyzer_thread.read(block=True, timeout=0.05) # TODO: maybe a better timeout value could be tuned to
+      if status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_ERROR:
+        logging.error("Screen Analyzer Error!")
+      elif status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.DID_NOT_CHECK:
+        logging.info("Screen Analyzer did not check, maybe owing to the kill signal.")
+    except queue.Empty:
+      logging.warning("Screen Analyzer exceeds time limit!")
+    #  }}} method `_run_screen_analyzer` # 
   #  }}} Interaction Methods # 
 
   #  Methods to Start and Stop the Assistant Threads {{{ # 
