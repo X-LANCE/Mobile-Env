@@ -57,8 +57,6 @@ class TaskManager():
       max_bad_states: int = 3,
       dumpsys_check_frequency: int = 150,
       max_failed_current_activity: int = 10,
-      emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub = None, # zdy
-      image_format: emulator_controller_pb2.ImageFormat = None, # zdy
   ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
@@ -71,8 +69,6 @@ class TaskManager():
         current_activity and view hierarchy
       max_failed_current_activity: The maximum number of tries for extracting
         the current activity before forcing the episode to restart.
-      emulator_stub: Used by the screen analyzer to capture the screenshot.
-      image_format: Used by the screen analyzer to parse the screenshot
     """
     self._task = task
     self._max_bad_states = max_bad_states
@@ -82,8 +78,9 @@ class TaskManager():
     self._lock = threading.Lock()
     self._extras_max_buffer_size = 100
     self._adb_controller = None
+    self._emulator_stub = None
+    self._image_format = None
     self._setup_step_interpreter = None
-    self._emulator_stub = emulator_stub # zdy
 
     # Logging settings
     self._log_dict = {
@@ -314,10 +311,15 @@ class TaskManager():
 
   def setup_task(self,
                  adb_controller: adb_control.AdbController,
-                 log_stream: log_stream_lib.LogStream) -> None:
+                 emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub, # zdy
+                 image_format: emulator_controller_pb2.ImageFormat, # zdy
+                 log_stream: log_stream_lib.LogStream,
+                 ) -> None:
     """Starts the given task along with all relevant processes."""
 
     self._adb_controller = adb_controller
+    self._emulator_stub = emulator_stub
+    self._image_format = image_format
     self._start_logcat_thread(log_stream=log_stream)
     self._start_setup_step_interpreter()
     self._setup_step_interpreter.interpret(self._task.setup_steps)

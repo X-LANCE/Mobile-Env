@@ -205,6 +205,8 @@ class Coordinator():
       try:
         self._task_manager.setup_task(
             adb_controller=adb_controller,
+            emulator_stub=self._simulator.get_emulator_stub(), # zdy
+            image_format=self._simulator.image_format, # zdy
             log_stream=log_stream)
       except errors.StepCommandError:
         logging.error('Failed to set up the task. Restarting simulator.')

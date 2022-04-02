@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,6 +108,13 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     return adb_controller.AdbController(
         device_name=self.adb_device_name(),
         **self._adb_controller_args)
+
+  # zdy
+  def get_emulator_stub(self):
+    return self._emulator_stub
+  @property
+  def image_format(self):
+    return self._image_format
 
   def _restart_impl(self) -> None:
     if not self._existing_emulator_provided:

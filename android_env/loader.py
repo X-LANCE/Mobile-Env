@@ -71,7 +71,6 @@ def load(task_path: str,
   with open(task_path, 'r') as proto_file:
     text_format.Parse(proto_file.read(), task)
 
-  # TODO: adjust the initiaion of `TaskManager`
   task_manager = task_manager_lib.TaskManager(task)
   coordinator = coordinator_lib.Coordinator(simulator, task_manager)
 

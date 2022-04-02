@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +24,7 @@ import sys
 import threading
 import time
 from typing import List, Optional, Sequence, Tuple
+import lxml.etree
 
 from absl import logging
 from android_env.components import errors
@@ -42,7 +44,7 @@ class AdbController():
                device_name: str = '',
                adb_path: str = 'adb',
                adb_server_port: int = 5037,
-               prompt_regex: str = r'generic_x86:/ \$',
+               prompt_regex: str = r'generic_x86:/ \$', # ZDY_COMMENT: TODO: maybe to r"generic_x86_64_arm64:/ \$"
                default_timeout: float = _DEFAULT_TIMEOUT_SECONDS):
     """Instantiates an AdbController object.
 
@@ -393,6 +395,21 @@ class AdbController():
       logging.info('Granting permission: %r', permission)
       self._execute_command(
           ['shell', 'pm', 'grant', package, permission], timeout=timeout)
+
+  def get_view_hierarchy(self, timeout=None):
+    #  method `get_view_hierarchy` {{{ # 
+    """
+    timeout - floating or None
+
+    return lxml.etree.Element
+    """
+    view_hierarchy_output = self._execute_command(["shell", "uiautomator", "dump", "/dev/stdout"], timeout=timeout)
+    view_hierarchy_output = view_hierarchy_output.strip()\
+        .removesuffix(b"UI hierchary dumped to: /dev/stdout")
+    logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.encode("utf-8")))
+    root = lxml.etree.fromstring(view_hierarchy_output)
+    return root
+    #  }}} method `get_view_hierarchy` # 
 
   def get_activity_dumpsys(self,
                            package_name: str,
