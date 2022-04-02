@@ -142,10 +142,17 @@ message Event {
     message ViewHierarchyEvent {
         repeated string view_hierarchy_path = 1;
 
+        enum Sign {
+            EQ = 0;
+            LE = 1;
+            LT = 2;
+            GE = 3;
+            GT = 4;
+        }
         message Property {
             string property_name = 1;
+            Sign sign = 2;
             oneof property_value {
-                bool boolean = 2;
                 string pattern = 3;
                 int32 integer = 4;
                 float floating = 5;

@@ -238,8 +238,18 @@ class TaskManager():
         elif prpt.HasField("pattern"):
           property_ = event_listeners.ViewHierarchyEvent.StringProperty(prpt.property_name, prpt.pattern)
         else:
+          if prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.EQ:
+            comparator = operator.eq
+          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.LE:
+            comparator = operator.le
+          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.LT:
+            comparator = operator.lt
+          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.GE:
+            comparator = operator.ge
+          else:
+            comparator = operator.gt
           property_ = event_listeners.ViewHierarchyEvent.ScalarProperty(prpt.property_name,
-              getattr(prpt, prpt.WhichOneof("property_value")))
+              comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
           properties, transformation=event_definition.transformation, cast=cast, update=update)

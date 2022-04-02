@@ -375,14 +375,19 @@ class ViewHierarchyEvent(Event):
 
     class ScalarProperty(Property):
         #  class `ScalarProperty` {{{ # 
-        def __init__(self, name, value):
+        def __init__(self, name, comparator, value):
             #  method `__init__` {{{ # 
             """
             name - str
+            comparator - callable accepting
+              + the same type with `value`
+              + the same type with `value`
+              and returning bool
             value - something
             """
 
             super(ScalarProperty, self).__init__(name)
+            self._comparator = comparator
             self._value = value
             #  }}} method `__init__` # 
 
@@ -394,7 +399,7 @@ class ViewHierarchyEvent(Event):
             return bool
             """
 
-            return self._value==value
+            return self._comparator(self._value, value)
             #  }}} method `match` # 
         #  }}} class `ScalarProperty` # 
 
