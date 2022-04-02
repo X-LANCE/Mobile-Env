@@ -79,7 +79,8 @@ class DumpsysThread(thread_function.ThreadFunction):
       name: Name of the thread.
     """
 
-    self._event_listeners = []
+    # zdy
+    #self._event_listeners = []
     self._lock = lock
 
     self._app_screen_checker = app_screen_checker
@@ -91,15 +92,6 @@ class DumpsysThread(thread_function.ThreadFunction):
         block_input=block_input, block_output=block_output, name=name)
     #  }}} method `__init__` # 
 
-  def add_event_listeners(self, *event_listeners):
-    #  method `add_event_listeners` {{{ # 
-    """
-    event_listeners - list of event_listeners.ViewHierarchyEvent
-    """
-
-    self._event_listeners += event_listeners
-    #  }}} method `add_event_listeners` # 
-
   def main(self):
     #  method `main` {{{ # 
     v = self._read_value()
@@ -108,6 +100,8 @@ class DumpsysThread(thread_function.ThreadFunction):
       return
 
     # The reward signals should be checked anyway, I think.
+    # TODO: insert the codes to check the events
+    self._app_screen_checker.match_events(self._lock)
 
     # Update and check loop_counter against check_frequency.
     self._main_loop_counter += 1

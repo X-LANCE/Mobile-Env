@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -167,9 +168,62 @@ def matches_path(dumpsys_activity_output: str,
       current_node = child
   return True
 
+def find_children(node, class_regex, id_regex):
+  #  function `find_children` {{{ # 
+  """
+  node - lxml.etree.Element
+  class_regex - re.Pattern
+  id_regex - re.Pattern
+
+  return list of lxml.etree.Element
+  """
+
+  children = []
+  for ch in node.iterdescendants():
+    if class_regex.match(ch.get("class")) is not None and\
+        id_regex.match(ch.get("resource-id")) is not None:
+      children.append(ch)
+  return children
+  #  }}} function `find_children` # 
+
+_separator_pattern = re.compile(r"(?<!\\)@")
+_fake_separator_pattern = re.compile(r"(?<=\\)@")
+def match_path2(node, vh_path):
+  #  function `match_path2` {{{ # 
+  """
+  node - lxml.etree.Element
+  vh_path - list of str
+  
+  return
+  - bool
+  - lxml.etree.Element or None
+  """
+
+  if len(vh_path)==0:
+    return True, None
+
+  head = vh_path[0]
+  tail = vh_path[1:]
+
+  patterns = _separator_pattern.split(head, maxsplit=1)
+  class_pattern_str = _fake_separator_pattern.sub("@", patterns[0])
+  class_regex = re.compile(class_regex)
+  id_pattern_str = _fake_separator_pattern.sub("@", patterns[1]) if len(patterns)>=2\
+      else r".*"
+  id_regex = re.compile(id_pattern_str)
+
+  matched_children = find_children(node, class_regex, id_regex)
+  for ch in matched_children:
+    matches, leaf = match_path2(ch, tail):
+    if matches:
+      return True, leaf or node
+  return False, None
+  #  }}} function `match_path2` # 
 
 class AppScreenChecker():
   """Checks that the current app screen matches an expected screen."""
+
+  bbox_regex = re.compile(r"\[(?P<left>\d+),(?P<top>\d+)\]\[(?P<right>\d+),(?P<bottom>\d+)\]")
 
   class Outcome(enum.IntEnum):
     """Possible return vales from checking the current app screen."""
@@ -193,6 +247,8 @@ class AppScreenChecker():
     self._expected_view_hierarchy_path = [
         re.compile(regex) for regex in expected_app_screen.view_hierarchy_path
     ]
+
+    self._event_listeners = [] # zdy
 
   # Return type is AppScreenChecker.Outcome, but pytype doesn't understand that.
   def matches_current_app_screen(self) -> enum.IntEnum:
@@ -225,3 +281,43 @@ class AppScreenChecker():
           return AppScreenChecker.Outcome.UNEXPECTED_VIEW_HIERARCHY
 
     return AppScreenChecker.Outcome.SUCCESS
+
+  #  For VH Events Listening {{{ # 
+  def add_event_listeners(self, *event_listeners):
+    #  method `add_event_listeners` {{{ # 
+    """
+    event_listeners - list of event_listeners.ViewHierarchyEvent
+    """
+
+    self._event_listeners += event_listeners
+    #  }}} method `add_event_listeners` # 
+
+  def match_events(self, lock):
+    #  method `match_events` {{{ # 
+    """
+    lock - threading.Lock
+    """
+
+    view_hierarchy = self._adb_controller.get_view_hierarchy()
+
+    for evnt in self._event_listeners:
+      # 1. match the path
+      matches, leaf_node = match_path2(view_hierarchy, evnt.path)
+      if not matches:
+        continue
+
+      # 2. match the property value
+      values = []
+      for prpt in evnt.property_names:
+        if prpt in ["left", "top", "right", "bottom"]:
+          matches = AppScreenChecker.bbox_regex.fullmatch(leaf_node.get("bounds"))
+          normalization = self._adb_controller.get_screen_dimensions()[1]\
+              if prpt[0]=="l" or prpt[0]=="r"\
+              else self._adb_controller.get_screen_dimensions()[0]
+          values.append(float(matches[prpt])/normalization)
+        else:
+          values.append(leaf_node.get(prpt))
+      with lock:
+        evnt.set(values)
+    #  }}} method `match_events` # 
+  #  }}} For VH Events Listening # 

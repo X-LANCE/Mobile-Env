@@ -140,6 +140,9 @@ message Event {
     }
 
     message ViewHierarchyEvent {
+        // Specified as (EBNF)
+        // path = class-regex "@" id-regex ;
+        // If there is "@" in the regex literal, escape it by "\@".
         repeated string view_hierarchy_path = 1;
 
         enum Sign {

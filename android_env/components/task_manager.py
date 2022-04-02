@@ -513,11 +513,14 @@ class TaskManager():
       self._logcat_thread.add_event_listener(event_listener)
 
   def _start_dumpsys_thread(self):
+    app_screen_checker = app_screen_checker.AppScreenChecker(
+        self._adb_controller, self._task.expected_app_screen)
+    app_screen_checker.add_event_listeners(*self._view_hierarchy_events)
     self._dumpsys_thread = dumpsys_thread.DumpsysThread(
-        app_screen_checker=app_screen_checker.AppScreenChecker(
-            self._adb_controller, self._task.expected_app_screen),
+        app_screen_checker=app_screen_checker,
         check_frequency=self._dumpsys_check_frequency,
         max_failed_current_activity=self._max_failed_current_activity,
+        lock=self._lock,
         block_input=True,
         block_output=True)
 
