@@ -93,7 +93,42 @@ max_num_steps: 500
   #}
 #}
 
-# TODO: new event listener definitions
+# new event listener definitions
+score_listener: {
+    log_event: {
+        filters: ["AndroidRLTask:V"]
+        pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+    }
+    transformation: "x[0]"
+}
+reward_listener: {
+    log_event: {
+        filters: ["AndroidRLTask:V"]
+        pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    }
+    transformation: "x[0]"
+}
+episode_end_listener: {
+    log_event: {
+        filters: ["AndroidRLTask:V"]
+        pattern: "^episode[ _]end$"
+    }
+    transformation: "True"
+}
+extra_listener: {
+    log_event: {
+        filters: ["AndroidRLTask:V"]
+        pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+    }
+    transformation: "{x[0]: x[1]}"
+}
+json_extra_listener: {
+    log_event: {
+        filters: ["AndroidRLTask:V"]
+        pattern: "^json_extra: (?P<json_extra>.*)$"
+    }
+    transformation: "x[0]"
+}
 
 extras_spec: [
   # Grid representing the state of the board.

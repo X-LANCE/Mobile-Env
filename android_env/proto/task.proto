@@ -186,8 +186,7 @@ message Event {
         LogEvent log_event = 10;
     }
     // Python expression that could be evaluated by `eval` function. Use `x`
-    // to indicate the input variable. As many transformations as pattern groups
-    // should be provided.
+    // to indicate the input variable. 
     //
     // e.g., use "x" to indicate the identity transformation
     // e.g., use expression like "3" to indicate the constant transformation
@@ -195,7 +194,7 @@ message Event {
     // NOTE: for `and`, use `x[i]` to indicate the input from the i-th event
     // NOTE: for `or`, use `x` to represent the input from the exclusive active
     // event
-    repeated string transformation = 15;
+    string transformation = 15;
 }
 // }}} new message `Event` 
 
