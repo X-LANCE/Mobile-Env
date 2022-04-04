@@ -475,7 +475,7 @@ class TaskManager():
         dumpsys_thread.DumpsysThread.Signal.FETCH_DUMPSYS)
 
     try:
-      v = self._dumpsys_thread.read(block=True, timeout=0.05) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
+      v = self._dumpsys_thread.read(block=False) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
       if v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_ACTIVITY:
         self._increment_bad_state()
         raise errors.PlayerExitedActivityError()
