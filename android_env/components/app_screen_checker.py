@@ -214,7 +214,7 @@ def match_path2(node, vh_path):
 
   matched_children = find_children(node, class_regex, id_regex)
   for ch in matched_children:
-    matches, leaf = match_path2(ch, tail):
+    matches, leaf = match_path2(ch, tail)
     if matches:
       return True, leaf or node
   return False, None

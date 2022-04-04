@@ -198,13 +198,13 @@ class TaskManager():
 
     #  Icon Events {{{ # 
     if event_definition.HasField("icon_recognize"):
-      event = event_listeners.IconRecogEvent(event_definition.icon_recognize.class,
+      event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
           transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
       return event
     if event_definition.HasField("icon_detect"):
-      event = event_listeners.IconRecogEvent(event_definition.icon_detect.class,
+      event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
           transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
@@ -317,6 +317,12 @@ class TaskManager():
                  ) -> None:
     """Starts the given task along with all relevant processes."""
 
+    logging.info("#Text Events: {:d}".format(len(self._text_events)))
+    logging.info("#Icon Events: {:d}".format(len(self._icon_events)))
+    logging.info("#Icon Match Events: {:d}".format(len(self._icon_match_events)))
+    logging.info("#VH Events: {:d}".format(len(self._view_hierarchy_events)))
+    logging.info("#Log Events: {:d}".format(len(self._log_events)))
+
     self._adb_controller = adb_controller
     self._emulator_stub = emulator_stub
     self._image_format = image_format
@@ -356,10 +362,15 @@ class TaskManager():
     with self._lock:
       #reward = self._latest_values['reward']
       #self._latest_values['reward'] = 0.0
-      score = self._score_event.get() if self._score_event.is_set() else 0 # zdy
-      reward = score - self._latest_values["score"]
-      self._latest_values["score"] = score
-      self._score_event.clear()
+
+      # zdy
+      if self._score_event.is_set():
+        score = self._score_event.get()
+        reward = score - self._latest_values["score"]
+        self._latest_values["score"] = score
+        self._score_event.clear()
+      else:
+        reward = 0
 
       reward += self._reward_event.get() if self._reward_event.is_set() else 0 # zdy
       self._reward_event.clear() # zdy
@@ -401,6 +412,7 @@ class TaskManager():
     #  }}} method `get_current_extras` # 
 
   def check_if_episode_ended(self) -> bool:
+    #  method `check_if_episode_ended` {{{ # 
     """Determines whether the episode should be terminated and reset."""
 
     # Check if player existed the task
@@ -438,6 +450,7 @@ class TaskManager():
         return True
 
     return False
+    #  }}} method `check_if_episode_ended` # 
 
   #  Deprecated `_check_player_exited` method {{{ # 
   # zdy
@@ -462,7 +475,7 @@ class TaskManager():
         dumpsys_thread.DumpsysThread.Signal.FETCH_DUMPSYS)
 
     try:
-      v = self._dumpsys_thread.read(block=False) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
+      v = self._dumpsys_thread.read(block=True, timeout=0.05) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
       if v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_ACTIVITY:
         self._increment_bad_state()
         raise errors.PlayerExitedActivityError()
@@ -513,11 +526,11 @@ class TaskManager():
       self._logcat_thread.add_event_listener(event_listener)
 
   def _start_dumpsys_thread(self):
-    app_screen_checker = app_screen_checker.AppScreenChecker(
+    app_screen_checker_ = app_screen_checker.AppScreenChecker(
         self._adb_controller, self._task.expected_app_screen)
-    app_screen_checker.add_event_listeners(*self._view_hierarchy_events)
+    app_screen_checker_.add_event_listeners(*self._view_hierarchy_events)
     self._dumpsys_thread = dumpsys_thread.DumpsysThread(
-        app_screen_checker=app_screen_checker,
+        app_screen_checker=app_screen_checker_,
         check_frequency=self._dumpsys_check_frequency,
         max_failed_current_activity=self._max_failed_current_activity,
         lock=self._lock,
@@ -539,6 +552,7 @@ class TaskManager():
         text_detector, text_recognizer,
         icon_detector, icon_recognizer, icon_matcher,
         self._emulator_stub, self._image_format,
+        lock=self._lock,
         block_input=True, block_output=True)
     self._screen_analyzer_thread.add_text_event_listeners(*self._text_events)
     self._screen_analyzer_thread.add_icon_event_listeners(*self._icon_events)

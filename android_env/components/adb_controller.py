@@ -44,7 +44,7 @@ class AdbController():
                device_name: str = '',
                adb_path: str = 'adb',
                adb_server_port: int = 5037,
-               prompt_regex: str = r'generic_x86:/ \$', # ZDY_COMMENT: TODO: maybe to r"generic_x86_64_arm64:/ \$"
+               prompt_regex: str = r'generic_x86:/ \$',
                default_timeout: float = _DEFAULT_TIMEOUT_SECONDS):
     """Instantiates an AdbController object.
 
@@ -404,11 +404,17 @@ class AdbController():
     return lxml.etree.Element
     """
     view_hierarchy_output = self._execute_command(["shell", "uiautomator", "dump", "/dev/stdout"], timeout=timeout)
-    view_hierarchy_output = view_hierarchy_output.strip()\
-        .removesuffix(b"UI hierchary dumped to: /dev/stdout")
-    logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.encode("utf-8")))
-    root = lxml.etree.fromstring(view_hierarchy_output)
-    return root
+    if view_hierarchy_output:
+      view_hierarchy_output = view_hierarchy_output.strip()
+      #if view_hierarchy_output.endswith(b"UI hierchary dumped to: /dev/stdout"):
+        #view_hierarchy_output = view_hierarchy_output[:-35]
+      rindex = view_hierarchy_output.rfind(b">")
+      view_hierarchy_output = view_hierarchy_output[:rindex+1] if rindex!=-1\
+          else view_hierarchy_output
+      logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.decode("utf-8")))
+      root = lxml.etree.fromstring(view_hierarchy_output)
+      return root
+    return None
     #  }}} method `get_view_hierarchy` # 
 
   def get_activity_dumpsys(self,

@@ -8,6 +8,9 @@ import torch
 #import torchvision.ops as tvops
 import torchvision.io as tvio
 
+from absl import logging
+import traceback
+
 # mainly taken from `DumpsysThread`
 class ScreenAnalyzerThread(thread_function.ThreadFunction):
     #  class `ScreenAnalyzerThread` {{{ # 
@@ -169,29 +172,37 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                     x1*height,
                     y1*width
                 ])[None, :])
-        results = self._text_detector(screen, bboxes)
-        with self._lock:
-            for lstn, rslts in zip(self._text_detect_event_listeners, results):
-                for cddt in rslts:
-                    lstn.set(cddt)
-                    if lstn.is_set():
-                        break
+        if len(bboxes)>0:
+            results = self._text_detector(screen, bboxes)
+            with self._lock:
+                for lstn, rslts in zip(self._text_detect_event_listeners, results):
+                    for cddt in rslts:
+                        lstn.set(cddt)
+                        if lstn.is_set():
+                            break
 
         # then, for pure recognize
-        bboxes = []
-        for lstn in self._text_recog_event_listeners:
-            x0, y0, x1, y1 = lstn.region
-            bboxes.append(torch.tensor(
-                [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
-                ])[None, :])
-        results = self._text_recognizer(screen, bboxes)
-        with self._lock:
-            for lstn, rslt in zip(self._text_recog_event_listeners, results):
-                lstn.set(rslt)
+        try:
+            bboxes = []
+            for lstn in self._text_recog_event_listeners:
+                x0, y0, x1, y1 = lstn.region
+                bboxes.append(torch.tensor(
+                    [
+                        x0*height,
+                        y0*width,
+                        x1*height,
+                        y1*width
+                    ])[None, :])
+            if len(bboxes)>0:
+                results = self._text_recognizer(screen, bboxes)
+                with self._lock:
+                    for lstn, rslt in zip(self._text_recog_event_listeners, results):
+                        #logging.info("ZDY_DEBUG: {:}".format(type(rslt)))
+                        lstn.set(rslt)
+        except Exception as e:
+            logging.error("Error occurred during text recognition!")
+            logging.error(str(e))
+            traceback.print_exc()
         #  }}} method `match_text_events` # 
 
     @torch.no_grad()
@@ -204,39 +215,49 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         _, height, width = screen.shape
 
         # first, for detection
-        bboxes = []
-        for lstn in self._icon_detect_event_listeners:
-            x0, y0, x1, y1 = lstn.region
-            bboxes.append(torch.tensor(
-                [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
-                ])[None, :])
-        _, results = self._icon_detector(screen, bboxes)
-        with self._lock:
-            for lstn, rslts in zip(self._icon_detect_event_listeners, results):
-                for cddt in rslts:
-                    lstn.set(cddt)
-                    if lstn.is_set():
-                        break
+        try:
+            bboxes = []
+            for lstn in self._icon_detect_event_listeners:
+                x0, y0, x1, y1 = lstn.region
+                bboxes.append(torch.tensor(
+                    [
+                        x0*height,
+                        y0*width,
+                        x1*height,
+                        y1*width
+                    ])[None, :])
+            if len(bboxes)>0:
+                _, results = self._icon_detector(screen, bboxes)
+                with self._lock:
+                    for lstn, rslts in zip(self._icon_detect_event_listeners, results):
+                        for cddt in rslts:
+                            lstn.set(cddt)
+                            if lstn.is_set():
+                                break
+        except Exception as e:
+            logging.error("Error occurred during icon detection!")
+            logging.error(str(e))
 
         # then, for pure recognize
-        bboxes = []
-        for lstn in self._icon_recog_event_listeners:
-            x0, y0, x1, y1 = lstn.region
-            bboxes.append(torch.tensor(
-                [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
-                ])[None, :])
-        results = self._icon_recognizer(screen, bboxes)
-        with self._lock:
-            for lstn, rslt in zip(self._icon_recog_event_listeners, results):
-                lstn.set(rslt)
+        try:
+            bboxes = []
+            for lstn in self._icon_recog_event_listeners:
+                x0, y0, x1, y1 = lstn.region
+                bboxes.append(torch.tensor(
+                    [
+                        x0*height,
+                        y0*width,
+                        x1*height,
+                        y1*width
+                    ])[None, :])
+            if len(bboxes)>0:
+                results = self._icon_recognizer(screen, bboxes)
+                with self._lock:
+                    for lstn, rslt in zip(self._icon_recog_event_listeners, results):
+                        lstn.set(rslt)
+        except Exception as e:
+            logging.error("Error occurred during icon recognition!")
+            logging.error(str(e))
         #  }}} method `match_icon_events` # 
 
     @torch.no_grad()
@@ -263,19 +284,19 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
             target_images.append(image_tensor)
-        candidate_bboxes, _ = self._icon_detector(screen, bboxes)
+        if len(bboxes)>0:
+            candidate_bboxes, _ = self._icon_detector(screen, bboxes)
+            base_bboxes = torch.cat(bboxes)[:, None, :]
+            candidate_bboxes[:, :, 0] += base_bboxes[:, :, 0]
+            candidate_bboxes[:, :, 2] += base_bboxes[:, :, 0]
+            candidate_bboxes[:, :, 1] += base_bboxes[:, :, 1]
+            candidate_bboxes[:, :, 3] += base_bboxes[:, :, 1]
+            results = self._icon_matcher(screen, target_images, candidate_bboxes)
 
-        base_bboxes = torch.cat(bboxes)[:, None, :]
-        candidate_bboxes[:, :, 0] += base_bboxes[:, :, 0]
-        candidate_bboxes[:, :, 2] += base_bboxes[:, :, 0]
-        candidate_bboxes[:, :, 1] += base_bboxes[:, :, 1]
-        candidate_bboxes[:, :, 3] += base_bboxes[:, :, 1]
-        results = self._icon_matcher(screen, target_images, candidate_bboxes)
-
-        with self._lock:
-            for lstn, rslts in zip(self._icon_detect_match_event_listeners, results):
-                if any(rslts):
-                    lstn.set(True)
+            with self._lock:
+                for lstn, rslts in zip(self._icon_detect_match_event_listeners, results):
+                    if any(rslts):
+                        lstn.set(True)
 
         # then, for pure recognize
         bboxes = []
@@ -292,11 +313,12 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
             target_images.append(image_tensor)
-        bboxes = torch.cat(bboxes)[:, None, :]
-        results = self._icon_matcher(screen, target_images, bboxes)
-        with self._lock:
-            for lstn, rslt in zip(self._icon_recog_event_listeners, results):
-                lstn.set(rslt[0])
+        if len(bboxes)>0:
+            bboxes = torch.cat(bboxes)[:, None, :]
+            results = self._icon_matcher(screen, target_images, bboxes)
+            with self._lock:
+                for lstn, rslt in zip(self._icon_recog_event_listeners, results):
+                    lstn.set(rslt[0])
         #  }}} method `match_icon_match_events` # 
     #  }}} Methods to Match Registered Events # 
 
@@ -316,7 +338,9 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
 
 
         try:
+            logging.info("Screen Analyzer Tries to Catch Screenshot...")
             screen = self.get_screenshot()
+            logging.info("Screen Analyzer Caught Screenshot!")
 
             self.match_text_events(screen)
             self.match_icon_events(screen)
@@ -324,6 +348,6 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
 
             self._write_value(ScreenAnalyzerThread.Signal.OK)
         except:
-            self._write_value(ScreenAnalyzerThread.Signal.CHECK_ERROR
+            self._write_value(ScreenAnalyzerThread.Signal.CHECK_ERROR)
         #  }}} method `main` # 
     #  }}} class `ScreenAnalyzerThread` # 

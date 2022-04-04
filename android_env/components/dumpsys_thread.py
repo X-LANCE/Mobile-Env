@@ -99,10 +99,6 @@ class DumpsysThread(thread_function.ThreadFunction):
       self._write_value(DumpsysThread.Signal.DID_NOT_CHECK)
       return
 
-    # The reward signals should be checked anyway, I think.
-    # TODO: insert the codes to check the events
-    self._app_screen_checker.match_events(self._lock)
-
     # Update and check loop_counter against check_frequency.
     self._main_loop_counter += 1
     if (self._check_frequency <= 0 or
@@ -110,6 +106,10 @@ class DumpsysThread(thread_function.ThreadFunction):
       self._write_value(DumpsysThread.Signal.DID_NOT_CHECK)
       return
     self._main_loop_counter = 0
+
+    # The reward signals should be checked anyway, I think.
+    # However, it's too slow, so I moved it here.
+    self._app_screen_checker.match_events(self._lock)
 
     outcome = self._app_screen_checker.matches_current_app_screen()
 

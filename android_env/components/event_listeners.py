@@ -251,7 +251,7 @@ class TextEvent(RegionEvent):
         text - str or None
         """
 
-        match_ = self.expect.match(text)
+        match_ = self._expect.match(text)
         if match_ is not None:
             self._set(match_.groups())
             #value = self._transform(match_.groups())

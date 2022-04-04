@@ -95,11 +95,30 @@ max_num_steps: 500
 
 # new event listener definitions
 score_listener: {
-    log_event: {
-        filters: ["AndroidRLTask:V"]
-        pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+    or: {
+        events: [
+            {
+                log_event: {
+                    filters: ["AndroidRLTask:V"]
+                    pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+                }
+                transformation: "x[0]"
+            },
+            {
+                text_recognize: {
+                    expect: "Event String"
+                    rect: {
+                        x0: 0,
+                        y0: 0,
+                        x1: 0.1,
+                        y1: 0.1
+                    }
+                }
+                transformation: "10"
+            }
+        ]
     }
-    transformation: "x[0]"
+    transformation: "x"
 }
 reward_listener: {
     log_event: {
