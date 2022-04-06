@@ -67,7 +67,7 @@ class Event(abc.ABC):
     def _verify(self, value):
         #  method `_verify` {{{ # 
         """
-        This is a hook function for the extenders to implemente.
+        This is a hook function for the extenders to implement.
 
         value - something
 
@@ -214,6 +214,8 @@ class And(Event):
         """
 
         if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return False
+        if len(self._events)==0:
             return False
         if any(map(lambda x: not x.is_set(), self._events)):
             return False
