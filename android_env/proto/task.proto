@@ -185,6 +185,9 @@ message Event {
         ViewHierarchyEvent view_hierarchy_event = 9;
         LogEvent log_event = 10;
     }
+
+    int32 id = 12;
+    repeated int32 prerequisite=13;
     // Python expression that could be evaluated by `eval` function. Use `x`
     // to indicate the input variable. 
     //

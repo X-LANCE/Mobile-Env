@@ -93,6 +93,9 @@ class TaskManager():
 
     # zdy
     #  Event Infrastructures {{{ # 
+    self._events_with_id = {}
+    self._events_in_need = {}
+
     self._text_events = []
     self._icon_events = []
     self._icon_match_events = []
@@ -136,6 +139,9 @@ class TaskManager():
     self._json_extra_event = self.parse_event_listeners(task.json_extra_listener,
           update=functools.partial(_update_json_extra, self._extras_max_buffer_size))\
         if task.HasField("json_extra_listener") else event_listeners.EmptyEvent()
+
+    del self._events_with_id
+    del self._events_in_need
     #  }}} Event Infrastructures # 
 
     # Initialize internal state
@@ -187,47 +193,38 @@ class TaskManager():
           _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
           transformation=event_definition.transformation, cast=cast, update=update)
       self._text_events.append(event)
-      return event
-    if event_definition.HasField("text_detect"):
+    elif event_definition.HasField("text_detect"):
       event = event_listeners.TextEvent(event_definition.text_detect.expect,
           _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
           transformation=event_definition.transformation, cast=cast, update=update)
       self._text_events.append(event)
-      return event
     #  }}} Text Events # 
-
     #  Icon Events {{{ # 
-    if event_definition.HasField("icon_recognize"):
+    elif event_definition.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
           transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
-      return event
-    if event_definition.HasField("icon_detect"):
+    elif event_definition.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
           transformation=event_definition.transformation, update=update)
       self._icon_events.append(event)
-      return event
     #  }}} Icon Events # 
-
     #  Icon Match Events {{{ # 
-    if event_definition.HasField("icon_match"):
+    elif event_definition.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
           _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
           transformation=event_definition.transformation, update=update)
       self._icon_match_events.append(event)
-      return event
-    if event_definition.HasField("icon_detect_match"):
+    elif event_definition.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
           _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
           transformation=event_definition.transformation, update=update)
       self._icon_match_events.append(event)
-      return event
     #  }}} Icon Match Events # 
-
     #  Other Events {{{ # 
-    if event_definition.HasField("view_hierarchy_event"):
+    elif event_definition.HasField("view_hierarchy_event"):
       properties = []
       for prpt in event_definition.view_hierarchy_event.properties:
         if not prpt.HasField("property_value"):
@@ -251,27 +248,44 @@ class TaskManager():
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
           properties, transformation=event_definition.transformation, cast=cast, update=update)
       self._view_hierarchy_events.append(event)
-      return event
-    if event_definition.HasField("log_event"):
+    elif event_definition.HasField("log_event"):
       self._log_filters |= set(event_definition.log_event.filters)
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
           transformation=event_definition.transformation, cast=cast, update=update)
       self._log_events.append(event)
-      return event
     #  }}} Other Events # 
-
     #  Combined Events {{{ # 
-    if event_definition.HasField("or"):
+    elif event_definition.HasField("or"):
       sub_events = list(
           map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "or").events))
-      return event_listeners.Or(sub_events, event_definition.transformation, cast, update)
-    if event_definition.HasField("and"):
+      event = event_listeners.Or(sub_events, event_definition.transformation, cast, update)
+    elif event_definition.HasField("and"):
       sub_events = list(
           map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "and").events))
-      return event_listeners.And(sub_events, event_definition.transformation, cast, update)
+      event = event_listeners.And(sub_events, event_definition.transformation, cast, update)
     #  }}} Combined Events # 
+
+    #  Handle the prerequisites {{{ # 
+    if event_definition.HasField("id"):
+      event_id = event_definition.id
+      self._events_with_id[event_id] = event
+      if event_id in self._events_in_need:
+        for evt in self._events_in_need[event_id]:
+          evt.add_prerequisites(event)
+        del self._events_in_need[event_id]
+    if event_definition.HasField("prerequisite"):
+      for evt_id in event_definition.prerequisite:
+        if evt_id in self._events_with_id:
+          event.add_prerequisites(self._events_with_id[evt_id])
+        else:
+          if evt_id not in self._events_in_need:
+            self._events_in_need[evt_id] = []
+          self._events_in_need[evt_id].append(event)
+    #  }}} Handle the prerequisites # 
+
+    return event
     #  }}} method `parse_event_listeners` # 
 
   def task(self) -> task_pb2.Task:

@@ -31,6 +31,9 @@ class Event(abc.ABC):
 
         self._flag = False
         self._value = None
+
+        self._ever_set = False
+        self._prerequisites = []
         #  }}} method `__init__` # 
 
     def _transform(self, x):
@@ -49,17 +52,32 @@ class Event(abc.ABC):
     def set(self, value):
         #  method `set` {{{ # 
         """
-        value - the same type as `self._value`
+        value - something
         """
 
-        self._set(self, value)
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return
+        is_validate, value = self._verify(value)
+        if is_validate:
+            value = self._transform(value)
+            self._value = self._update(self._value, value)
+            self._flag = True
+            self._ever_set = True
         #  }}} method `set` # 
-    def _set(self, value):
-        #  method `_set` {{{ # 
-        value = self._transform(value)
-        self._value = self._update(self._value, value)
-        self._flag = True
-        #  }}} method `_set` # 
+    def _verify(self, value):
+        #  method `_verify` {{{ # 
+        """
+        This is a hook function for the extenders to implemente.
+
+        value - something
+
+        return
+        - bool
+        - something else
+        """
+
+        raise NotImplementedError()
+        #  }}} method `_verify` # 
     def clear(self):
         #  method `clear` {{{ # 
         self._flag = False
@@ -75,6 +93,21 @@ class Event(abc.ABC):
 
         return self._value if self.is_set() else None
         #  }}} method `get` # 
+
+    def is_ever_set(self):
+        return self._ever_set
+    def reset(self):
+        self._flag = False
+        self._value = None
+        self._ever_set = False
+    def add_prerequisites(self, *prerequisites):
+        #  method `add_prerequisites` {{{ # 
+        """
+        prerequisites - iterable of Event
+        """
+
+        self._prerequisites += prerequisites
+        #  }}} method `add_prerequisites` # 
     #  }}} abstract class `Event` # 
 
 class EmptyEvent(Event):
@@ -83,6 +116,8 @@ class EmptyEvent(Event):
         super(EmptyEvent, self).__init__()
     def set(self, value):
         pass
+    def _verify(self, value):
+        return False, None
     def is_set(self):
         return False
     def get(self):
@@ -115,7 +150,12 @@ class Or(Event):
         return bool
         """
 
-        return any(map(lambda x: x.is_set(), self._events))
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return False
+        if any(map(lambda x: x.is_set(), self._events)):
+            self._ever_set = True
+            return True
+        return False
         #  }}} method `is_set` # 
 
     def clear(self):
@@ -130,14 +170,22 @@ class Or(Event):
         return the same type as `self._transform` returns or None
         """
 
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return None
         value = None
         is_set = False
         for evt in self._events:
             if evt.is_set():
                 is_set = True
+                self._ever_set = True
                 value = self._update(value, self._transform(evt.get()))
         return value if is_set else None
         #  }}} method `get` # 
+
+    def is_ever_set(self):
+        if not self._ever_set:
+            return self.is_set()
+        return True
     #  }}} class `Or` # 
 
 class And(Event):
@@ -165,7 +213,12 @@ class And(Event):
         return bool
         """
 
-        return all(map(lambda x: x.is_set(), self._events))
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return False
+        if any(map(lambda x: not x.is_set(), self._events)):
+            return False
+        self._ever_set = True
+        return True
         #  }}} method `is_set` # 
 
     def clear(self):
@@ -186,11 +239,18 @@ class And(Event):
         return the same type as `self._transform` returns or None
         """
 
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return None
         return self._transform(
                 list(
                     map(lambda x: x.get(),
                         self._events))) if self.is_set() else None
         #  }}} method `get` # 
+
+    def is_ever_set(self):
+        if not self._ever_set:
+            return self.is_set()
+        return True
     #  }}} class `And` # 
 
 class RegionEvent(Event, abc.ABC):
@@ -245,19 +305,19 @@ class TextEvent(RegionEvent):
         self._expect = re.compile(expect)
         #  }}} method `__init__` # 
 
-    def set(self, text):
-        #  method `set` {{{ # 
+    def _verify(self, text):
+        #  method `_verify` {{{ # 
         """
         text - str or None
+
+        return bool, list of str or None
         """
 
         match_ = self._expect.match(text)
         if match_ is not None:
-            self._set(match_.groups())
-            #value = self._transform(match_.groups())
-            #self._value = self._update(self._value, value)
-            #self._flag = True
-        #  }}} method `set` # 
+            return True, match_.groups()
+        return False, None
+        #  }}} method `_verify` # 
     #  }}} class `TextEvent` # 
 
 class IconRecogEvent(RegionEvent):
@@ -282,17 +342,17 @@ class IconRecogEvent(RegionEvent):
         self._icon_class = icon_class
         #  }}} method `__init__` # 
 
-    def set(self, icon_class):
-        #  method `set` {{{ # 
+    def _verify(self, icon_class):
+        #  method `_verify` {{{ # 
         """
         icon_class - str
+
+        return bool, bool
         """
 
-        if icon_class==self._icon_class:
-            self._set(True)
-            #self._value = self._update(self._value, self._transform(True))
-            #self._flag = True
-        #  }}} method `set` # 
+        flag =  icon_class==self._icon_class:
+        return flag, flag
+        #  }}} method `_verify` # 
     #  }}} class `IconRecogEvent` # 
 
 class IconMatchEvent(RegionEvent):
@@ -321,17 +381,16 @@ class IconMatchEvent(RegionEvent):
     def path(self):
         return self._path
 
-    def set(self, set_flag):
-        #  method `set` {{{ # 
+    def _verify(self, set_flag):
+        #  method `_verify` {{{ # 
         """
         set_flag - bool
+
+        return bool, bool
         """
 
-        if set_flag:
-            self._set(True)
-            #self._value = self._update(self._value, self._transform(True))
-            #self._flag = True
-        #  }}} method `set` # 
+        return set_flag, set_flag
+        #  }}} method `_verify` # 
     #  }}} class `IconMatchEvent` # 
 
 class ViewHierarchyEvent(Event):
@@ -459,18 +518,21 @@ class ViewHierarchyEvent(Event):
     def property_names(self):
         return self._property_names
 
-    def set(self, values):
-        #  method `set` {{{ # 
+    def _verify(self, values):
+        #  method `_verify` {{{ # 
         """
-        value - list with the same length as `self._vh_properties`
+        values - list with the same length as `self._vh_properties`
+
+        return
+        - bool
+        - the same type as `values` or None
         """
 
         if all(map(lambda p: p[0].match(p[1]),
                 itertools.zip_longest(self._vh_properties, values))):
-            self._set(values)
-            #self._value = values
-            #self._flag = True
-        #  }}} method `set` # 
+            return True, values
+        return False, None
+        #  }}} method `_verify` # 
     #  }}} class `ViewHierarchyEvent` # 
 
 class LogEvent(Event):
@@ -498,16 +560,17 @@ class LogEvent(Event):
     def pattern(self):
         return self._pattern
 
-    def set(self, line):
-        #  method `set` {{{ # 
+    def _verify(self, line):
+        #  method `_verify` {{{ # 
         """
         line - str
+
+        return bool, list of str
         """
 
         match_ = self._pattern.match(line)
         if match_ is not None:
-            self._set(match_.groups())
-            #self._value = match_.groups()
-            #self._flag = True
-        #  }}} method `set` # 
+            return True, match_.groups()
+        return False, None
+        #  }}} method `_verify` # 
     #  }}} class `LogEvent` # 
