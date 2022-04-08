@@ -187,40 +187,43 @@ class TaskManager():
       return [rect.x0, rect.y0, rect.x1, rect.y1]
       #  }}} function `_rect_to_list` # 
 
+    transformation = event_definition.transformation if event_definition.HasField("transformation")\
+        else "x"
+
     #  Text Events {{{ # 
     if event_definition.HasField("text_recognize"):
       event = event_listeners.TextEvent(event_definition.text_recognize.expect,
           _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
-          transformation=event_definition.transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, update=update)
       self._text_events.append(event)
     elif event_definition.HasField("text_detect"):
       event = event_listeners.TextEvent(event_definition.text_detect.expect,
           _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
-          transformation=event_definition.transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, update=update)
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
     elif event_definition.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
-          transformation=event_definition.transformation, update=update)
+          transformation=transformation, update=update)
       self._icon_events.append(event)
     elif event_definition.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
-          transformation=event_definition.transformation, update=update)
+          transformation=transformation, update=update)
       self._icon_events.append(event)
     #  }}} Icon Events # 
     #  Icon Match Events {{{ # 
     elif event_definition.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
           _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
-          transformation=event_definition.transformation, update=update)
+          transformation=transformation, update=update)
       self._icon_match_events.append(event)
     elif event_definition.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
           _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
-          transformation=event_definition.transformation, update=update)
+          transformation=transformation, update=update)
       self._icon_match_events.append(event)
     #  }}} Icon Match Events # 
     #  Other Events {{{ # 
@@ -246,12 +249,12 @@ class TaskManager():
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
-          properties, transformation=event_definition.transformation, cast=cast, update=update)
+          properties, transformation=transformation, cast=cast, update=update)
       self._view_hierarchy_events.append(event)
     elif event_definition.HasField("log_event"):
       self._log_filters |= set(event_definition.log_event.filters)
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
-          transformation=event_definition.transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, update=update)
       self._log_events.append(event)
     #  }}} Other Events # 
     #  Combined Events {{{ # 
@@ -259,12 +262,12 @@ class TaskManager():
       sub_events = list(
           map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "or").events))
-      event = event_listeners.Or(sub_events, event_definition.transformation, cast, update)
+      event = event_listeners.Or(sub_events, transformation, cast, update)
     elif event_definition.HasField("and"):
       sub_events = list(
           map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
             getattr(event_definition, "and").events))
-      event = event_listeners.And(sub_events, event_definition.transformation, cast, update)
+      event = event_listeners.And(sub_events, transformation, cast, update)
     #  }}} Combined Events # 
 
     #  Handle the prerequisites {{{ # 
@@ -399,6 +402,7 @@ class TaskManager():
       # zdy
       extras = self._extra_event.get() if self._extra_event.is_set() else {}
       self._extra_event.clear()
+      extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
 
       if self._json_extra_event.is_set():
         json_extras = self._json_extra_event.get()

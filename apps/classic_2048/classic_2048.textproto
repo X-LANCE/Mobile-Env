@@ -139,7 +139,7 @@ extra_listener: {
         filters: ["AndroidRLTask:V"]
         pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
     }
-    transformation: "{x[0]: x[1]}"
+    transformation: "{x[0]: [x[1]]}"
 }
 json_extra_listener: {
     log_event: {
