@@ -187,7 +187,7 @@ def find_children(node, class_regex, id_regex):
   #  }}} function `find_children` # 
 
 _separator_pattern = re.compile(r"(?<!\\)@")
-_fake_separator_pattern = re.compile(r"(?<=\\)@")
+_fake_separator_pattern = re.compile(r"\\@")
 def match_path2(node, vh_path):
   #  function `match_path2` {{{ # 
   """

@@ -141,7 +141,7 @@ message Event {
 
     message ViewHierarchyEvent {
         // Specified as (EBNF)
-        // path = class-regex "@" id-regex ;
+        // path = class-regex [ "@" id-regex ] ;
         // If there is "@" in the regex literal, escape it by "\@".
         repeated string view_hierarchy_path = 1;
 
@@ -151,6 +151,7 @@ message Event {
             LT = 2;
             GE = 3;
             GT = 4;
+            NE = 5;
         }
         message Property {
             string property_name = 1;
