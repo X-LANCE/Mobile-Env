@@ -103,9 +103,9 @@ class TaskManager():
     self._log_events = []
     self._log_filters = set()
 
-    self._score_event = self.parse_event_listeners(task.score_listener, cast=int)\
+    self._score_event = self.parse_event_listeners(task.score_listener, cast=float)\
         if task.HasField("score_listener") else event_listeners.EmptyEvent()
-    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=int,
+    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=float,
           update=operator.add)\
         if task.HasField("reward_listener") else event_listeners.EmptyEvent()
     self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)\
@@ -230,9 +230,9 @@ class TaskManager():
     elif event_definition.HasField("view_hierarchy_event"):
       properties = []
       for prpt in event_definition.view_hierarchy_event.properties:
-        if not prpt.HasField("property_value"):
-          property_ = event_listeners.ViewHierarchyEvent.PureProperty(prpt.property_name)
-        elif prpt.HasField("pattern"):
+        #if not prpt.HasField("property_value"):
+          #property_ = event_listeners.ViewHierarchyEvent.PureProperty(prpt.property_name)
+        if prpt.HasField("pattern"):
           property_ = event_listeners.ViewHierarchyEvent.StringProperty(prpt.property_name, prpt.pattern)
         else:
           if prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.EQ:
