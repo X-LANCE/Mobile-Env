@@ -6,6 +6,6 @@ python ../../examples/run_random_agent.py \
     --android_sdk_root=/home/david/Library/Android/sdk \
     --emulator_path=/home/david/Android/Sdk/emulator/emulator \
     --adb_path=/home/david/Android/Sdk/platform-tools/adb \
-    --num_steps=500 \
+    --num_steps=30 \
     --task_path=classic_2048.textproto\
     --norun_headless\

@@ -352,7 +352,7 @@ class IconRecogEvent(RegionEvent):
         return bool, bool
         """
 
-        flag =  icon_class==self._icon_class:
+        flag = icon_class==self._icon_class
         return flag, flag
         #  }}} method `_verify` # 
     #  }}} class `IconRecogEvent` # 

@@ -233,6 +233,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                         for cddt in rslts:
                             lstn.set(cddt)
                             if lstn.is_set():
+                                #logging.info("Icon Event Set!")
                                 break
         except Exception as e:
             logging.error("Error occurred during icon detection!")

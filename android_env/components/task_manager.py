@@ -187,7 +187,7 @@ class TaskManager():
       return [rect.x0, rect.y0, rect.x1, rect.y1]
       #  }}} function `_rect_to_list` # 
 
-    transformation = event_definition.transformation if event_definition.HasField("transformation")\
+    transformation = event_definition.transformation if len(event_definition.transformation)>0\
         else "x"
 
     #  Text Events {{{ # 
@@ -235,7 +235,7 @@ class TaskManager():
         elif prpt.HasField("pattern"):
           property_ = event_listeners.ViewHierarchyEvent.StringProperty(prpt.property_name, prpt.pattern)
         else:
-          if not prpt.HasField("sign") or prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.EQ:
+          if prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.EQ:
             comparator = operator.eq
           elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.LE:
             comparator = operator.le
@@ -273,14 +273,14 @@ class TaskManager():
     #  }}} Combined Events # 
 
     #  Handle the prerequisites {{{ # 
-    if event_definition.HasField("id"):
+    if event_definition.id!=0:
       event_id = event_definition.id
       self._events_with_id[event_id] = event
       if event_id in self._events_in_need:
         for evt in self._events_in_need[event_id]:
           evt.add_prerequisites(event)
         del self._events_in_need[event_id]
-    if event_definition.HasField("prerequisite"):
+    if len(event_definition.prerequisite)>0:
       for evt_id in event_definition.prerequisite:
         if evt_id in self._events_with_id:
           event.add_prerequisites(self._events_with_id[evt_id])

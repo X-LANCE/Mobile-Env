@@ -108,12 +108,13 @@ score_listener: {
                 text_recognize: {
                     expect: "Event String"
                     rect: {
-                        x0: 0,
-                        y0: 0,
-                        x1: 0.1,
+                        x0: 0
+                        y0: 0
+                        x1: 0.1
                         y1: 0.1
                     }
                 }
+                id: 1
                 transformation: "10"
             }
         ]
@@ -121,11 +122,22 @@ score_listener: {
     transformation: "x"
 }
 reward_listener: {
-    log_event: {
-        filters: ["AndroidRLTask:V"]
-        pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #log_event: {
+        #filters: ["AndroidRLTask:V"]
+        #pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #}
+    #transformation: "x[0]"
+    icon_detect: {
+       class: "Event String"
+       rect: {
+           x0: 0.1
+           y0: 0.1
+           x1: 0.2
+           y1: 0.2
+       }
     }
-    transformation: "x[0]"
+    prerequisite: [1]
+    transformation: "100"
 }
 episode_end_listener: {
     log_event: {
