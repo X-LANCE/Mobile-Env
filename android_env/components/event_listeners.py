@@ -144,6 +144,9 @@ class Or(Event):
         self._events = list(events)
         #  }}} method `__init__` # 
 
+    def set(self, value):
+        pass
+
     def is_set(self):
         #  method `is_set` {{{ # 
         """
@@ -206,6 +209,9 @@ class And(Event):
 
         self._events = list(events)
         #  }}} method `__init__` # 
+
+    def set(self, value):
+        pass
 
     def is_set(self):
         #  method `is_set` {{{ # 
