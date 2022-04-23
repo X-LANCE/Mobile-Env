@@ -17,3 +17,4 @@ gradlew
 gradlew.bat
 
 apps/classic_2048/screenshot.dump
+apps/searchwikihow/window_dump.xml
