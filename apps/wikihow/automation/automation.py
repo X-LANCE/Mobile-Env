@@ -2,6 +2,7 @@
 
 import uiautomator2
 import time
+import functools
 
 def component_to_str(component):
     #  function `component_to_str` {{{ # 
@@ -230,12 +231,13 @@ def traverse_some_page(depth, depth_limit=5,
             counter += 1
             continue
         if is_valuable_to_click(cpn):
+            print(component_to_str(cpn))
             cpn.click()
             traverse_page(depth+1, depth_limit=depth_limit)
     #  }}} function `traverse_some_page` # 
 
 #  Functions to Traverse Pages of Specific Classes {{{ # 
-def traverse_author_page(depth, depth_limit=depth_limit):
+def traverse_author_page(depth, depth_limit=5):
     #  function `traverse_author_page` {{{ # 
     """
     depth - int
@@ -262,132 +264,77 @@ def traverse_author_page(depth, depth_limit=depth_limit):
         get_more_special_components=more_special_components,
         start_offset=2)
     #  }}} function `traverse_author_page` # 
-#  }}} Functions to Traverse Pages of Specific Classes # 
-
-def traverse_author_page(depth, depth_limit=5):
-    #  function `traverse_author_page` {{{ # 
-    print("Traversing Author Page")
-    clickables = print_clickables()
-
-    search_button1,\
-        menu_button = special_components()
-
-    author_website = device(resourceId="author_website", className=VIEW_CLASS, description="Website", clickable=True)
-    author_follow = device(resourceId="author_follow", className=VIEW_CLASS, description="+ Follow", clickable=True)
-    author_social = device(resourceId="author_social", className=VIEW_CLASS)
-    author_socials = author_social.child(clickable=True)
-    for i, cpn in enumerate(author_socials):
-        print("!!{:}: {:}".format(i, component_to_str(cpn)))
-
-    counter = 0
-    for i, cpn in enumerate(clickables):
-        if equal(cpn, search_button1) or\
-                equal(cpn, menu_button) or\
-                equal(cpn, author_website) or\
-                equal(cpn, author_follow) or\
-                any(equal(cpn, scl) for scl in author_socials):
-            print(i, component_to_str(cpn))
-            continue
-        print(component_to_str(cpn))
-        if counter<2:
-            counter += 1
-            continue
-        cpn.click()
-        traverse_page(depth+1, depth_limit=depth_limit)
-    #  }}} function `traverse_author_page` # 
-def traverse_categories_page(depth, depth_limit=5):
-    #  function `traverse_categories_page` {{{ # 
-    print("Traversing Categories Page")
-    clickables = print_clickables()
-
-    search_button1,\
-        menu_button = special_components()
-
-    for i, cpn in enumerate(clickables):
-        if equal(cpn, search_button1) or\
-                equal(cpn, menu_button):
-            print(i, component_to_str(cpn))
-            continue
-        if is_category_item(cpn):
-            cpn.click()
-            traverse_page(depth+1, depth_limit=depth_limit)
-    #  }}} function `traverse_categories_page` # 
+traverse_categories_page = functools.partial(traverse_some_page,
+        page_class="Categories",
+        has_search_box=False, has_option_button=False,
+        get_more_special_components=(lambda: []),
+        start_offset=0, is_valuable_to_click=is_category_item)
 def traverse_category_page(depth, depth_limit=5):
     #  function `traverse_category_page` {{{ # 
-    print("Traversing Category Page")
+    """
+    depth - int
+    depth_limit - int
+    """
 
-    clickables = print_clickables()
+    def more_special_components():
+        #  function `more_special_components` {{{ # 
+        """
+        return list of uiautomator2._selector.UiObject
+        """
 
-    search_button1,\
-        menu_button = special_components()
+        title_view = device(resourceId="category_banner_title", className=VIEW_CLASS)
+        title = title_view.info["text"]
 
-    title_view = device(resourceId="category_banner_title", className=VIEW_CLASS)
-    title = title_view.info["text"]
+        title_webview = device(text=title, className="android.webkit.WebView")
+        view1 = title_webview.child(clickable=True, index=0, className=VIEW_CLASS)[0]
+        view2 = view1.child(clickable=True, className=VIEW_CLASS, resourceId="mw-mf-page-center")
 
-    title_webview = device(text=title, className="android.webkit.WebView")
-    view1 = title_webview.child(clickable=True, index=0, className=VIEW_CLASS)[0]
-    view2 = view1.child(clickable=True, className=VIEW_CLASS, resourceId="mw-mf-page-center")
+        search_box = device(clickable=True, className=EDIT_TEXT_CLASS, resourceId="category_banner_search_input")
+        search_button = search_box.sibling(clickable=True, className="android.widget.Button", resourceId="category_banner_submit")
 
-    search_box = device(clickable=True, className=EDIT_TEXT_CLASS, resourceId="category_banner_search_input")
-    search_button = search_box.sibling(clickable=True, className="android.widget.Button", resourceId="category_banner_submit")
+        cat_parent = device(clickable=True, className=VIEW_CLASS, resourceId="cat_parent", description="<")
 
-    cat_parent = device(clickable=True, className=VIEW_CLASS, resourceId="cat_parent", description="<")
-    print("!!₁. {:}".format(component_to_str(search_box)))
-    print("!!₂. {:}".format(component_to_str(search_button)))
-    print("!!₃. {:}".format(component_to_str(view1)))
-    print("!!₄. {:}".format(component_to_str(view2)))
-    print("!!₅. {:}".format(component_to_str(cat_parent)))
+        return [search_box, search_button, view1, view2, cat_parent]
+        #  }}} function `more_special_components` # 
 
-    for i, cpn in enumerate(clickables):
-        if equal(cpn, search_button1) or\
-                equal(cpn, menu_button) or\
-                equal(cpn, search_box) or\
-                equal(cpn, search_button) or\
-                equal(cpn, view1) or\
-                equal(cpn, view2) or\
-                equal(cpn, cat_parent):
-            print(i, component_to_str(cpn))
-            continue
-        print(component_to_str(cpn))
-        cpn.click()
-        traverse_page(depth+1, depth_limit=depth_limit)
+    traverse_some_page(depth, depth_limit,
+        page_class="Category",
+        get_more_special_components=more_special_components)
     #  }}} function `traverse_category_page` # 
 def traverse_article(depth, depth_limit=5):
     #  function `traverse_article` {{{ # 
-    print("Traversing Article")
+    """
+    depth - int
+    depth_limit - int
+    """
 
-    clickables = print_clickables()
+    def more_special_components():
+        #  function `more_special_components` {{{ # 
+        """
+        return list of uiautomator2._selector.UiObject
+        """
 
-    search_button1,\
-        menu_button,\
-        option_button = special_components(has_option_button=True)
+        title_externel = device(clickable=True, resourceId="section_0", index=1,
+                className=VIEW_CLASS, textStartsWith="How to ")
+        title_internel = title_externel.child(clickable=True, className=VIEW_CLASS,
+                descriptionStartsWith="How to ")
+        return [title_externel, title_internel]
+        #  }}} function `more_special_components` # 
 
-    title_externel = device(clickable=True, resourceId="section_0", index=1,
-            className=VIEW_CLASS, textStartsWith="How to ")
-    title_internel = title_externel.child(clickable=True, className=VIEW_CLASS, descriptionStartsWith="How to ")
-    #author = device(className=VIEW_CLASS, resourceId="bodyContent", index=2)\
-            #.child(className=VIEW_CLASS, resourceId="intro")\
-            #.child(className=VIEW_CLASS, resourceId="coauthor_byline")\
-            #.child(className=VIEW_CLASS, resourceId="byline_info")\
-            #.child(clickable=True, className=VIEW_CLASS, index=2)
-    print("!!₁. {:}".format(component_to_str(title_externel)))
-    print("!!₂. {:}".format(component_to_str(title_internel)))
-    #print("!!₃. {:}".format(component_to_str(author)))
-
-    for i, cpn in enumerate(clickables):
-        if equal(cpn, search_button1) or\
-                equal(cpn, menu_button) or\
-                equal(cpn, option_button) or\
-                equal(cpn, title_externel) or\
-                equal(cpn, title_internel):
-            print(i, component_to_str(cpn))
-            continue
-        if cpn.info["text"].startswith("Last Updated"):
-            continue
-        print(component_to_str(cpn))
-        cpn.click()
-        traverse_page(depth+1, depth_limit=depth_limit)
+    traverse_some_page(depth, depth_limit,
+        page_class="Article",
+        has_option_button=True,
+        get_more_special_components=more_special_components,
+        is_valuable_to_click=(lambda cpn: not cpn.info["text"].startswith("Last Updated")))
     #  }}} function `traverse_article` # 
+traverse_other_page = functools.partial(traverse_some_page,
+        has_search_box=False, has_option_button=False,
+        get_more_special_components=(lambda: [device(clickable=True,
+                    className=VIEW_CLASS,
+                    resourceId="cat_parent",
+                    description="<")]),
+        start_offset=0, is_valuable_to_click=(lambda _: True))
+#  }}} Functions to Traverse Pages of Specific Classes # 
 
 def traverse_page(depth, depth_limit=5):
     #  function `traverse_page` {{{ # 
@@ -413,25 +360,7 @@ def traverse_page(depth, depth_limit=5):
     elif check_article():
         traverse_article(depth, depth_limit=depth_limit)
     else:
-        print("Traversing Page")
-        clickables = print_clickables()
-
-        search_button1,\
-            menu_button = special_components()
-
-        cat_parent = device(clickable=True, className=VIEW_CLASS, resourceId="cat_parent", description="<")
-
-        for i, cpn in enumerate(clickables):
-            if equal(cpn, search_button1) or\
-                    equal(cpn, menu_button):
-                print(i, component_to_str(cpn))
-                continue
-            if cat_parent.exists and equal(cpn, cat_parent):
-                print(i, component_to_str(cpn))
-                continue
-            print(component_to_str(cpn))
-            cpn.click()
-            traverse_page(depth+1, depth_limit=depth_limit)
+        traverse_other_page(depth, depth_limit=depth_limit)
 
     # DEBUG
     #device.press("back")
@@ -448,19 +377,6 @@ def traverse_main_page(depth_limit=5):
     print("Traversing Main Page")
     clickables = print_clickables()
 
-    #  For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" {{{ # 
-    # TODO: search different keyword combinations
-    #search_button1 = device(clickable=True, className="android.widget.ImageView", description="Search")
-    #search_box = device(clickable=True, className=EDIT_TEXT_CLASS)
-    #search_button2 = search_box.sibling(clickable=True, index=1)
-    #  }}} For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" # 
-
-    #menu_button = device(clickable=True, className="android.widget.ImageButton", descriptionContains="drawer")
-
-    #print("!ⅰ", component_to_str(search_button1))
-    #print("!ⅱ", component_to_str(search_box))
-    #print("!ⅲ", component_to_str(search_button2))
-    #print("!ⅳ", component_to_str(menu_button))
     search_button1,\
         search_box,\
         search_button2,\
@@ -480,13 +396,16 @@ def traverse_main_page(depth_limit=5):
         #else:
             #cpn.click()
 
+    #  For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" {{{ # 
+    # TODO: search different keyword combinations
+    #  }}} For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" # 
+
     #  For Navigation Drawer .`android.widget.ImageButton`~+"drawer" {{{ # 
     # TODO: the last part to traverse
+    # NOTE: Maybe manually
     #  }}} For Navigation Drawer .`android.widget.ImageButton`~+"drawer" # 
     #  }}} function `traverse_main_page` # 
 
 if __name__ == "__main__":
     #traverse_main_page()
-    #traverse_article(1, depth_limit=2)
-    #traverse_page(1, depth_limit=2)
-    roll_down()
+    traverse_page(1, depth_limit=2)
