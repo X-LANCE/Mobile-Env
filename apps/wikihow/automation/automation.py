@@ -50,7 +50,11 @@ print(device.app_current())
 def wait_for_stable():
     with device.watch_context() as w:
         w.wait_stable()
-def roll_down():
+def back():
+    device.press("back")
+    time.sleep(2)
+    wait_for_stable()
+def scroll_down():
     #  function `roll_down` {{{ # 
     device.swipe_ext("up")
     device.swipe_ext("up")
@@ -64,10 +68,10 @@ def print_clickables():
     """
 
     clickables = device(clickable=True)
-    print("#Clickable components: {:}".format(len(clickables)))
+    print("\x1b[34m#\x1b[0mClickable components: {:}".format(len(clickables)))
     for i, cpn in enumerate(clickables):
         #print(type(cpn))
-        print(i, component_to_str(cpn))
+        print("\x1b[34m{:}\x1b[0m {:}".format(i, component_to_str(cpn)))
     return clickables
     #  }}} function `print_clickables` # 
 def special_components(has_search_box=False, has_option_button=False):
@@ -90,7 +94,7 @@ def special_components(has_search_box=False, has_option_button=False):
 
     if has_search_box:
         results[1] = device(clickable=True, className=EDIT_TEXT_CLASS)
-        results[2] = search_box.sibling(clickable=True, index=1)
+        results[2] = results[1].sibling(clickable=True, index=1)
         indices += [1, 2]
     indices.append(3)
     if has_option_button:
@@ -101,7 +105,7 @@ def special_components(has_search_box=False, has_option_button=False):
 
     roman_digits = ["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ"]
     for i, rslt in zip(roman_digits, result):
-        print("!{:}. {:}".format(i, component_to_str(rslt)))
+        print("\x1b[36m!{:}.\x1b[0m {:}".format(i, component_to_str(rslt)))
 
     return result
     #  }}} function `special_components` # 
@@ -187,11 +191,12 @@ def check_article():
     if not author4.exists:
         return False
     author5 = author4.child(clickable=True, className=VIEW_CLASS, index=2)
-    return author5.exists
+    author5_2 = author4.child(clickable=True, className=VIEW_CLASS, description="Author Info")
+    return author5.exists or author5_2.exists
     #  }}} function `check_article` # 
 #  }}} Functions to Check Page Class # 
 
-def traverse_some_page(depth, depth_limit=5,
+def traverse_some_page(depth, depth_limit=5, scroll_depth=2,
         page_class="",
         has_search_box=False, has_option_button=False,
         get_more_special_components=(lambda: []),
@@ -200,6 +205,7 @@ def traverse_some_page(depth, depth_limit=5,
     """
     depth - int
     depth_limit - int
+    scroll_depth - int
 
     page_class - str
 
@@ -212,36 +218,43 @@ def traverse_some_page(depth, depth_limit=5,
     is_valuable_to_click - callable accepting uiautomator2._selector.UiObject returning bool
     """
 
-    print("Traversing {:} Page...".format(page_class))
-    clickables = print_clickables()
-
-    special_component_list = special_components(has_search_box, has_option_button)
-
-    more_special_component_list = get_more_special_components()
-    for i, cpn in enumerate(more_special_component_list):
-        print("!!{:}: {:}".format(i, component_to_str(cpn)))
-
     counter = 0
-    for i, cpn in enumerate(clickables):
-        if any(equal(cpn, spcl) for spcl in special_component_list) or\
-                any(equal(cpn, spcl) for spcl in more_special_component_list):
-            print(i, component_to_str(cpn))
-            continue
-        if counter<start_offset:
-            counter += 1
-            continue
-        if is_valuable_to_click(cpn):
-            print(component_to_str(cpn))
-            cpn.click()
-            traverse_page(depth+1, depth_limit=depth_limit)
+    for d in range(scroll_depth+1):
+        print("\x1b[5;31mTraversing {:} Page...\x1b[0m".format(page_class))
+        clickables = print_clickables()
+
+        if d==0:
+            special_component_list = special_components(has_search_box, has_option_button)
+        else:
+            special_component_list = special_components(has_option_button=has_option_button)
+
+        more_special_component_list = get_more_special_components()
+        more_special_component_list = list(filter(lambda cpn: cpn.exists, more_special_component_list))
+        for i, cpn in enumerate(more_special_component_list):
+            print("\x1b[36m!!{:}:\x1b[0m {:}".format(i, component_to_str(cpn)))
+
+        for i, cpn in enumerate(clickables):
+            if any(equal(cpn, spcl) for spcl in special_component_list) or\
+                    any(equal(cpn, spcl) for spcl in more_special_component_list):
+                print(i, component_to_str(cpn))
+                continue
+            if counter<start_offset:
+                counter += 1
+                continue
+            if is_valuable_to_click(cpn):
+                print("\x1b[1;33m{:}\x1b[0m".format(component_to_str(cpn)))
+                cpn.click()
+                traverse_page(depth+1, depth_limit=depth_limit)
+        scroll_down()
     #  }}} function `traverse_some_page` # 
 
 #  Functions to Traverse Pages of Specific Classes {{{ # 
-def traverse_author_page(depth, depth_limit=5):
+def traverse_author_page(depth, depth_limit=5, scroll_depth=2):
     #  function `traverse_author_page` {{{ # 
     """
     depth - int
     depth_limit - int
+    scroll_depth - int
     """
 
     def more_special_components():
@@ -259,7 +272,7 @@ def traverse_author_page(depth, depth_limit=5):
         return [author_website, author_follow] + list(author_socials)
         #  }}} function `more_special_components` # 
 
-    traverse_some_page(depth, depth_limit,
+    traverse_some_page(depth, depth_limit, scroll_depth,
         page_class="Author",
         get_more_special_components=more_special_components,
         start_offset=2)
@@ -269,11 +282,12 @@ traverse_categories_page = functools.partial(traverse_some_page,
         has_search_box=False, has_option_button=False,
         get_more_special_components=(lambda: []),
         start_offset=0, is_valuable_to_click=is_category_item)
-def traverse_category_page(depth, depth_limit=5):
+def traverse_category_page(depth, depth_limit=5, scroll_depth=2):
     #  function `traverse_category_page` {{{ # 
     """
     depth - int
     depth_limit - int
+    scroll_depth - int
     """
 
     def more_special_components():
@@ -282,30 +296,40 @@ def traverse_category_page(depth, depth_limit=5):
         return list of uiautomator2._selector.UiObject
         """
 
-        title_view = device(resourceId="category_banner_title", className=VIEW_CLASS)
-        title = title_view.info["text"]
+        result_list = []
 
-        title_webview = device(text=title, className="android.webkit.WebView")
-        view1 = title_webview.child(clickable=True, index=0, className=VIEW_CLASS)[0]
-        view2 = view1.child(clickable=True, className=VIEW_CLASS, resourceId="mw-mf-page-center")
+        title_view = device(resourceId="category_banner_title", className=VIEW_CLASS)
+        if title_view.exists:
+            title = title_view.info["text"]
+
+            title_webview = device(text=title, className="android.webkit.WebView")
+            view1 = title_webview.child(clickable=True, index=0, className=VIEW_CLASS)[0]
+            view2 = view1.child(clickable=True, className=VIEW_CLASS, resourceId="mw-mf-page-center")
+
+            result_list += [view1, view2]
 
         search_box = device(clickable=True, className=EDIT_TEXT_CLASS, resourceId="category_banner_search_input")
-        search_button = search_box.sibling(clickable=True, className="android.widget.Button", resourceId="category_banner_submit")
+        if search_box.exists:
+            search_button = search_box.sibling(clickable=True, className="android.widget.Button", resourceId="category_banner_submit")
+            result_list += [search_box, search_button]
 
         cat_parent = device(clickable=True, className=VIEW_CLASS, resourceId="cat_parent", description="<")
+        if cat_parent.exists:
+            result_list.append(cat_parent)
 
-        return [search_box, search_button, view1, view2, cat_parent]
+        return result_list
         #  }}} function `more_special_components` # 
 
-    traverse_some_page(depth, depth_limit,
+    traverse_some_page(depth, depth_limit, scroll_depth,
         page_class="Category",
         get_more_special_components=more_special_components)
     #  }}} function `traverse_category_page` # 
-def traverse_article(depth, depth_limit=5):
+def traverse_article(depth, depth_limit=5, scroll_depth=2):
     #  function `traverse_article` {{{ # 
     """
     depth - int
     depth_limit - int
+    scroll_depth - int
     """
 
     def more_special_components():
@@ -318,83 +342,103 @@ def traverse_article(depth, depth_limit=5):
                 className=VIEW_CLASS, textStartsWith="How to ")
         title_internel = title_externel.child(clickable=True, className=VIEW_CLASS,
                 descriptionStartsWith="How to ")
-        return [title_externel, title_internel]
+
+        author1 = device(className=VIEW_CLASS, resourceId="bodyContent", index=2)
+        if not author1.exists:
+            return False
+        author2 = author1.child(className=VIEW_CLASS, resourceId="intro")
+        if not author2.exists:
+            return False
+        author3 = author2.child(className=VIEW_CLASS, resourceId="coauthor_byline")
+        if not author3.exists:
+            return False
+        author4 = author3.child(className=VIEW_CLASS, resourceId="byline_info")
+        if not author4.exists:
+            return False
+        author5_2 = author4.child(clickable=True, className=VIEW_CLASS, description="Author Info")
+
+        references = device(clickable=True, className="android.widget.Button",
+                textStartsWith="Link to Reference",
+                resourceIdMatches=r"^_ref-\d+$")
+        return list(
+                filter(lambda cpn: cpn.exists,
+                    [title_externel, title_internel, author5_2] + list(references)))
         #  }}} function `more_special_components` # 
 
-    traverse_some_page(depth, depth_limit,
+    traverse_some_page(depth, depth_limit, scroll_depth,
         page_class="Article",
         has_option_button=True,
         get_more_special_components=more_special_components,
         is_valuable_to_click=(lambda cpn: not cpn.info["text"].startswith("Last Updated")))
     #  }}} function `traverse_article` # 
-traverse_other_page = functools.partial(traverse_some_page,
-        has_search_box=False, has_option_button=False,
-        get_more_special_components=(lambda: [device(clickable=True,
-                    className=VIEW_CLASS,
-                    resourceId="cat_parent",
-                    description="<")]),
-        start_offset=0, is_valuable_to_click=(lambda _: True))
+def traverse_other_page(depth, depth_limit=5, scroll_depth=2):
+    #  function `traverse_other_page` {{{ # 
+    """
+    depth - int
+    depth_limit - int
+    scroll_depth - int
+    """
+
+    def more_special_components():
+        #  function `more_special_components` {{{ # 
+        """
+        return list of uiautomator2._selector.UiObject
+        """
+
+        cat_parent = device(clickable=True, className=VIEW_CLASS,
+                resourceId="cat_parent", description="<")
+
+        return [cat_parent] if cat_parent.exists else []
+        #  }}} function `more_special_components` # 
+
+    traverse_some_page(depth, depth_limit, scroll_depth,
+            page_class="\b",
+            get_more_special_components=more_special_components,
+            start_offset=2)
+    #  }}} function `traverse_other_page` # 
 #  }}} Functions to Traverse Pages of Specific Classes # 
 
-def traverse_page(depth, depth_limit=5):
+def traverse_page(depth, depth_limit=5, scroll_depth=2):
     #  function `traverse_page` {{{ # 
     """
     depth - int
     depth_limit - int
+    scroll_depth - int
     """
 
     time.sleep(2)
     wait_for_stable()
-    if depth==depth_limit:
-        device.press("back")
-        time.sleep(2)
-        wait_for_stable()
+    if depth==depth_limit or device.app_current()["package"]!="com.wikihow.wikihowapp":
+        print("\x1b[31mReturn Immediately\x1b[0m")
+        back()
         return
 
     if check_author_page():
-        traverse_author_page(depth, depth_limit=depth_limit)
+        traverse_author_page(depth, depth_limit=depth_limit, scroll_depth=2)
     elif check_categories_page():
-        traverse_categories_page(depth, depth_limit=depth_limit)
+        traverse_categories_page(depth, depth_limit=depth_limit, scroll_depth=2)
     elif check_category_page():
-        traverse_category_page(depth, depth_limit=depth_limit)
+        traverse_category_page(depth, depth_limit=depth_limit, scroll_depth=2)
     elif check_article():
-        traverse_article(depth, depth_limit=depth_limit)
+        traverse_article(depth, depth_limit=depth_limit, scroll_depth=2)
     else:
-        traverse_other_page(depth, depth_limit=depth_limit)
+        traverse_other_page(depth, depth_limit=depth_limit, scroll_depth=2)
 
     # DEBUG
-    #device.press("back")
-    #time.sleep(2)
-    #wait_for_stable()
+    print("\x1b[31mReturning\x1b[0m")
+    back()
     #  }}} function `traverse_page` # 
 
-def traverse_main_page(depth_limit=5):
+def traverse_main_page(depth_limit=5, scroll_depth=2):
     #  function `traverse_main_page` {{{ # 
     """
     depth_limit - int
+    scroll_depth - int
     """
-
-    print("Traversing Main Page")
-    clickables = print_clickables()
-
-    search_button1,\
-        search_box,\
-        search_button2,\
-        menu_button = special_components(has_search_box=True)
-
-    for i, cpn in enumerate(clickables):
-        if equal(cpn, search_button1) or\
-                equal(cpn, search_box) or\
-                equal(cpn, search_button2) or\
-                equal(cpn, menu_button):
-            print(i, component_to_str(cpn))
-            continue
-        print(component_to_str(cpn))
-        if is_article_link(cpn):
-            cpn.click()
-            traverse_page(1, depth_limit=depth_limit)
-        #else:
-            #cpn.click()
+    traverse_some_page(0, depth_limit=depth_limit, scroll_depth=scroll_depth,
+        page_class="Main",
+        has_search_box=True,
+        is_valuable_to_click=is_article_link)
 
     #  For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" {{{ # 
     # TODO: search different keyword combinations
@@ -407,5 +451,5 @@ def traverse_main_page(depth_limit=5):
     #  }}} function `traverse_main_page` # 
 
 if __name__ == "__main__":
-    #traverse_main_page()
-    traverse_page(1, depth_limit=2)
+    traverse_main_page(depth_limit=4)
+    #traverse_page(1, depth_limit=2)
