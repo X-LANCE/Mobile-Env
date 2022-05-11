@@ -3,6 +3,7 @@
 import uiautomator2
 import time
 import functools
+import itertools
 
 def component_to_str(component):
     #  function `component_to_str` {{{ # 
@@ -48,11 +49,11 @@ device.app_wait(PACKAGE_NAME)
 print(device.app_current())
 
 def wait_for_stable():
+    time.sleep(2)
     with device.watch_context() as w:
         w.wait_stable()
 def back():
     device.press("back")
-    time.sleep(2)
     wait_for_stable()
 def scroll_down():
     #  function `roll_down` {{{ # 
@@ -74,9 +75,10 @@ def print_clickables():
         print("\x1b[34m{:}\x1b[0m {:}".format(i, component_to_str(cpn)))
     return clickables
     #  }}} function `print_clickables` # 
-def special_components(has_search_box=False, has_option_button=False):
+def special_components(is_search_page=False, has_search_box=False, has_option_button=False):
     #  function `special_components` {{{ # 
     """
+    is_search_page - bool
     has_search_box - bool
     has_option_button - bool
 
@@ -89,7 +91,7 @@ def special_components(has_search_box=False, has_option_button=False):
     results = [None, None, None, None, None]
     indices = [0]
 
-    results[0] = device(clickable=True, className="android.widget.ImageView", description="Search")
+    results[0] = device(clickable=True, className="android.widget.ImageView", description="Clear query" if is_search_page else "Search")
     results[3] = device(clickable=True, className="android.widget.ImageButton", descriptionContains="drawer")
 
     if has_search_box:
@@ -198,7 +200,7 @@ def check_article():
 
 def traverse_some_page(depth, depth_limit=5, scroll_depth=2,
         page_class="",
-        has_search_box=False, has_option_button=False,
+        is_search_page=False, has_search_box=False, has_option_button=False,
         get_more_special_components=(lambda: []),
         start_offset=0, is_valuable_to_click=(lambda _: True)):
     #  function `traverse_some_page` {{{ # 
@@ -209,6 +211,7 @@ def traverse_some_page(depth, depth_limit=5, scroll_depth=2,
 
     page_class - str
 
+    is_search_page - bool
     has_search_box - bool
     has_option_button - bool
 
@@ -220,13 +223,13 @@ def traverse_some_page(depth, depth_limit=5, scroll_depth=2,
 
     counter = 0
     for d in range(scroll_depth+1):
-        print("\x1b[5;31mTraversing {:} Page...\x1b[0m".format(page_class))
+        print("\x1b[5;31mTraversing {:} Page @d{:}...\x1b[0m".format(page_class, d))
         clickables = print_clickables()
 
         if d==0:
-            special_component_list = special_components(has_search_box, has_option_button)
+            special_component_list = special_components(is_search_page, has_search_box, has_option_button)
         else:
-            special_component_list = special_components(has_option_button=has_option_button)
+            special_component_list = special_components(is_search_page, has_option_button=has_option_button)
 
         more_special_component_list = get_more_special_components()
         more_special_component_list = list(filter(lambda cpn: cpn.exists, more_special_component_list))
@@ -246,6 +249,7 @@ def traverse_some_page(depth, depth_limit=5, scroll_depth=2,
                 cpn.click()
                 traverse_page(depth+1, depth_limit=depth_limit)
         scroll_down()
+        wait_for_stable()
     #  }}} function `traverse_some_page` # 
 
 #  Functions to Traverse Pages of Specific Classes {{{ # 
@@ -279,7 +283,7 @@ def traverse_author_page(depth, depth_limit=5, scroll_depth=2):
     #  }}} function `traverse_author_page` # 
 traverse_categories_page = functools.partial(traverse_some_page,
         page_class="Categories",
-        has_search_box=False, has_option_button=False,
+        is_search_page=False, has_search_box=False, has_option_button=False,
         get_more_special_components=(lambda: []),
         start_offset=0, is_valuable_to_click=is_category_item)
 def traverse_category_page(depth, depth_limit=5, scroll_depth=2):
@@ -343,26 +347,36 @@ def traverse_article(depth, depth_limit=5, scroll_depth=2):
         title_internel = title_externel.child(clickable=True, className=VIEW_CLASS,
                 descriptionStartsWith="How to ")
 
-        author1 = device(className=VIEW_CLASS, resourceId="bodyContent", index=2)
-        if not author1.exists:
-            return False
-        author2 = author1.child(className=VIEW_CLASS, resourceId="intro")
-        if not author2.exists:
-            return False
-        author3 = author2.child(className=VIEW_CLASS, resourceId="coauthor_byline")
-        if not author3.exists:
-            return False
-        author4 = author3.child(className=VIEW_CLASS, resourceId="byline_info")
-        if not author4.exists:
-            return False
-        author5_2 = author4.child(clickable=True, className=VIEW_CLASS, description="Author Info")
+        author5_2 = None
+        while True:
+            author1 = device(className=VIEW_CLASS, resourceId="bodyContent", index=2)
+            if not author1.exists:
+                break
+            author2 = author1.child(className=VIEW_CLASS, resourceId="intro")
+            if not author2.exists:
+                break
+            author3 = author2.child(className=VIEW_CLASS, resourceId="coauthor_byline")
+            if not author3.exists:
+                break
+            author4 = author3.child(className=VIEW_CLASS, resourceId="byline_info")
+            if not author4.exists:
+                break
+            author5_2 = author4.child(clickable=True, className=VIEW_CLASS, description="Author Info")
+            break
+
+        trust_wikihow = device(clickable=True, className=VIEW_CLASS, description="Learn why people trust wikiHow")
+        categories = device(clickable=True, className=VIEW_CLASS, description="CATEGORIES")
+        approved = device(clickable=True, className="android.widget.Button", text="Approved")
 
         references = device(clickable=True, className="android.widget.Button",
                 textStartsWith="Link to Reference",
                 resourceIdMatches=r"^_ref-\d+$")
         return list(
-                filter(lambda cpn: cpn.exists,
-                    [title_externel, title_internel, author5_2] + list(references)))
+                filter(lambda cpn: cpn is not None and cpn.exists,
+                    [
+                        title_externel, title_internel, author5_2,
+                        trust_wikihow, categories, approved
+                    ] + list(references)))
         #  }}} function `more_special_components` # 
 
     traverse_some_page(depth, depth_limit, scroll_depth,
@@ -406,7 +420,6 @@ def traverse_page(depth, depth_limit=5, scroll_depth=2):
     scroll_depth - int
     """
 
-    time.sleep(2)
     wait_for_stable()
     if depth==depth_limit or device.app_current()["package"]!="com.wikihow.wikihowapp":
         print("\x1b[31mReturn Immediately\x1b[0m")
@@ -429,19 +442,51 @@ def traverse_page(depth, depth_limit=5, scroll_depth=2):
     back()
     #  }}} function `traverse_page` # 
 
+def traverse_search_page(depth, depth_limit=2):
+    #  function `traverse_search_page` {{{ # 
+    """
+    depth - int
+    depth_limit - int
+    """
+
+    wait_for_stable()
+
+    traverse_some_page(depth, depth_limit=depth_limit, scroll_depth=0,
+            page_class="Search",
+            is_search_page=True, has_search_box=True,
+            start_offset=2)
+
+    print("\x1b[31mReturning\x1b[0m")
+    back()
+    #  }}} function `traverse_search_page` # 
+
 def traverse_main_page(depth_limit=5, scroll_depth=2):
     #  function `traverse_main_page` {{{ # 
     """
     depth_limit - int
     scroll_depth - int
     """
-    traverse_some_page(0, depth_limit=depth_limit, scroll_depth=scroll_depth,
-        page_class="Main",
-        has_search_box=True,
-        is_valuable_to_click=is_article_link)
+
+    #traverse_some_page(0, depth_limit=depth_limit, scroll_depth=scroll_depth,
+        #page_class="Main",
+        #has_search_box=True,
+        #is_valuable_to_click=is_article_link)
 
     #  For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" {{{ # 
     # TODO: search different keyword combinations
+    #search_text = "How to clean a water dispenser"
+    search_words = ["how to", "clean", "water", "dispenser"]
+    search_texts = itertools.chain.from_iterable(
+            map(lambda k: itertools.permutations(search_words, k),
+                range(1, len(search_words)+1)))
+    for t in search_texts:
+        search_box = device(clickable=True, className=EDIT_TEXT_CLASS)
+        search_box.click()
+        device.set_fastinput_ime(True)
+        device.send_keys(" ".join(t))
+        device.set_fastinput_ime(False)
+        device.send_action("search")
+        traverse_search_page(1, depth_limit=2)
     #  }}} For Search Box .`android.widget.EditText` and Search Button .`android.widget.ImageView`~"Search" # 
 
     #  For Navigation Drawer .`android.widget.ImageButton`~+"drawer" {{{ # 
@@ -451,5 +496,5 @@ def traverse_main_page(depth_limit=5, scroll_depth=2):
     #  }}} function `traverse_main_page` # 
 
 if __name__ == "__main__":
-    traverse_main_page(depth_limit=4)
-    #traverse_page(1, depth_limit=2)
+    #traverse_main_page(depth_limit=4)
+    traverse_page(3, depth_limit=4, scroll_depth=1)
