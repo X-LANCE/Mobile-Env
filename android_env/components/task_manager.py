@@ -48,6 +48,8 @@ from android_env.proto import task_pb2
 from android_env.components import event_listeners # zdy
 import numpy as np
 
+# TODO: task command
+
 class TaskManager():
   """Handles all events and information related to the task."""
 
@@ -295,6 +297,12 @@ class TaskManager():
 
   def task(self) -> task_pb2.Task:
     return self._task
+  def command(self):
+    """
+    return list of str
+    """
+
+    return self._task.command
 
   def increment_steps(self):
     self._episode_steps += 1

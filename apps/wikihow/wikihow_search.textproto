@@ -1,0 +1,22 @@
+# vim: set filetype=conf nospell:
+
+id: "wikihow_search_demo"
+name: "WikiHow Search - Demo Task"
+description: "A demo task requiring to search WikiHow for a specific article."
+
+setup_steps: [
+    {
+        success_condition: {
+            # num_retries: # TODO, DEF
+            check_install: {
+                package_name: "com.wikihow.wikihowapp"
+                timeout_sec: 10.0
+            }
+        }
+        adb_call: {
+            install_apk: {
+                filesystem: { path: "wikiHow：万事指南_2.9.6_apkcombo.com.apk" }
+            }
+        }
+    }
+]

@@ -287,6 +287,8 @@ message Task {
   // If <= 0, this logic is disabled.
   int32 max_num_steps = 8;
 
+  // zdy
+  repeated string command = 9;
   // Defines parameters for parsing messages from logcat.
   //LogParsingConfig log_parsing_config = 9;
   // zdy

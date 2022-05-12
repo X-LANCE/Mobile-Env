@@ -21,6 +21,7 @@ from android_env.components import coordinator as coordinator_lib
 import dm_env
 import numpy as np
 
+# TODO: interface to check task command texts
 
 class AndroidEnv(dm_env.Environment):
   """An RL environment that interacts with Android apps."""
