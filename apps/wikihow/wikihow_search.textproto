@@ -18,5 +18,27 @@ setup_steps: [
                 filesystem: { path: "wikiHow：万事指南_2.9.6_apkcombo.com.apk" }
             }
         }
+    },
+    {
+        adb_call: {
+            rotate: { orientation: PORTRAIT_0 }
+        }
     }
 ]
+
+reset_steps: [
+    {
+        adb_call: {
+            force_stop: { package_name: "com.wikihow.wikihowapp" }
+        }
+    },
+    {
+        adb_call: {
+            clear_cache: { package_name: "com.wikihow.wikihowapp" }
+        }
+    },
+    {
+        adb_call: {
+            start_activity: {
+                full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+                # extra_args: [] # NOPE

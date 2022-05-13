@@ -1,3 +1,4 @@
+# vim: set tabstop=2 shiftwidth=2:
 # coding=utf-8
 # Copyright 2021 DeepMind Technologies Limited.
 #
@@ -18,7 +19,7 @@
 import copy
 import socket
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 from absl import logging
 from android_env.components import action_type as action_type_lib
@@ -100,6 +101,13 @@ class Coordinator():
 
   def task_extras_spec(self) -> Dict[str, dm_env.specs.Array]:
     return specs.base_task_extras_spec(task=self._task_manager.task())
+
+  def command(self) -> List[str]:
+    """
+    return list of str
+    """
+
+    return self._task_manager.command
 
   def reset_environment_state(self):
     """Resets the state of the simulation for a new RL episode.

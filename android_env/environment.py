@@ -1,3 +1,4 @@
+# vim: set tabstop=2 shiftwidth=2:
 # coding=utf-8
 # Copyright 2021 DeepMind Technologies Limited.
 #
@@ -15,13 +16,11 @@
 
 """Android environment implementation."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from absl import logging
 from android_env.components import coordinator as coordinator_lib
 import dm_env
 import numpy as np
-
-# TODO: interface to check task command texts
 
 class AndroidEnv(dm_env.Environment):
   """An RL environment that interacts with Android apps."""
@@ -47,6 +46,13 @@ class AndroidEnv(dm_env.Environment):
 
   def task_extras_spec(self) -> Dict[str, dm_env.specs.Array]:
     return self._coordinator.task_extras_spec()
+
+  def command(self) -> List[str]:
+    """
+    return list of str
+    """
+
+    return self._coordinator.command()
 
   @property
   def raw_action(self):

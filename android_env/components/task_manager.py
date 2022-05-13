@@ -48,8 +48,6 @@ from android_env.proto import task_pb2
 from android_env.components import event_listeners # zdy
 import numpy as np
 
-# TODO: task command
-
 class TaskManager():
   """Handles all events and information related to the task."""
 
