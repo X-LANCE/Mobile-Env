@@ -257,6 +257,15 @@ message Event {
 //}
 // }}} original `LogParsingConfig` 
 
+message TaskEventSlots {
+  Event score_listener = 1;
+  Event reward_listener = 2;
+  Event episode_end_listener = 3;
+  Event extra_listener = 4;
+  Event json_extra_listener = 5;
+  Event instruction_listener = 6;
+}
+
 // Description of a reinforcement learning task to be solved by an agent.
 message Task {
   // A globally unique identifier for this task.
@@ -288,15 +297,11 @@ message Task {
   int32 max_num_steps = 8;
 
   // zdy
-  repeated string command = 9;
   // Defines parameters for parsing messages from logcat.
   //LogParsingConfig log_parsing_config = 9;
+  TaskEventSlots event_slots = 9;
   // zdy
-  Event score_listener = 11;
-  Event reward_listener = 12;
-  Event episode_end_listener = 13;
-  Event extra_listener = 14;
-  Event json_extra_listener = 15;
+  repeated string command = 11;
 
   // (Optional): The task may also define extras to help the RL agent.
   // An Extra in AndroidEnv is any information that apps may send to aid the

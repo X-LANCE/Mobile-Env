@@ -103,13 +103,16 @@ class TaskManager():
     self._log_events = []
     self._log_filters = set()
 
-    self._score_event = self.parse_event_listeners(task.score_listener, cast=float)\
-        if task.HasField("score_listener") else event_listeners.EmptyEvent()
-    self._reward_event = self.parse_event_listeners(task.reward_listener, cast=float,
+    self._score_event = self.parse_event_listeners(task.event_slots.score_listener, cast=float)\
+        if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
+        else event_listeners.EmptyEvent()
+    self._reward_event = self.parse_event_listeners(task.event_slots.reward_listener, cast=float,
           update=operator.add)\
-        if task.HasField("reward_listener") else event_listeners.EmptyEvent()
-    self._episode_end_event = self.parse_event_listeners(task.episode_end_listener)\
-        if task.HasField("episode_end_listener") else event_listeners.EmptyEvent()
+        if task.HasField("event_slots") and task.event_slots.HasField("reward_listener")\
+        else event_listeners.EmptyEvent()
+    self._episode_end_event = self.parse_event_listeners(task.event_slots.episode_end_listener)\
+        if task.HasField("event_slots") and task.event_slots.HasField("episode_end_listener")\
+        else event_listeners.EmptyEvent()
 
     def _update_dict(buffer_size_limit, dict1, dict2):
       for k in dict2:
@@ -120,9 +123,10 @@ class TaskManager():
         if len(dict1[k])>buffer_size_limit:
           dict1[k] = dict1[k][-buffer_size_limit:]
       return dict1
-    self._extra_event = self.parse_event_listeners(task.extra_listener,
+    self._extra_event = self.parse_event_listeners(task.event_slots.extra_listener,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
-        if task.HasField("extra_listener") else event_listeners.EmptyEvent()
+        if task.HasField("event_slots") and task.event_slots.HasField("extra_listener")\
+        else event_listeners.EmptyEvent()
 
     def _update_json_extra(buffer_size_limit, extra1, extra2):
       try:
@@ -136,9 +140,23 @@ class TaskManager():
         logging.error('JSON string could not be parsed: %s', extra2)
         extra2 = {}
       return _update_dict(buffer_size_limit, extra1, extra2)
-    self._json_extra_event = self.parse_event_listeners(task.json_extra_listener,
+    self._json_extra_event = self.parse_event_listeners(task.event_slots.json_extra_listener,
           update=functools.partial(_update_json_extra, self._extras_max_buffer_size))\
-        if task.HasField("json_extra_listener") else event_listeners.EmptyEvent()
+        if task.HasField("event_slots") and task.event_slots.HasField("json_extra_listener")\
+        else event_listeners.EmptyEvent()
+
+    def _update_list(buffer_size_limit, instruction1, instruction2):
+      if isinstance(instruction1, str):
+        instruction1 = [instruction1]
+      if isinstance(instruction2, str):
+        instruction1.append(instruction2)
+      else:
+        instruction1 += instruction2
+      return instruction1
+    self._instruction_event = self.parse_event_listeners(task.event_slots.instruction_listener,
+          cast=str, update=functools.partial(_update_list, self._extras_max_buffer_size))\
+        if task.HasField("event_slots") and task.event_slots.HasField("instruction_listener")\
+        else event_listeners.EmptyEvent()
 
     del self._events_with_id
     del self._events_in_need
@@ -436,6 +454,18 @@ class TaskManager():
       #self._latest_values['extra'] = {} # zdy
       return extras
     #  }}} method `get_current_extras` # 
+
+  def get_current_instructions(self):
+    #  function `get_current_instructions` {{{ # 
+    """
+    return list of str
+    """
+
+    instructions = self._instruction_event.get() if self._instruction_event.set() else []
+    self._instruction_event.clear()
+
+    return instructions
+    #  }}} function `get_current_instructions` # 
 
   def check_if_episode_ended(self) -> bool:
     #  method `check_if_episode_ended` {{{ # 

@@ -32,6 +32,7 @@ class AndroidEnv(dm_env.Environment):
     self._latest_action = {}
     self._latest_observation = {}
     self._latest_extras = {}
+    self._latest_instruction = []
     self._reset_next_step = True
 
     logging.info('Action spec: %s', self.action_spec())
@@ -100,12 +101,13 @@ class AndroidEnv(dm_env.Environment):
       return self.reset()
 
     # Execute selected action.
-    obs, reward, extras, episode_end = self._coordinator.execute_action(action)
+    obs, reward, extras, instructions, episode_end = self._coordinator.execute_action(action)
 
     # Process relevant information.
     if obs is not None:
       self._latest_observation = obs.copy()
     self._latest_extras = extras.copy()
+    self._latest_instruction = instructions.copy()
     self._latest_action = action.copy()
     self._reset_next_step = episode_end
 
@@ -126,8 +128,24 @@ class AndroidEnv(dm_env.Environment):
         extra_values = self._latest_extras[key].astype(spec.dtype)
         for extra in extra_values:
           spec.validate(extra)
-        task_extras[key] = extra_values[-1] if latest_only else extra_values
+        if latest_only:
+          task_extras[key] = extra_values[-1] if len(extra_values)>0\
+              else np.zeros(shape=spec.shape, dtype=spec.dtype)
+        else:
+          task_extras[key] = extra_values
     return task_extras
+
+  def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:
+    """
+    latest_only - bool
+
+    return str or list of str
+    """
+
+    if latest_only:
+      return self._latest_instruction[-1] if len(self._latest_instruction)>0 else ""
+    else:
+      return self._latest_instruction
 
   def close(self) -> None:
     """Cleans up running processes, threads and local files."""

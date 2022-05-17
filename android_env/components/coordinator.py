@@ -228,7 +228,11 @@ class Coordinator():
   def execute_action(
       self,
       action: Optional[Dict[str, np.ndarray]],
-  ) -> Tuple[Optional[Dict[str, np.ndarray]], float, Dict[str, Any], bool]:
+  ) -> Tuple[Optional[Dict[str, np.ndarray]],
+          float,
+          Dict[str, Any],
+          List[str],
+          bool]:
     """Executes the selected action and returns transition info.
 
     Args:
@@ -237,6 +241,7 @@ class Coordinator():
       observation: Pixel observations as displayed on the screen.
       reward: Total reward collected since the last call.
       extras: Task extras observed since the last call.
+      instructions: Task instructions received since the last call.
       episode_end: Boolean indicating if the RL episode should be terminated.
     """
 
@@ -248,7 +253,7 @@ class Coordinator():
 
     # If a restart is neccessary, end the episode.
     if self._should_restart or self._check_timeout():
-      return None, 0.0, {}, True
+      return None, 0.0, {}, [], True
 
     # If the action is a TOUCH or LIFT, send it to the simulator.
     if (action is not None and
@@ -265,13 +270,14 @@ class Coordinator():
       observation = self._simulator.get_observation()
       reward = self._task_manager.get_current_reward()
       task_extras = self._task_manager.get_current_extras()
+      instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
-      return observation, reward, task_extras, episode_end
+      return observation, reward, task_extras, instructions, episode_end
     except (errors.ReadObservationError, socket.error):
       logging.exception('Unable to fetch observation. Restarting simulator.')
       self._log_dict['restart_count_fetch_observation'] += 1
       self._should_restart = True
-      return None, 0.0, {}, True
+      return None, 0.0, {}, [], True
 
   def _send_action_to_simulator(self, action: Dict[str, np.ndarray]) -> None:
     """Sends the selected action to the simulator.
