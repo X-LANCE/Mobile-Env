@@ -23,7 +23,7 @@ import json
 import queue
 import re
 import threading
-from typing import Any, Dict
+from typing import Any, Dict, List, Set
 import functools
 import operator
 
@@ -93,28 +93,33 @@ class TaskManager():
 
     # zdy
     #  Event Infrastructures {{{ # 
-    self._events_with_id = {}
-    self._events_in_need = {}
+    self._events_with_id: Dict[int, event_listeners.Event] = {}
+    self._events_in_need: Dict[int, List[event_listeners.Event]] = {}
 
-    self._text_events = []
-    self._icon_events = []
-    self._icon_match_events = []
-    self._view_hierarchy_events = []
-    self._log_events = []
-    self._log_filters = set()
+    self._text_events: List[event_listeners.TextEvent] = []
+    self._icon_events: List[event_listeners.IconRecogEvent] = []
+    self._icon_match_events: List[event_listeners.IconMatchEvent] = []
+    self._view_hierarchy_events: List[event_listeners.ViewHierarchyEvent] = []
+    self._log_events: List[event_listeners.LogEvent] = []
+    self._log_filters: Set[str] = set()
 
-    self._score_event = self.parse_event_listeners(task.event_slots.score_listener, cast=float)\
+    self._score_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.score_listener, cast=float)\
         if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
         else event_listeners.EmptyEvent()
-    self._reward_event = self.parse_event_listeners(task.event_slots.reward_listener, cast=float,
+    self._reward_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.reward_listener, cast=float,
           update=operator.add)\
         if task.HasField("event_slots") and task.event_slots.HasField("reward_listener")\
         else event_listeners.EmptyEvent()
-    self._episode_end_event = self.parse_event_listeners(task.event_slots.episode_end_listener)\
+    self._episode_end_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.episode_end_listener)\
         if task.HasField("event_slots") and task.event_slots.HasField("episode_end_listener")\
         else event_listeners.EmptyEvent()
 
-    def _update_dict(buffer_size_limit, dict1, dict2):
+    def _update_dict(buffer_size_limit: int,
+        dict1: Dict[str, Any],
+        dict2: Dict[str, Any]) -> Dict[str, Any]:
       for k in dict2:
         if k in dict1:
           dict1[k] += dict2[k]
@@ -123,38 +128,33 @@ class TaskManager():
         if len(dict1[k])>buffer_size_limit:
           dict1[k] = dict1[k][-buffer_size_limit:]
       return dict1
-    self._extra_event = self.parse_event_listeners(task.event_slots.extra_listener,
+    self._extra_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.extra_listener,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("extra_listener")\
         else event_listeners.EmptyEvent()
 
-    def _update_json_extra(buffer_size_limit, extra1, extra2):
+    def _parse_json(extra: str) -> Dict[str, Any]:
       try:
-        extra1 = extra1 if isinstance(extra1, dict) else dict(json.loads(extra1))
+        extra = dict(json.loads(extra))
       except ValueError:
         logging.error('JSON string could not be parsed: %s', extra1)
-        extra1 = {}
-      try:
-        extra2 = dict(json.loads(extra2))
-      except ValueError:
-        logging.error('JSON string could not be parsed: %s', extra2)
-        extra2 = {}
-      return _update_dict(buffer_size_limit, extra1, extra2)
-    self._json_extra_event = self.parse_event_listeners(task.event_slots.json_extra_listener,
-          update=functools.partial(_update_json_extra, self._extras_max_buffer_size))\
+        extra = {}
+      return extra
+    self._json_extra_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.json_extra_listener,
+          wrap=_parse_json,
+          update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("json_extra_listener")\
         else event_listeners.EmptyEvent()
 
-    def _update_list(buffer_size_limit, instruction1, instruction2):
-      if isinstance(instruction1, str):
-        instruction1 = [instruction1]
-      if isinstance(instruction2, str):
-        instruction1.append(instruction2)
-      else:
-        instruction1 += instruction2
+    def _update_list(buffer_size_limit: int, instruction1: List[str], instruction2: List[str]) -> List[str]:
+      instruction1 += instruction2
       return instruction1
-    self._instruction_event = self.parse_event_listeners(task.event_slots.instruction_listener,
-          cast=str, update=functools.partial(_update_list, self._extras_max_buffer_size))\
+    self._instruction_event: event_listeners.Event =\
+      self.parse_event_listeners(task.event_slots.instruction_listener,
+          cast=str, wrap=(lambda instrct: instrct if isinstance(instrct, list) else [instrct]),
+          update=functools.partial(_update_list, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("instruction_listener")\
         else event_listeners.EmptyEvent()
 
@@ -181,20 +181,26 @@ class TaskManager():
 
   # zdy
   # TODO: test the correctness
-  def parse_event_listeners(self, event_definition, cast=None, update=None):
+  def parse_event_listeners(self, event_definition: task_pb2.Event,
+      cast: Optional[Callable[[V], C]] = None,
+      wrap: Optional[Callable[[T], W]] = None,
+      update: Optional[Callable[[W, W], W]] = None) -> event_listeners.Event:
     #  method `parse_event_listeners` {{{ # 
     """
     event_definition - task_pb2.Event
-    cast - callable accepting something returning something else or None
+    cast - callable accepting the verified type returning the cast type or
+      None
+    wrap - callable accepting the transformed type returning the wrapped
+      type or None
     update - callable accepting
-      + something as `self._value`
-      + something as the new value
-      and returning something
+      + the wrapped type
+      + the wrapped type
+      and returning the wrapped type
 
     return event_listeners.Event
     """
 
-    def _rect_to_list(rect):
+    def _rect_to_list(rect: task_pb2.Event.Rect) -> List[float]:
       #  function `_rect_to_list` {{{ # 
       """
       rect - task_pb2.Event.Rect
@@ -212,36 +218,36 @@ class TaskManager():
     if event_definition.HasField("text_recognize"):
       event = event_listeners.TextEvent(event_definition.text_recognize.expect,
           _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
-          transformation=transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update)
       self._text_events.append(event)
     elif event_definition.HasField("text_detect"):
       event = event_listeners.TextEvent(event_definition.text_detect.expect,
           _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
-          transformation=transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update)
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
     elif event_definition.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
-          transformation=transformation, update=update)
+          transformation=transformation, wrap=wrap, update=update)
       self._icon_events.append(event)
     elif event_definition.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
-          transformation=transformation, update=update)
+          transformation=transformation, wrap=wrap, update=update)
       self._icon_events.append(event)
     #  }}} Icon Events # 
     #  Icon Match Events {{{ # 
     elif event_definition.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
           _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
-          transformation=transformation, update=update)
+          transformation=transformation, wrap=wrap, update=update)
       self._icon_match_events.append(event)
     elif event_definition.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
           _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
-          transformation=transformation, update=update)
+          transformation=transformation, wrap=wrap, update=update)
       self._icon_match_events.append(event)
     #  }}} Icon Match Events # 
     #  Other Events {{{ # 
@@ -269,25 +275,25 @@ class TaskManager():
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
-          properties, transformation=transformation, cast=cast, update=update)
+          properties, transformation=transformation, cast=cast, wrap=wrap, update=update)
       self._view_hierarchy_events.append(event)
     elif event_definition.HasField("log_event"):
       self._log_filters |= set(event_definition.log_event.filters)
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
-          transformation=transformation, cast=cast, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update)
       self._log_events.append(event)
     #  }}} Other Events # 
     #  Combined Events {{{ # 
     elif event_definition.HasField("or"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
+          map(functools.partial(self.parse_event_listeners, cast=cast, wrap=wrap, update=update),
             getattr(event_definition, "or").events))
-      event = event_listeners.Or(sub_events, transformation, cast, update)
+      event = event_listeners.Or(sub_events, transformation, cast, wrap, update)
     elif event_definition.HasField("and"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast, update=update),
+          map(functools.partial(self.parse_event_listeners, cast=cast, wrap=wrap, update=update),
             getattr(event_definition, "and").events))
-      event = event_listeners.And(sub_events, transformation, cast, update)
+      event = event_listeners.And(sub_events, transformation, cast, wrap)
     #  }}} Combined Events # 
 
     #  Handle the prerequisites {{{ # 
@@ -313,7 +319,7 @@ class TaskManager():
 
   def task(self) -> task_pb2.Task:
     return self._task
-  def command(self):
+  def command(self) -> List[str]:
     """
     return list of str
     """
@@ -432,6 +438,7 @@ class TaskManager():
 
       if self._json_extra_event.is_set():
         json_extras = self._json_extra_event.get()
+        self._json_extra_event.clear()
 
         if not isinstance(json_extras, dict):
           try:
@@ -446,8 +453,6 @@ class TaskManager():
           else:
             extras[k] = json_extras[k]
 
-        self._json_extra_event.clear()
-
       #for name, values in self._latest_values['extra'].items(): # zdy
       for name, values in extras.items(): # zdy
         extras[name] = np.stack(values)
@@ -455,7 +460,7 @@ class TaskManager():
       return extras
     #  }}} method `get_current_extras` # 
 
-  def get_current_instructions(self):
+  def get_current_instructions(self) -> List[str]:
     #  function `get_current_instructions` {{{ # 
     """
     return list of str
@@ -463,6 +468,9 @@ class TaskManager():
 
     instructions = self._instruction_event.get() if self._instruction_event.set() else []
     self._instruction_event.clear()
+
+    if not isinstance(instructions, list):
+      instructions = [instructions]
 
     return instructions
     #  }}} function `get_current_instructions` # 
