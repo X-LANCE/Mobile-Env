@@ -55,6 +55,13 @@ class AndroidEnv(dm_env.Environment):
 
     return self._coordinator.command()
 
+  def vocabulary(self) -> List[str]:
+    """
+    return list of str
+    """
+
+    return self._coordinator.vocabulary()
+
   @property
   def raw_action(self):
     return self._latest_action

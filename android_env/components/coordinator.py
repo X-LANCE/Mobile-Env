@@ -91,8 +91,9 @@ class Coordinator():
     self._restart_simulator()
 
   def action_spec(self) -> Dict[str, dm_env.specs.Array]:
+    num_tokens = self._task_manager.nb_tokens()
     num_fingers = self._simulator.num_fingers()
-    return specs.base_action_spec(num_fingers=num_fingers)
+    return specs.base_action_spec(num_tokens=num_tokens, num_fingers=num_fingers)
 
   def observation_spec(self) -> Dict[str, dm_env.specs.Array]:
     screen_dims = self._simulator.screen_dimensions()
@@ -107,7 +108,13 @@ class Coordinator():
     return list of str
     """
 
-    return self._task_manager.command
+    return self._task_manager.command()
+  def vocabulary(self) -> List[str]:
+    """
+    return list of str
+    """
+
+    return self._task_manager.vocabulary()
 
   def reset_environment_state(self):
     """Resets the state of the simulation for a new RL episode.
@@ -256,9 +263,11 @@ class Coordinator():
       return None, 0.0, {}, [], True
 
     # If the action is a TOUCH or LIFT, send it to the simulator.
-    if (action is not None and
-        action['action_type'].item() != action_type_lib.ActionType.REPEAT):
-      self._send_action_to_simulator(action)
+    if action is not None:
+      if action["action_type"].item() == action_type_lib.ActionType.TEXT:
+        self._send_action_to_taskmanager(action)
+      elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
+        self._send_action_to_simulator(action)
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
@@ -278,6 +287,19 @@ class Coordinator():
       self._log_dict['restart_count_fetch_observation'] += 1
       self._should_restart = True
       return None, 0.0, {}, [], True
+
+  def _send_action_to_taskmanager(self, action: Dict[str, np.ndarray]):
+    #  method `_send_action_to_taskmanager` {{{ # 
+    """
+    action - dict like
+      {
+        "action_type": scalar array of int32 with value 3,
+        "input_token": scalar array of int32
+      }
+    """
+
+    self._task_manager.send_token(action["input_token"].item())
+    #  }}} method `_send_action_to_taskmanager` # 
 
   def _send_action_to_simulator(self, action: Dict[str, np.ndarray]) -> None:
     """Sends the selected action to the simulator.

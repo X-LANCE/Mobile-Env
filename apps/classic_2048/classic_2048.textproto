@@ -80,8 +80,6 @@ expected_app_screen: {
 
 max_num_steps: 500
 
-#command: []
-
 #log_parsing_config: {
 #
   #filters: ["AndroidRLTask:V"]
@@ -96,71 +94,74 @@ max_num_steps: 500
 #}
 
 # new event listener definitions
-score_listener: {
-    or: {
-        events: [
-            {
-                log_event: {
-                    filters: ["AndroidRLTask:V"]
-                    pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
-                }
-                transformation: "x[0]"
-            },
-            {
-                text_recognize: {
-                    expect: "Event String"
-                    rect: {
-                        x0: 0
-                        y0: 0
-                        x1: 0.1
-                        y1: 0.1
+event_slots: {
+    score_listener: {
+        or: {
+            events: [
+                {
+                    log_event: {
+                        filters: ["AndroidRLTask:V"]
+                        pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
                     }
+                    transformation: "x[0]"
+                },
+                {
+                    text_recognize: {
+                        expect: "Event String"
+                        rect: {
+                            x0: 0
+                            y0: 0
+                            x1: 0.1
+                            y1: 0.1
+                        }
+                    }
+                    id: 1
+                    transformation: "10"
                 }
-                id: 1
-                transformation: "10"
-            }
-        ]
+            ]
+        }
+        transformation: "x"
     }
-    transformation: "x"
-}
-reward_listener: {
-    #log_event: {
-        #filters: ["AndroidRLTask:V"]
-        #pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
-    #}
-    #transformation: "x[0]"
-    icon_detect: {
-       class: "Event String"
-       rect: {
-           x0: 0.1
-           y0: 0.1
-           x1: 0.2
-           y1: 0.2
-       }
+    reward_listener: {
+        #log_event: {
+            #filters: ["AndroidRLTask:V"]
+            #pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+        #}
+        #transformation: "x[0]"
+        icon_detect: {
+           class: "Event String"
+           rect: {
+               x0: 0.1
+               y0: 0.1
+               x1: 0.2
+               y1: 0.2
+           }
+        }
+        prerequisite: [1]
+        transformation: "100"
     }
-    prerequisite: [1]
-    transformation: "100"
-}
-episode_end_listener: {
-    log_event: {
-        filters: ["AndroidRLTask:V"]
-        pattern: "^episode[ _]end$"
+    episode_end_listener: {
+        log_event: {
+            filters: ["AndroidRLTask:V"]
+            pattern: "^episode[ _]end$"
+        }
+        transformation: "True"
     }
-    transformation: "True"
-}
-extra_listener: {
-    log_event: {
-        filters: ["AndroidRLTask:V"]
-        pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+    extra_listener: {
+        log_event: {
+            filters: ["AndroidRLTask:V"]
+            pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+        }
+        transformation: "{x[0]: [x[1]]}"
     }
-    transformation: "{x[0]: [x[1]]}"
-}
-json_extra_listener: {
-    log_event: {
-        filters: ["AndroidRLTask:V"]
-        pattern: "^json_extra: (?P<json_extra>.*)$"
+    json_extra_listener: {
+        log_event: {
+            filters: ["AndroidRLTask:V"]
+            pattern: "^json_extra: (?P<json_extra>.*)$"
+        }
+        transformation: "x[0]"
     }
-    transformation: "x[0]"
+    # instruction_listener: {}
 }
 
 extras_spec: [
@@ -170,3 +171,6 @@ extras_spec: [
   # 0: up, 1: right, 2: down, 3: left
   { name: "direction" shape: [1], dtype: INT32 }
 ]
+
+command: []
+vocabulary: []

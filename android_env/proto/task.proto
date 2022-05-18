@@ -318,4 +318,6 @@ message Task {
   // definition will be passed to the agent, everything else is excluded.
   // The name of an extra must be unique across all extras.
   repeated ArraySpec extras_spec = 10;
+
+  repeated string vocabulary = 12;
 }

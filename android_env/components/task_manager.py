@@ -82,6 +82,8 @@ class TaskManager():
     self._image_format = None
     self._setup_step_interpreter = None
 
+    self._vocabulary: List[str] = self._task.vocabulary
+
     # Logging settings
     self._log_dict = {
         'reset_count_step_timeout': 0,
@@ -317,6 +319,7 @@ class TaskManager():
     return event
     #  }}} method `parse_event_listeners` # 
 
+  #  Properties {{{ # 
   def task(self) -> task_pb2.Task:
     return self._task
   def command(self) -> List[str]:
@@ -325,6 +328,19 @@ class TaskManager():
     """
 
     return self._task.command
+  def nb_tokens(self) -> int:
+    """
+    return int
+    """
+
+    return len(self._vocabulary)
+  def vocabulary(self) -> List[str]:
+    """
+    return list of str
+    """
+
+    return self._vocabulary
+  #  }}} Properties # 
 
   def increment_steps(self):
     self._episode_steps += 1
@@ -397,8 +413,17 @@ class TaskManager():
   #  }}} Episode Management # 
 
   #  Interaction Methods {{{ # 
+  def send_token(token_id: int):
+    #  method `send_token` {{{ # 
+    """
+    token_id - int
+    """
+
+    self._adb_controller.input_text(self._vocabulary[token_id] + " ")
+    #  }}} method `send_token` # 
+
   def get_current_reward(self) -> float:
-  #  method `get_current_reward` {{{ # 
+    #  method `get_current_reward` {{{ # 
     """Returns total reward accumulated since the last step."""
 
     # zdy
@@ -424,7 +449,7 @@ class TaskManager():
       reward += self._reward_event.get() if self._reward_event.is_set() else 0 # zdy
       self._reward_event.clear() # zdy
     return reward
-  #  }}} method `get_current_reward` # 
+    #  }}} method `get_current_reward` # 
 
   def get_current_extras(self) -> Dict[str, Any]:
     #  method `get_current_extras` {{{ # 

@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,10 +44,11 @@ _PROTO_DTYPE_TO_NUMPY_DTYPE = {
 }
 
 
-def base_action_spec(num_fingers: int = 1) -> Dict[str, specs.Array]:
+def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.Array]:
   """Default action spec for AndroidEnv.
 
   Args:
+    num_tokens: Number of candidate tokens
     num_fingers: Number of virtual fingers of the agent.
   Returns:
     A dict of action specs, each item corresponding to a virtual finger.
@@ -70,6 +72,10 @@ def base_action_spec(num_fingers: int = 1) -> Dict[str, specs.Array]:
               minimum=[0.0, 0.0],
               maximum=[1.0, 1.0],
               name='touch_position'),
+      'input_token':
+        specs.DiscreteArray(
+          num_values=num_tokens,
+          name="input_token")
   }
 
   for i in range(2, num_fingers + 1):
@@ -85,6 +91,10 @@ def base_action_spec(num_fingers: int = 1) -> Dict[str, specs.Array]:
                 minimum=[0.0, 0.0],
                 maximum=[1.0, 1.0],
                 name=f'touch_position_{i}'),
+        f'input_token_{i}':
+          specs.DiscreteArray(
+            num_values=num_tokens,
+            name="input_token")
     })
 
   return action_spec
