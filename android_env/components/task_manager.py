@@ -376,8 +376,8 @@ class TaskManager():
 
   def setup_task(self,
                  adb_controller: adb_control.AdbController,
-                 emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub, # zdy
-                 image_format: emulator_controller_pb2.ImageFormat, # zdy
+                 #emulator_stub: emulator_controller_pb2_grpc.EmulatorControllerStub, # zdy
+                 #image_format: emulator_controller_pb2.ImageFormat, # zdy
                  log_stream: log_stream_lib.LogStream,
                  ) -> None:
     """Starts the given task along with all relevant processes."""
@@ -388,9 +388,9 @@ class TaskManager():
     logging.info("#VH Events: {:d}".format(len(self._view_hierarchy_events)))
     logging.info("#Log Events: {:d}".format(len(self._log_events)))
 
-    self._adb_controller = adb_controller
-    self._emulator_stub = emulator_stub
-    self._image_format = image_format
+    self._adb_controller: adb_control.AdbController = adb_controller
+    #self._emulator_stub = emulator_stub
+    #self._image_format = image_format
     self._start_logcat_thread(log_stream=log_stream)
     self._start_setup_step_interpreter()
     self._setup_step_interpreter.interpret(self._task.setup_steps)
@@ -422,12 +422,18 @@ class TaskManager():
     self._adb_controller.input_text(self._vocabulary[token_id] + " ")
     #  }}} method `send_token` # 
 
-  def get_current_reward(self) -> float:
+  def get_current_reward(self, screen: np.ndarray) -> float:
     #  method `get_current_reward` {{{ # 
-    """Returns total reward accumulated since the last step."""
+    """
+    Returns total reward accumulated since the last step.
+
+    screen - array of uint8 with shape (height, width, 3)
+
+    return floating
+    """
 
     # zdy
-    self._run_screen_analyzer()
+    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
     try:
       self._run_dumpsys()
     except errors.NotAllowedError:
@@ -576,13 +582,18 @@ class TaskManager():
     #  }}} method `_run_dumpsys` # 
 
   # zdy
-  def _run_screen_analyzer(self):
+  def _run_screen_analyzer(self, screen: np.ndarray):
     #  method `_run_screen_analyzer` {{{ # 
+    """
+    screen - array of uint8 with shape (height, width, 3)
+    """
+
     if not hasattr(self, "_screen_analyzer_thread"):
       return
 
     self._screen_analyzer_thread.write(
       screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_SCREEN)
+    self._screen_analyzer_thread.write(screen)
 
     try:
       status = self._screen_analyzer_thread.read(block=True, timeout=0.05) # TODO: maybe a better timeout value could be tuned to
@@ -637,12 +648,13 @@ class TaskManager():
     icon_recognizer = naive_functions.naive_icon_recognizer
     icon_matcher = naive_functions.naive_icon_matcher
 
-    self._screen_analyzer_thread = screen_analyzer_thread.ScreenAnalyzerThread(
-        text_detector, text_recognizer,
-        icon_detector, icon_recognizer, icon_matcher,
-        self._emulator_stub, self._image_format,
-        lock=self._lock,
-        block_input=True, block_output=True)
+    self._screen_analyzer_thread: screen_analyzer_thread.ScreenAnalyzerThread =\
+        screen_analyzer_thread.ScreenAnalyzerThread(
+          text_detector, text_recognizer,
+          icon_detector, icon_recognizer, icon_matcher,
+          #self._emulator_stub, self._image_format,
+          lock=self._lock,
+          block_input=True, block_output=True)
     self._screen_analyzer_thread.add_text_event_listeners(*self._text_events)
     self._screen_analyzer_thread.add_icon_event_listeners(*self._icon_events)
     self._screen_analyzer_thread.add_icon_match_event_listeners(*self._icon_match_events)

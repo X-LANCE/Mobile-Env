@@ -110,8 +110,8 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
         **self._adb_controller_args)
 
   # zdy
-  def get_emulator_stub(self):
-    return self._emulator_stub
+  #def get_emulator_stub(self):
+    #return self._emulator_stub
   @property
   def image_format(self):
     return self._image_format

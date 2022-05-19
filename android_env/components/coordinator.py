@@ -220,8 +220,8 @@ class Coordinator():
       try:
         self._task_manager.setup_task(
             adb_controller=adb_controller,
-            emulator_stub=self._simulator.get_emulator_stub(), # zdy
-            image_format=self._simulator.image_format, # zdy
+            #emulator_stub=self._simulator.get_emulator_stub(), # zdy
+            #image_format=self._simulator.image_format, # zdy
             log_stream=log_stream)
       except errors.StepCommandError:
         logging.error('Failed to set up the task. Restarting simulator.')
@@ -277,7 +277,7 @@ class Coordinator():
     try:
       self._latest_observation_time = time.time()
       observation = self._simulator.get_observation()
-      reward = self._task_manager.get_current_reward()
+      reward = self._task_manager.get_current_reward(observation["pixels"]) # zdy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()

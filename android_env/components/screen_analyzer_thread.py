@@ -11,6 +11,11 @@ import torchvision.io as tvio
 from absl import logging
 import traceback
 
+from typing import Callable
+from typing import List
+import event_listeners
+import threading
+
 # mainly taken from `DumpsysThread`
 class ScreenAnalyzerThread(thread_function.ThreadFunction):
     #  class `ScreenAnalyzerThread` {{{ # 
@@ -23,13 +28,21 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         #  }}} enum `Signal` # 
 
     def __init__(self,
-            text_detector, text_recognizer,
-            icon_detector, icon_recognizer, icon_matcher,
-            emulator_stub, image_format,
+            text_detector: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[List[str]]],
+            text_recognizer: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[str]],
+            icon_detector: Callable[[torch.Tensor, List[torch.Tensor]],
+                Tuple[torch.Tensor, List[List[str]]]],
+            icon_recognizer: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[str]],
+            icon_matcher: Callable[[torch.Tensor, List[torch.Tensor], torch.Tensor],
+                List[List[bool]]],
+            #emulator_stub, image_format,
             #check_frequency,
             #max_failed_current_activity,
-            lock,
-            block_input, block_output, name="screen_analyzer"):
+            lock: threading.Lock,
+            block_input: bool, block_output: bool, name: str = "screen_analyzer"):
         #  method `__init__` {{{ # 
         """
         text_detector - callable accepting
@@ -62,8 +75,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
           and returning list of [[list of bool with length nb_candidates]] with
           length nb_bboxes
 
-        emulator_stub - emulator_controller_pb2_grpc.EmulatorControllerStub
-        image_format - emulator_controller_pb2.ImageFormat
+        #emulator_stub - emulator_controller_pb2_grpc.EmulatorControllerStub
+        #image_format - emulator_controller_pb2.ImageFormat
 
         #check_frequency - int
         #max_failed_current_activity - int
@@ -75,23 +88,28 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         name - str
         """
 
-        self._text_detector = text_detector
-        self._text_recognizer = text_recognizer
-        self._icon_detector = icon_detector
-        self._icon_recognizer = icon_recognizer
-        self._icon_matcher = icon_matcher
+        self._text_detector: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[List[str]]] = text_detector
+        self._text_recognizer: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[str]] = text_recognizer
+        self._icon_detector: Callable[[torch.Tensor, List[torch.Tensor]],
+                Tuple[torch.Tensor, List[List[str]]]] = icon_detector
+        self._icon_recognizer: Callable[[torch.Tensor, List[torch.Tensor]],
+                List[str]] = icon_recognizer
+        self._icon_matcher: Callable[[torch.Tensor, List[torch.Tensor], torch.Tensor],
+                List[List[bool]]] = icon_matcher
 
-        self._emulator_stub = emulator_stub
-        self._image_format = image_format
+        #self._emulator_stub = emulator_stub
+        #self._image_format = image_format
 
-        self._text_recog_event_listeners = []
-        self._text_detect_event_listeners = []
-        self._icon_recog_event_listeners = []
-        self._icon_detect_event_listeners = []
-        self._icon_match_event_listeners = []
-        self._icon_detect_match_event_listeners = []
+        self._text_recog_event_listeners: List[event_listeners.Event] = []
+        self._text_detect_event_listeners: List[event_listeners.Event] = []
+        self._icon_recog_event_listeners: List[event_listeners.Event] = []
+        self._icon_detect_event_listeners: List[event_listeners.Event] = []
+        self._icon_match_event_listeners: List[event_listeners.Event] = []
+        self._icon_detect_match_event_listeners: List[event_listeners.Event] = []
 
-        self._lock = lock
+        self._lock: threading.Lock = lock
 
         #self._main_loop_counter = 0
         #self._check_frequency = check_frequency
@@ -136,20 +154,20 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 self._icon_match_event_listeners.append(lstn)
     #  }}} Methods to Add Event Listeners # 
 
-    def get_screenshot(self):
-        #  method `get_screenshot` {{{ # 
-        """
-        return tensor of float32 with shape (3, height, width)
-        """
-
-        image_proto = self._emulator_stub.getScreenshot(self._image_format)
-        height = image_proto.format.height
-        width = image_proto.format.width
-        image = np.frombuffer(image_proto.image, dtype=np.uint8, count=height*width*3)
-        image.shape = (height, width, 3)
-        image = np.transpose(image, axes=(2, 0, 1))
-        return torch.tensor(image, dtype=torch.float32)
-        #  }}} method `get_screenshot` # 
+    #def get_screenshot(self):
+        ##  method `get_screenshot` {{{ # 
+        #"""
+        #return tensor of float32 with shape (3, height, width)
+        #"""
+#
+        #image_proto = self._emulator_stub.getScreenshot(self._image_format)
+        #height = image_proto.format.height
+        #width = image_proto.format.width
+        #image = np.frombuffer(image_proto.image, dtype=np.uint8, count=height*width*3)
+        #image.shape = (height, width, 3)
+        #image = np.transpose(image, axes=(2, 0, 1))
+        #return torch.tensor(image, dtype=torch.float32)
+        ##  }}} method `get_screenshot` # 
 
     #  Methods to Match Registered Events {{{ # 
     @torch.no_grad()
@@ -326,8 +344,12 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
     def main(self):
         #  method `main` {{{ # 
         command = self._read_value()
-
         if command!=ScreenAnalyzerThread.Signal.CHECK_SCREEN:
+            self._write_value(ScreenAnalyzerThread.Signal.DID_NOT_CHECK)
+            return
+
+        screen = self._read_value()
+        if not isinstance(screen, np.ndarray):
             self._write_value(ScreenAnalyzerThread.Signal.DID_NOT_CHECK)
             return
         #self._main_loop_counter += 1
@@ -339,9 +361,9 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
 
 
         try:
-            logging.info("Screen Analyzer Tries to Catch Screenshot...")
-            screen = self.get_screenshot()
-            logging.info("Screen Analyzer Caught Screenshot!")
+            #logging.info("Screen Analyzer Tries to Catch Screenshot...")
+            #screen = self.get_screenshot()
+            #logging.info("Screen Analyzer Caught Screenshot!")
 
             self.match_text_events(screen)
             self.match_icon_events(screen)
