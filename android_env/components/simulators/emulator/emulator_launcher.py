@@ -33,6 +33,8 @@ from google.protobuf import empty_pb2
 # bring down the process.
 _GRPC_KEEPALIVE_MS = 100000
 
+# TODO:
+# + writable_system - bool
 
 class EmulatorLauncher():
   """Handles launching the emulator."""

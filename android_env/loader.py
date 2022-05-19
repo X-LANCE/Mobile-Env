@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +17,7 @@
 """Function for loading AndroidEnv."""
 
 import os
+import os.path
 
 from android_env import environment
 from android_env.components import coordinator as coordinator_lib
@@ -25,6 +27,8 @@ from android_env.proto import task_pb2
 
 from google.protobuf import text_format
 
+from typing import Optional
+from typing import Dict
 
 def load(task_path: str,
          avd_name: str,
@@ -32,7 +36,8 @@ def load(task_path: str,
          android_sdk_root: str = '~/Android/Sdk',
          emulator_path: str = '~/Android/Sdk/emulator/emulator',
          adb_path: str = '~/Android/Sdk/platform-tools/adb',
-         run_headless: bool = False) -> environment.AndroidEnv:
+         run_headless: bool = False,
+         mitm_conifg: Optional[Dict[str, str]] = None) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
   Args:
@@ -43,33 +48,80 @@ def load(task_path: str,
     emulator_path: Path to the emulator binary.
     adb_path: Path to the ADB (Android Debug Bridge).
     run_headless: If True, the emulator display is turned off.
+    mitm_conifg: An optional dict to config the launch options if an mitm proxy
+      is in need for a web-based app. The dict is expected to have a struture
+      like
+        {
+            "method": "syscert" | "frida" | "packpatch",
+            "address": str as the address for the mitm proxy server, default to
+              "127.0.0.1",
+            "port": str as the port for the mitm proxy server, default to
+              "8080",
+            "frida-server": an option for method "frida", to indicate the path
+              to the executable of frida-server on the android system, default
+              to "/data/local/tmp/frida-server",
+            "frida": an option for method "frida", to indicate the path to the
+              executable of frida on the local machine, default to "frida",
+            "frida-script": an option for method "frida", to indicate the
+              script used to hijack the target applicationa, default to
+              "frida-script.js",
+            "patch-suffix": an option for method "packpatch", to indicate the
+              suffix $suff with which the package name "$package.apk" to be
+              installed is replaced to "$package-$suff.apk", default to
+              "patched"
+        }
   Returns:
     env: An AndroidEnv instance.
   """
 
-  # Create simulator.
-  #print("ZDY: BEFORE Simulator Initialization")
-  simulator = emulator_simulator.EmulatorSimulator(
-      adb_controller_args=dict(
-          adb_path=os.path.expanduser(adb_path),
-          adb_server_port=5037,
-          prompt_regex=r'\w*:\/ \$',
-      ),
-      emulator_launcher_args=dict(
-          avd_name=avd_name,
-          android_avd_home=os.path.expanduser(android_avd_home),
-          android_sdk_root=os.path.expanduser(android_sdk_root),
-          emulator_path=os.path.expanduser(emulator_path),
-          run_headless=run_headless,
-          gpu_mode='swiftshader_indirect',
-      ),
-  )
-  #print("ZDY: AFTER Simulator Initialization")
+  adb_controller_args = dict(
+      adb_path=os.path.expanduser(adb_path),
+      adb_server_port=5037,
+      prompt_regex=r'\w*:\/ \$')
+  emulator_launcher_args = dict(
+      avd_name=avd_name,
+      android_avd_home=os.path.expanduser(android_avd_home),
+      android_sdk_root=os.path.expanduser(android_sdk_root),
+      emulator_path=os.path.expanduser(emulator_path),
+      run_headless=run_headless,
+      gpu_mode='swiftshader_indirect',
+      writable_system=False)
 
   # Prepare task.
   task = task_pb2.Task()
   with open(task_path, 'r') as proto_file:
     text_format.Parse(proto_file.read(), task)
+
+  if mitm_conifg is not None:
+    emulator_launcher_args["writable_system"] = True
+    emulator_launcher_args["address"] = mitm_conifg.get("address", "127.0.0.1")
+    emulator_launcher_args["port"] = mitm_conifg.get("port", "8080")
+
+    if mitm_conifg["method"]=="frida":
+      adb_controller_args["frida-server"] = mitm_conifg.get("frida-server",
+          "/data/local/tmp/frida-server")
+      adb_controller_args["frida"] = mitm_conifg.get("frida", "frida")
+      adb_controller_args["frida-script"] = mitm_conifg.get("frida-script",
+          "frida-script.js")
+    elif mitm_conifg["method"]=="packpatch":
+      for st in task.setup_steps:
+        if st.HasField("adb_call") and\
+            st.adb_call.HasField("install_apk"):
+          apk_path = st.adb_call.install_apk.filesystem.path
+          main_name, extension = os.path.splitext(apk_path)
+          st.adb_call.install_apk.filesystem.path =\
+              "{:}-{:}.{:}".format(main_name,
+                mitm_conifg.get("patch-suffix", "patched"),
+                extension)
+
+    # TODO: have a check
+
+  # Create simulator.
+  #print("ZDY: BEFORE Simulator Initialization")
+  simulator = emulator_simulator.EmulatorSimulator(
+      adb_controller_args=adb_controller_args,
+      emulator_launcher_args=emulator_launcher_args)
+  #print("ZDY: AFTER Simulator Initialization")
 
   task_manager = task_manager_lib.TaskManager(task)
   coordinator = coordinator_lib.Coordinator(simulator, task_manager)
