@@ -54,7 +54,9 @@ class EmulatorLauncher():
       gpu_mode: str = 'swiftshader_indirect',
       android_avd_home: str = '',
       startup_wait_time_sec: int = 300,
-  ):
+      writable_system: bool = False,
+      proxy_address: Optional[str] = None,
+      proxy_port: Optional[str] = None):
     """Installs required files locally and launches the emulator.
 
     Args:
@@ -72,20 +74,26 @@ class EmulatorLauncher():
         https://developer.android.com/studio/run/emulator-acceleration#accel-graphics
       android_avd_home: Local directory for AVDs.
       startup_wait_time_sec: Timeout for booting the emulator.
+      writable_system: Whether to run with a writable /system partition.
+      proxy_address: The address for the HTTP proxy.
+      proxy_port: The port for the HTTP proxy.
     """
-    self._local_tmp_dir = local_tmp_dir
-    self._adb_port = adb_port
-    self._adb_server_port = adb_server_port
-    self._emulator_console_port = emulator_console_port
-    self._emulator_path = emulator_path
-    self._android_sdk_root = android_sdk_root
-    self._avd_name = avd_name
-    self._run_headless = run_headless
-    self._kvm_device = kvm_device
-    self._gpu_mode = gpu_mode
-    self._android_avd_home = android_avd_home
-    self._startup_wait_time_sec = startup_wait_time_sec
-    self._grpc_port = grpc_port
+    self._local_tmp_dir: str = local_tmp_dir
+    self._adb_port: Optional[int] = adb_port
+    self._adb_server_port: Optional[int] = adb_server_port
+    self._emulator_console_port: Optional[int] = emulator_console_port
+    self._emulator_path: str = emulator_path
+    self._android_sdk_root: str = android_sdk_root
+    self._avd_name: str = avd_name
+    self._run_headless: bool = run_headless
+    self._writable_system: bool = writable_system
+    self._kvm_device: str = kvm_device
+    self._gpu_mode: str = gpu_mode
+    self._android_avd_home: str = android_avd_home
+    self._startup_wait_time_sec: int = startup_wait_time_sec
+    self._grpc_port: int = grpc_port
+    self._proxy_address: Optional[str] = proxy_address
+    self._proxy_port: Optional[str] = proxy_port
 
     self._emulator = None
     self._emulator_output = None
@@ -122,7 +130,10 @@ class EmulatorLauncher():
     # Compile command.
     grpc_port = ['-grpc', str(self._grpc_port)] if self._grpc_port >= 0 else []
     run_headless = ['-no-skin', '-no-window'] if self._run_headless else []
+    writable_system = ["-writable-system"] if self._writable_system else []
     ports = ['-ports', '%s,%s' % (self._emulator_console_port, self._adb_port)]
+    proxy = ["-http-proxy", "http://{:}:{:}".format(self._proxy_address, self._proxy_port)]\
+            if self._proxy_address and self._proxy_port else []
     command = [
         self._emulator_path,
         '-no-snapshot',
@@ -130,7 +141,7 @@ class EmulatorLauncher():
         '-no-audio',
         '-verbose',
         '-avd', self._avd_name,
-    ] + grpc_port + run_headless + ports
+    ] + grpc_port + run_headless + writable_system + ports + proxy
     logging.info('Emulator launch command: %s', ' '.join(command))
 
     # Prepare logfile.

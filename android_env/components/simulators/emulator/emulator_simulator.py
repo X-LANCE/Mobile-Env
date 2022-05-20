@@ -47,6 +47,8 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
                emulator_launcher_args: Dict[str, Any],
                adb_controller_args: Dict[str, Any],
                tmp_dir: Optional[str] = None,
+               adb_root: bool = False,
+               frida_server: Optional[str] = None,
                **kwargs):
 
     # If adb_port, console_port and grpc_port are all already provided,
@@ -78,6 +80,10 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     self._adb_controller_args = adb_controller_args
     self._adb_controller = self.create_adb_controller()
     self._adb_controller.init_server()
+    if adb_root:
+      self._adb_controller.get_root()
+    if frida_server:
+      self._adb_controller.init_frida_server(frida_server)
     logging.info('Initialized simulator with ADB server port %r.',
                  self._adb_controller_args['adb_server_port'])
 

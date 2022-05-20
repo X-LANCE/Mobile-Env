@@ -92,16 +92,19 @@ def load(task_path: str,
   with open(task_path, 'r') as proto_file:
     text_format.Parse(proto_file.read(), task)
 
+  adb_root = False
+  frida_server = None
   if mitm_conifg is not None:
     emulator_launcher_args["writable_system"] = True
-    emulator_launcher_args["address"] = mitm_conifg.get("address", "127.0.0.1")
-    emulator_launcher_args["port"] = mitm_conifg.get("port", "8080")
+    emulator_launcher_args["proxy_address"] = mitm_conifg.get("address", "127.0.0.1")
+    emulator_launcher_args["proxy_port"] = mitm_conifg.get("port", "8080")
 
     if mitm_conifg["method"]=="frida":
-      adb_controller_args["frida-server"] = mitm_conifg.get("frida-server",
+      adb_root = True
+      frida_server = mitm_conifg.get("frida-server",
           "/data/local/tmp/frida-server")
       adb_controller_args["frida"] = mitm_conifg.get("frida", "frida")
-      adb_controller_args["frida-script"] = mitm_conifg.get("frida-script",
+      adb_controller_args["frida_script"] = mitm_conifg.get("frida-script",
           "frida-script.js")
     elif mitm_conifg["method"]=="packpatch":
       for st in task.setup_steps:
@@ -113,14 +116,16 @@ def load(task_path: str,
               "{:}-{:}.{:}".format(main_name,
                 mitm_conifg.get("patch-suffix", "patched"),
                 extension)
-
-    # TODO: have a check
+    #elif mitm_conifg["method"]=="syscert":
+      #adb_root = True
 
   # Create simulator.
   #print("ZDY: BEFORE Simulator Initialization")
   simulator = emulator_simulator.EmulatorSimulator(
       adb_controller_args=adb_controller_args,
-      emulator_launcher_args=emulator_launcher_args)
+      emulator_launcher_args=emulator_launcher_args,
+      adb_root=adb_root,
+      frida_server=frida_server)
   #print("ZDY: AFTER Simulator Initialization")
 
   task_manager = task_manager_lib.TaskManager(task)

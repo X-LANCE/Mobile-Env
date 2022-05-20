@@ -45,7 +45,10 @@ class AdbController():
                adb_path: str = 'adb',
                adb_server_port: int = 5037,
                prompt_regex: str = r'generic_x86:/ \$',
-               default_timeout: float = _DEFAULT_TIMEOUT_SECONDS):
+               default_timeout: float = _DEFAULT_TIMEOUT_SECONDS,
+               #frida_server: Optional[str] = None,
+               frida: Optional[str] = None,
+               frida_script: Optional[str] = None):
     """Instantiates an AdbController object.
 
     Args:
@@ -54,6 +57,9 @@ class AdbController():
       adb_server_port: Port for adb server.
       prompt_regex: Shell prompt for pexpect in ADB controller.
       default_timeout: Default timeout in seconds.
+      #frida_server: Path to the frida_server executable on the Android device.
+      frida: Path to the frida binary executable on the host machine
+      frida_script: Path to the frida script on the host machine
     """
 
     self._device_name = device_name
@@ -61,6 +67,11 @@ class AdbController():
     self._adb_server_port = str(adb_server_port)
     self._prompt = prompt_regex
     self._default_timeout = default_timeout
+
+    self._frida: Optional[str] = frida
+    self._frida_script: Optional[str] = frida_script
+    if self._frida and self._frida_script:
+      self._frida_processes: Dict[str, subprocess.Popen] = {}
 
     self._platform_sys = sys.platform
     self._execute_command_lock = threading.Lock()
@@ -97,6 +108,27 @@ class AdbController():
     time.sleep(0.2)
     # Subsequent calls will use the device name.
     self._device_name = device_name_tmp
+
+  def get_root(self, timeout: Optional[float] = None):
+    """
+    Gets the root priviledge.
+
+    timeout - float or None
+    """
+
+    self._execute_command(["root"], timeout=timeout)
+    time.sleep(0.2)
+
+  def init_frida_server(self, frida_server: str, timeout: Optional[float] = None):
+    """
+    Launch the frida server.
+
+    frida_server - str
+    timeout - float or None
+    """
+
+    self._execute_command(["shell", frida_server, "&"])
+    time.sleep(0.2)
 
   def close(self) -> None:
     """Closes internal threads and processes."""
@@ -335,6 +367,17 @@ class AdbController():
                      full_activity: str,
                      extra_args: Optional[List[str]],
                      timeout: Optional[float] = None):
+    if self._frida and self._frida_script:
+      package_name = full_activity.split("/", maxsplit=1)[0]
+      self._frida_processes[package_name] = subprocess.Popen(
+          [
+            self._frida,
+            "--no-pause", "-U",
+            "-l", self._frida_script,
+            "-f", package_name
+          ])
+      return
+
     if extra_args is None:
       extra_args = []
     self._execute_command(
@@ -380,6 +423,9 @@ class AdbController():
         ['push', src, dest], timeout=timeout)
 
   def force_stop(self, package: str, timeout: Optional[float] = None):
+    if hasattr(self, _frida_processes) and package in self._frida_processes:
+      self._frida_processes[package].terminate()
+      del self._frida_processes[package]
     self._execute_command(
         ['shell', 'am', 'force-stop', package], timeout=timeout)
 
