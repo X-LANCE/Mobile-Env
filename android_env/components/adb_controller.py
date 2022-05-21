@@ -423,7 +423,7 @@ class AdbController():
         ['push', src, dest], timeout=timeout)
 
   def force_stop(self, package: str, timeout: Optional[float] = None):
-    if hasattr(self, _frida_processes) and package in self._frida_processes:
+    if hasattr(self, "_frida_processes") and package in self._frida_processes:
       self._frida_processes[package].terminate()
       del self._frida_processes[package]
     self._execute_command(

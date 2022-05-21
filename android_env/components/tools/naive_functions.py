@@ -13,8 +13,10 @@ def naive_text_detector(screen, bboxes):
     """
 
     decides = random.random()
-    event_index = random.randrange(len(bboxes)) if decides<=0.1 else None
-    return [["Event String"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
+    event_index = random.randrange(len(bboxes)) if decides<=0.2 else None
+    if decides<=0.2:
+        logging.info("\x1b[32;1;43mText Detected!\x1b[0m")
+    return [["Instruction!"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
     #  }}} function `naive_text_detector` # 
 
 def naive_text_recognizer(screen, bboxes):

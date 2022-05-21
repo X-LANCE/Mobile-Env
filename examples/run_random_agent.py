@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,13 +68,20 @@ def main(_):
           action[k] = np.random.random(size=v.shape).astype(v.dtype)
       return action
 
+    commands = env.command()
+    logging.info("\x1b[32;1;43mCommand\x1b[0m: {:}".format(commands[0]))
+    vocabulary = env.vocabulary()
+    logging.info("\x1b[32;1;43mVocabulary\x1b[0m: {:}".format(vocabulary))
+
     _ = env.reset()
 
     for step in range(FLAGS.num_steps):
       action = get_random_action()
       timestep = env.step(action=action)
       reward = timestep.reward
-      logging.info('Step %r, action: %r, reward: %r', step, action, reward)
+      instruction = env.task_instructions()
+      logging.info('Step %r, action: %r, reward: %r, \x1b[31;42minstruct\x1b[0m: %r',
+        step, action, reward, instruction)
 
 
 

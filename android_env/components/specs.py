@@ -52,18 +52,20 @@ def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.A
     num_fingers: Number of virtual fingers of the agent.
   Returns:
     A dict of action specs, each item corresponding to a virtual finger.
-    action_type: An integer of type ActionType: TOUCH=0, LIFT=1, REPEAT=2
+    action_type: An integer of type ActionType: TOUCH=0, LIFT=1, REPEAT=2, TEXT=3
     touch_position: Position [x, y] of the touch action, where x, y are float
       values between 0.0 and 1.0 corresponding to the relative position on the
       screen. IGNORED when (action_type != ActionType.TOUCH).
+    input_token: An integer as the input token id.
     action_type_i: Action type for additional fingers (i>1).
     touch_position_i: Touch position for additional fingers (i>1).
   """
 
+  nb_types = len(action_type.ActionType)-1 if num_tokens==0 else len(action_type.ActionType)
   action_spec = {
       'action_type':
           specs.DiscreteArray(
-              num_values=len(action_type.ActionType),
+              num_values=nb_types,
               name='action_type'),
       'touch_position':
           specs.BoundedArray(
@@ -71,18 +73,14 @@ def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.A
               dtype=np.float32,
               minimum=[0.0, 0.0],
               maximum=[1.0, 1.0],
-              name='touch_position'),
-      'input_token':
-        specs.DiscreteArray(
-          num_values=num_tokens,
-          name="input_token")
-  }
+              name='touch_position')
+    }
 
   for i in range(2, num_fingers + 1):
     action_spec.update({
         f'action_type_{i}':
             specs.DiscreteArray(
-                num_values=len(action_type.ActionType),
+                num_values=len(action_type.ActionType)-1,
                 name=f'action_type_{i}'),
         f'touch_position_{i}':
             specs.BoundedArray(
@@ -90,12 +88,24 @@ def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.A
                 dtype=np.float32,
                 minimum=[0.0, 0.0],
                 maximum=[1.0, 1.0],
-                name=f'touch_position_{i}'),
-        f'input_token_{i}':
+                name=f'touch_position_{i}')
+      })
+
+  if num_tokens>0:
+    action_spec.update({
+        'input_token':
           specs.DiscreteArray(
             num_values=num_tokens,
             name="input_token")
-    })
+      })
+
+    #for i in range(2, num_fingers + 1):
+      #action_spec.update({
+          #f'input_token_{i}':
+            #specs.DiscreteArray(
+              #num_values=num_tokens,
+              #name="input_token")
+        #})
 
   return action_spec
 

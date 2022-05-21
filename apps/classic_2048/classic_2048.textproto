@@ -161,7 +161,18 @@ event_slots: {
         }
         transformation: "x[0]"
     }
-    # instruction_listener: {}
+    instruction_listener: {
+        text_detect: {
+            expect: "Instruction!"
+            rect: {
+                x0: 0.1
+                y0: 0.1
+                x1: 0.2
+                y1: 0.2
+            }
+        }
+        transformation: "\"Swipe right!\""
+    }
 }
 
 extras_spec: [
@@ -172,5 +183,5 @@ extras_spec: [
   { name: "direction" shape: [1], dtype: INT32 }
 ]
 
-command: []
-vocabulary: []
+command: ["Slide numbered tiles on a grid to combine them to create a tile with the number 2048"]
+vocabulary: ["One", "Two", "Three"]

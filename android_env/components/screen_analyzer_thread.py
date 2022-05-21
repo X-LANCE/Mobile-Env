@@ -12,8 +12,8 @@ from absl import logging
 import traceback
 
 from typing import Callable
-from typing import List
-import event_listeners
+from typing import List, Tuple
+from android_env.components import event_listeners
 import threading
 
 # mainly taken from `DumpsysThread`

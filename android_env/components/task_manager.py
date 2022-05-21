@@ -23,7 +23,7 @@ import json
 import queue
 import re
 import threading
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Optional, Callable
 import functools
 import operator
 
@@ -184,9 +184,15 @@ class TaskManager():
   # zdy
   # TODO: test the correctness
   def parse_event_listeners(self, event_definition: task_pb2.Event,
-      cast: Optional[Callable[[V], C]] = None,
-      wrap: Optional[Callable[[T], W]] = None,
-      update: Optional[Callable[[W, W], W]] = None) -> event_listeners.Event:
+      cast: Optional[Callable[[event_listeners.V], event_listeners.C]] = None,
+      wrap: Optional[Callable[[event_listeners.T], event_listeners.W]] = None,
+      update: Optional[Callable[[event_listeners.W, event_listeners.W],
+        event_listeners.W]] = None)\
+            -> event_listeners.Event[event_listeners.I,
+                event_listeners.V,
+                event_listeners.C,
+                event_listeners.T,
+                event_listeners.W]:
     #  method `parse_event_listeners` {{{ # 
     """
     event_definition - task_pb2.Event
@@ -413,12 +419,13 @@ class TaskManager():
   #  }}} Episode Management # 
 
   #  Interaction Methods {{{ # 
-  def send_token(token_id: int):
+  def send_token(self, token_id: int):
     #  method `send_token` {{{ # 
     """
     token_id - int
     """
 
+    logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
     self._adb_controller.input_text(self._vocabulary[token_id] + " ")
     #  }}} method `send_token` # 
 
@@ -497,7 +504,7 @@ class TaskManager():
     return list of str
     """
 
-    instructions = self._instruction_event.get() if self._instruction_event.set() else []
+    instructions = self._instruction_event.get() if self._instruction_event.is_set() else []
     self._instruction_event.clear()
 
     if not isinstance(instructions, list):

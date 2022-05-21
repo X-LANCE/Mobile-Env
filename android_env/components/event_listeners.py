@@ -2,7 +2,7 @@ import abc
 import re
 import itertools
 
-from typing import Generic, TypeVar, Callable, Optional, Any
+from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern
 from typing import Iterable
 
@@ -122,7 +122,7 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         self._flag = False
         self._value = None
         self._ever_set = False
-    def add_prerequisites(self, *prerequisites: Iterable[Event]):
+    def add_prerequisites(self, *prerequisites: Iterable["Event"]):
         #  method `add_prerequisites` {{{ # 
         """
         prerequisites - iterable of Event
@@ -176,6 +176,8 @@ class Or(Event[Any, V, C, T, W]):
 
     def set(self, value: Any):
         pass
+    def _verify(self, value: Any) -> Tuple[bool, None]:
+        return False, None
 
     def is_set(self) -> bool:
         #  method `is_set` {{{ # 
@@ -245,6 +247,8 @@ class And(Event[Any, V, C, T, W]):
 
     def set(self, value: Any):
         pass
+    def _verify(self, value: Any) -> Tuple[bool, None]:
+        return False, None
 
     def is_set(self) -> bool:
         #  method `is_set` {{{ # 
@@ -457,10 +461,10 @@ class IconMatchEvent(RegionEvent[bool, bool, bool, T, W]):
         #  }}} method `_verify` # 
     #  }}} class `IconMatchEvent` # 
 
+P = TypeVar("Property")
+
 class ViewHierarchyEvent(Event[List, Any, C, T, W]):
     #  class `ViewHierarchyEvent` {{{ # 
-    P = TypeVar("Property")
-
     class Property(abc.ABC, Generic[P]):
         #  class `Property` {{{ # 
         def __init__(self, name: str):

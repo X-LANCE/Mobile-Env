@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,7 @@
 """Loads an interactive session where a human acts on behalf of an agent."""
 
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
 from absl import app
 from absl import flags
@@ -49,23 +50,55 @@ flags.DEFINE_float('frame_rate', 1.0/30.0, 'Frame rate in seconds.')
 
 FLAGS = flags.FLAGS
 
+key_to_integer = {
+    pygame.K_0: 0,
+    pygame.K_1: 1,
+    pygame.K_2: 2,
+    pygame.K_3: 3,
+    pygame.K_4: 4,
+    pygame.K_5: 5,
+    pygame.K_6: 6,
+    pygame.K_7: 7,
+    pygame.K_8: 8,
+    pygame.K_9: 9,
+    pygame.K_KP0: 0,
+    pygame.K_KP1: 1,
+    pygame.K_KP2: 2,
+    pygame.K_KP3: 3,
+    pygame.K_KP4: 4,
+    pygame.K_KP5: 5,
+    pygame.K_KP6: 6,
+    pygame.K_KP7: 7,
+    pygame.K_KP8: 8,
+    pygame.K_KP9: 9
+  }
 
 def _get_action_from_event(
     event: pygame.event.Event,
     screen: pygame.Surface,
-    orientation: adb_pb2.AdbCall.Rotate.Orientation) -> Dict[str, Any]:
+    orientation: adb_pb2.AdbCall.Rotate.Orientation,
+    vocabulary_size: int) -> Union[int, Dict[str, Any]]:
   """Returns the current action by reading data from a pygame Event object."""
 
-  act_type = action_type.ActionType.LIFT
-  if event.type == pygame.MOUSEBUTTONDOWN:
-    act_type = action_type.ActionType.TOUCH
+  if event.type==pygame.KEYDOWN:
+    if event.key==pygame.K_ESCAPE:
+      return 0
+    if event.key in key_to_integer and vocabulary_size>0:
+      return {
+          "action_type": np.array(action_type.ActionType.TEXT, dtype=np.int32),
+          "input_token": np.clip(np.array(key_to_integer[event.key], dtype=np.int32), 0, vocabulary_size-1)
+        }
+  elif event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]:
+    act_type = action_type.ActionType.LIFT
+    if event.type == pygame.MOUSEBUTTONDOWN:
+      act_type = action_type.ActionType.TOUCH
 
-  return {
-      'action_type':
-          np.array(act_type, dtype=np.int32),
-      'touch_position':
-          _scale_position(event.pos, screen, orientation),
-  }
+    return {
+        'action_type':
+            np.array(act_type, dtype=np.int32),
+        'touch_position':
+            _scale_position(event.pos, screen, orientation),
+    }
 
 
 def _get_action_from_mouse(
@@ -146,6 +179,10 @@ def main(_):
       task_path=FLAGS.task_path,
       run_headless=FLAGS.run_headless) as env:
 
+    action_specification = env.action_spec()
+    vocabulary_size = action_specification["input_token"].num_values if "input_token" in action_specification\
+        else 0
+
     # Reset environment.
     first_timestep = env.reset()
     orientation = np.argmax(first_timestep.observation['orientation'])
@@ -167,8 +204,8 @@ def main(_):
     episode_return = 0
 
     while True:
-      if pygame.key.get_pressed()[pygame.K_ESCAPE]:
-        return
+      #if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+        #return
 
       all_events = pygame.event.get()
       for event in all_events:
@@ -176,14 +213,19 @@ def main(_):
           return
 
       # Filter event queue for mouse click events.
-      mouse_click_events = [
-          event for event in all_events
-          if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]
-      ]
+      #mouse_click_events = [
+          #event for event in all_events
+          #if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]
+      #]
 
       # Process all mouse click events.
-      for event in mouse_click_events:
-        action = _get_action_from_event(event, screen, orientation)
+      #for event in mouse_click_events:
+      for event in all_events:
+        action = _get_action_from_event(event, screen, orientation, vocabulary_size)
+        if action==0:
+          return
+        if action is None:
+          continue
         timestep = env.step(action)
         episode_return = _accumulate_reward(timestep, episode_return)
         _render_pygame_frame(surface, screen, orientation, timestep)

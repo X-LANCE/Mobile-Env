@@ -16,7 +16,7 @@
 
 """Android environment implementation."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from absl import logging
 from android_env.components import coordinator as coordinator_lib
 import dm_env
@@ -82,12 +82,13 @@ class AndroidEnv(dm_env.Environment):
     self._coordinator.reset_environment_state()
 
     # Execute selected action (None when resetting).
-    obs, _, extras, _ = self._coordinator.execute_action(action=None)
+    obs, _, extras, instructions, _ = self._coordinator.execute_action(action=None)
 
     # Process relevant information.
     if obs is not None:
       self._latest_observation = obs.copy()
     self._latest_extras = extras.copy()
+    self._latest_instruction = instructions.copy()
     self._latest_action = {}
     self._reset_next_step = False
 
@@ -152,7 +153,7 @@ class AndroidEnv(dm_env.Environment):
     if latest_only:
       return self._latest_instruction[-1] if len(self._latest_instruction)>0 else ""
     else:
-      return self._latest_instruction
+      return self._latest_instruction.copy()
 
   def close(self) -> None:
     """Cleans up running processes, threads and local files."""
