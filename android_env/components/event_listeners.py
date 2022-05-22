@@ -56,7 +56,7 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         self._prerequisites: List[Event] = []
         #  }}} method `__init__` # 
 
-    def _transform(self, x: Union[V, List[V]]) -> T:
+    def _transform(self, x0: Union[V, List[V]]) -> T:
         #  method `_transformation` {{{ # 
         """
         x - the same type as `self._value` or list of instances of type of
@@ -65,7 +65,10 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         return something
         """
 
-        x = list(map(self._cast, x)) if hasattr(x, "__iter__") else self._cast(x)
+        try:
+            x = list(map(self._cast, x0)) if hasattr(x0, "__iter__") else self._cast(x0)
+        except:
+            x = x0
         return eval(self._transformation_str) if self._transformation_str else x
         #  }}} method `_transformation` # 
 
@@ -163,7 +166,7 @@ class DefaultEvent(Event[Any, None, None, T, W]):
           and returning the wrapped type
         """
 
-        super(DefaultEvent, self).__init__(self, transformation, lambda _: None, wrap, update)
+        super(DefaultEvent, self).__init__(transformation, lambda _: None, wrap, update)
         #  }}} method `__init__` # 
 
     def _verify(self, value: Any) -> Tuple[bool, None]:
@@ -566,7 +569,7 @@ class ViewHierarchyEvent(Event[List, Any, C, T, W]):
             pattern - str
             """
 
-            super(StringProperty, self).__init__(name)
+            super(ViewHierarchyEvent.StringProperty, self).__init__(name)
             self._pattern: Pattern[str] = re.compile(pattern)
             #  }}} method `__init__` # 
 

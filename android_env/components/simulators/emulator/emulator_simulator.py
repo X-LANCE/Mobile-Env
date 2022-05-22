@@ -68,6 +68,9 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     self._emulator_stub = None
     self._image_format = None
 
+    self._adb_root: bool = adb_root
+    self._frida_server: Optional[str] = frida_server
+
     super().__init__(**kwargs)
 
     # Create directory for tmp files.
@@ -80,10 +83,6 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     self._adb_controller_args = adb_controller_args
     self._adb_controller = self.create_adb_controller()
     self._adb_controller.init_server()
-    if adb_root:
-      self._adb_controller.get_root()
-    if frida_server:
-      self._adb_controller.init_frida_server(frida_server)
     logging.info('Initialized simulator with ADB server port %r.',
                  self._adb_controller_args['adb_server_port'])
 
@@ -136,6 +135,12 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
 
   def _post_launch_setup(self):
     super()._post_launch_setup()
+    if self._adb_root:
+      self._adb_controller.get_root()
+      logging.info("Inited root adb daemon...")
+    if self._frida_server:
+      self._adb_controller.init_frida_server(self._frida_server)
+      logging.info("Inited frida server...")
     self._emulator_stub = self._get_emulator_stub()
     self._image_format = emulator_controller_pb2.ImageFormat(
         format=emulator_controller_pb2.ImageFormat.ImgFormat.RGB888,

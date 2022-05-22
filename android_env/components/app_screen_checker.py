@@ -18,7 +18,8 @@
 
 import enum
 import re
-from typing import Callable, List, Optional, Sequence, Pattern
+from typing import Callable, Optional, Sequence
+from typing import List, Pattern, Tuple
 
 from absl import logging
 

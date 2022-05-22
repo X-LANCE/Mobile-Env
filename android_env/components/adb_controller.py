@@ -44,7 +44,7 @@ class AdbController():
                device_name: str = '',
                adb_path: str = 'adb',
                adb_server_port: int = 5037,
-               prompt_regex: str = r'generic_x86:/ \$',
+               prompt_regex: str = r'generic_x86:/ [$#]',
                default_timeout: float = _DEFAULT_TIMEOUT_SECONDS,
                #frida_server: Optional[str] = None,
                frida: Optional[str] = None,
@@ -118,6 +118,9 @@ class AdbController():
 
     self._execute_command(["root"], timeout=timeout)
     time.sleep(0.2)
+    #if self._prompt.endswith(r"\$"):
+      #self._prompt = self._prompt[:-2] + "#"
+    #self._init_shell()
 
   def init_frida_server(self, frida_server: str, timeout: Optional[float] = None):
     """
@@ -127,8 +130,15 @@ class AdbController():
     timeout - float or None
     """
 
-    self._execute_command(["shell", frida_server, "&"])
-    time.sleep(0.2)
+    #self._execute_command(["shell", frida_server, "&"])
+    #time.sleep(0.2)
+    self._frida_server = subprocess.Popen(
+        [
+          "adb",
+          "shell",
+          frida_server
+        ],
+        stdin=subprocess.DEVNULL)
 
   def close(self) -> None:
     """Closes internal threads and processes."""
@@ -139,6 +149,11 @@ class AdbController():
       self._adb_shell = None
       self._shell_is_ready = False
     logging.info('Done closing ADB controller.')
+    if hasattr(self, "_frida_processes"):
+      for prcss in self._frida_processes.values():
+        prcss.terminate()
+    if hasattr(self, "_frida_server"):
+      self._frida_server.terminate()
 
   def _execute_command(
       self,
@@ -375,7 +390,8 @@ class AdbController():
             "--no-pause", "-U",
             "-l", self._frida_script,
             "-f", package_name
-          ])
+          ],
+          stdin=subprocess.DEVNULL)
       return
 
     if extra_args is None:

@@ -41,6 +41,14 @@ flags.DEFINE_string('adb_path',
                     '~/Android/Sdk/platform-tools/adb', 'Path to ADB.')
 flags.DEFINE_boolean('run_headless', True, 'Optionally turn off display.')
 
+flags.DEFINE_enum("mitm", "none", [
+    "none",
+    "syscert",
+    "frida",
+    "packpatch"
+  ], "Mitm method")
+flags.DEFINE_string("frida_script", "frida-script.js", "Path to frida script.")
+
 # Environment args.
 flags.DEFINE_string('task_path', None, 'Path to task textproto file.')
 
@@ -170,6 +178,13 @@ def main(_):
   pygame.init()
   pygame.display.set_caption('android_human_agent')
 
+  if FLAGS.mitm=="none":
+    mitm_config = None
+  else:
+    mitm_config = {"method": FLAGS.mitm}
+  if FLAGS.mitm=="frida":
+    mitm_config["frida-script"] = FLAGS.frida_script
+
   with android_env.load(
       emulator_path=FLAGS.emulator_path,
       android_sdk_root=FLAGS.android_sdk_root,
@@ -177,7 +192,8 @@ def main(_):
       avd_name=FLAGS.avd_name,
       adb_path=FLAGS.adb_path,
       task_path=FLAGS.task_path,
-      run_headless=FLAGS.run_headless) as env:
+      run_headless=FLAGS.run_headless,
+      mitm_config=mitm_config) as env:
 
     action_specification = env.action_spec()
     vocabulary_size = action_specification["input_token"].num_values if "input_token" in action_specification\
@@ -227,12 +243,18 @@ def main(_):
         if action is None:
           continue
         timestep = env.step(action)
+        reward = timestep.reward
+        instruction = env.task_instructions()
+        logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
         episode_return = _accumulate_reward(timestep, episode_return)
         _render_pygame_frame(surface, screen, orientation, timestep)
 
       # Sample the current position of the mouse either way.
       action = _get_action_from_mouse(screen, orientation)
       timestep = env.step(action)
+      reward = timestep.reward
+      instruction = env.task_instructions()
+      logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
       episode_return = _accumulate_reward(timestep, episode_return)
       _render_pygame_frame(surface, screen, orientation, timestep)
 

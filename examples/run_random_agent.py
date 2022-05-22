@@ -38,6 +38,14 @@ flags.DEFINE_string('adb_path',
 flags.DEFINE_bool('run_headless', True,
                   'Whether to display the emulator window.')
 
+flags.DEFINE_enum("mitm", "none", [
+    "none",
+    "syscert",
+    "frida",
+    "packpatch"
+  ], "Mitm method")
+flags.DEFINE_string("frida_script", "frida-script.js", "Path to frida script.")
+
 # Environment args.
 flags.DEFINE_string('task_path', None, 'Path to task textproto file.')
 
@@ -47,6 +55,13 @@ flags.DEFINE_integer('num_steps', 1000, 'Number of steps to take.')
 
 def main(_):
 
+  if FLAGS.mitm=="none":
+    mitm_config = None
+  else:
+    mitm_config = {"method": FLAGS.mitm}
+  if FLAGS.mitm=="frida":
+    mitm_config["frida-script"] = FLAGS.frida_script
+
   with android_env.load(
       emulator_path=FLAGS.emulator_path,
       android_sdk_root=FLAGS.android_sdk_root,
@@ -54,7 +69,8 @@ def main(_):
       avd_name=FLAGS.avd_name,
       adb_path=FLAGS.adb_path,
       task_path=FLAGS.task_path,
-      run_headless=FLAGS.run_headless) as env:
+      run_headless=FLAGS.run_headless,
+      mitm_config=mitm_config) as env:
 
     action_spec = env.action_spec()
 

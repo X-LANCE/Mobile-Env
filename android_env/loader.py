@@ -37,7 +37,7 @@ def load(task_path: str,
          emulator_path: str = '~/Android/Sdk/emulator/emulator',
          adb_path: str = '~/Android/Sdk/platform-tools/adb',
          run_headless: bool = False,
-         mitm_conifg: Optional[Dict[str, str]] = None) -> environment.AndroidEnv:
+         mitm_config: Optional[Dict[str, str]] = None) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
   Args:
@@ -48,7 +48,7 @@ def load(task_path: str,
     emulator_path: Path to the emulator binary.
     adb_path: Path to the ADB (Android Debug Bridge).
     run_headless: If True, the emulator display is turned off.
-    mitm_conifg: An optional dict to config the launch options if an mitm proxy
+    mitm_config: An optional dict to config the launch options if an mitm proxy
       is in need for a web-based app. The dict is expected to have a struture
       like
         {
@@ -77,7 +77,7 @@ def load(task_path: str,
   adb_controller_args = dict(
       adb_path=os.path.expanduser(adb_path),
       adb_server_port=5037,
-      prompt_regex=r'\w*:\/ \$')
+      prompt_regex=r'\w*:\/ [$#]')
   emulator_launcher_args = dict(
       avd_name=avd_name,
       android_avd_home=os.path.expanduser(android_avd_home),
@@ -94,29 +94,29 @@ def load(task_path: str,
 
   adb_root = False
   frida_server = None
-  if mitm_conifg is not None:
+  if mitm_config is not None:
     emulator_launcher_args["writable_system"] = True
-    emulator_launcher_args["proxy_address"] = mitm_conifg.get("address", "127.0.0.1")
-    emulator_launcher_args["proxy_port"] = mitm_conifg.get("port", "8080")
+    emulator_launcher_args["proxy_address"] = mitm_config.get("address", "127.0.0.1")
+    emulator_launcher_args["proxy_port"] = mitm_config.get("port", "8080")
 
-    if mitm_conifg["method"]=="frida":
+    if mitm_config["method"]=="frida":
       adb_root = True
-      frida_server = mitm_conifg.get("frida-server",
+      frida_server = mitm_config.get("frida-server",
           "/data/local/tmp/frida-server")
-      adb_controller_args["frida"] = mitm_conifg.get("frida", "frida")
-      adb_controller_args["frida_script"] = mitm_conifg.get("frida-script",
+      adb_controller_args["frida"] = mitm_config.get("frida", "frida")
+      adb_controller_args["frida_script"] = mitm_config.get("frida-script",
           "frida-script.js")
-    elif mitm_conifg["method"]=="packpatch":
+    elif mitm_config["method"]=="packpatch":
       for st in task.setup_steps:
         if st.HasField("adb_call") and\
             st.adb_call.HasField("install_apk"):
           apk_path = st.adb_call.install_apk.filesystem.path
           main_name, extension = os.path.splitext(apk_path)
           st.adb_call.install_apk.filesystem.path =\
-              "{:}-{:}.{:}".format(main_name,
-                mitm_conifg.get("patch-suffix", "patched"),
+              "{:}-{:}{:}".format(main_name,
+                mitm_config.get("patch-suffix", "patched"),
                 extension)
-    #elif mitm_conifg["method"]=="syscert":
+    #elif mitm_config["method"]=="syscert":
       #adb_root = True
 
   # Create simulator.
