@@ -25,6 +25,7 @@ from absl import logging
 from android_env.components import adb_controller as adb_control
 from android_env.proto import task_pb2
 
+import lxml.etree
 
 class DumpsysNode():
   """A node in a dumpsys tree."""
@@ -168,27 +169,31 @@ def matches_path(dumpsys_activity_output: str,
       current_node = child
   return True
 
-def find_children(node, class_regex, id_regex):
+def find_children(node: lxml.etree.Element,
+    class_regex: str, id_regex: str) -> List[lxml.etree.Element]:
   #  function `find_children` {{{ # 
   """
   node - lxml.etree.Element
-  class_regex - re.Pattern
-  id_regex - re.Pattern
+  class_regex - str
+  id_regex - str
 
   return list of lxml.etree.Element
   """
 
   children = []
   for ch in node.iterdescendants():
-    if class_regex.match(ch.get("class")) is not None and\
-        id_regex.match(ch.get("resource-id")) is not None:
+    #if class_regex.match(ch.get("class")) is not None and\
+        #id_regex.match(ch.get("resource-id")) is not None:
+    if class_regex==ch.get("class") and\
+        (id_regex=="" or id_regex==ch.get("resource-id")):
       children.append(ch)
   return children
   #  }}} function `find_children` # 
 
 _separator_pattern = re.compile(r"(?<!\\)@")
 _fake_separator_pattern = re.compile(r"\\@")
-def match_path2(node, vh_path):
+def match_path2(node: lxml.etree.Element, vh_path: List[str])\
+    -> Tuple[bool, Optional[lxml.etree.Element]]:
   #  function `match_path2` {{{ # 
   """
   node - lxml.etree.Element
@@ -207,10 +212,13 @@ def match_path2(node, vh_path):
 
   patterns = _separator_pattern.split(head, maxsplit=1)
   class_pattern_str = _fake_separator_pattern.sub("@", patterns[0])
-  class_regex = re.compile(class_regex)
+  #class_regex = re.compile(class_regex)
+  class_regex = class_pattern_str
   id_pattern_str = _fake_separator_pattern.sub("@", patterns[1]) if len(patterns)>=2\
-      else r".*"
-  id_regex = re.compile(id_pattern_str)
+      else ""
+      #else r".*"
+  #id_regex = re.compile(id_pattern_str)
+  id_regex = id_pattern_str
 
   matched_children = find_children(node, class_regex, id_regex)
   for ch in matched_children:

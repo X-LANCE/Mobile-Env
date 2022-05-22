@@ -185,6 +185,7 @@ message Event {
         IconMatchEvent icon_detect_match = 8;
         ViewHierarchyEvent view_hierarchy_event = 9;
         LogEvent log_event = 10;
+        bool default_event = 11;
     }
 
     int32 id = 12;

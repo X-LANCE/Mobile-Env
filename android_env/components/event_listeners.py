@@ -146,6 +146,30 @@ class EmptyEvent(Event[Any, None, None, None, None]):
         return None
     #  }}} class `EmptyEvent` # 
 
+class DefaultEvent(Event[Any, None, None, T, W]):
+    #  class `DefaultEvent` {{{ # 
+    def __init__(self,
+            transformation: Optional[str] = None,
+            wrap: Optional[Callable[[T], W]] = None,
+            update: Optional[Callable[[W, W], W]] = None):
+        #  method `__init__` {{{ # 
+        """
+        transformation - str or None
+        wrap - callable accepting the transformed type returning the wrapped
+          type or None
+        update - callable accepting
+          + the wrapped type
+          + the wrapped type
+          and returning the wrapped type
+        """
+
+        super(DefaultEvent, self).__init__(self, transformation, lambda _: None, wrap, update)
+        #  }}} method `__init__` # 
+
+    def _verify(self, value: Any) -> Tuple[bool, None]:
+        return True, None
+    #  }}} class `DefaultEvent` # 
+
 class Or(Event[Any, V, C, T, W]):
     #  class `Or` {{{ # 
     def __init__(self,

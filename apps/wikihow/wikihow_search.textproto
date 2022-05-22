@@ -66,3 +66,125 @@ reset_steps: [
 ]
 
 expected_app_screen: { app_screen: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity" }
+
+#max_duration_sec
+max_num_steps: 500
+
+event_slots: {
+    reward_listener: {
+        or: {
+            events: [
+                {
+                    or: {
+                        events: [
+                            {
+                                text_recognize: {
+                                    expect: "\\bclean\\b|\\bwater dispenser\\b"
+                                    rect: {
+                                        x0: 0.2439
+                                        y0: 0.0354
+                                        x1: 0.9085
+                                        y1: 0.1171
+                                    }
+                                }
+                                transformation: "1"
+                            },
+                            {
+                                view_hierarchy_event: {
+                                    view_hierarchy_path: [
+                                        "android.widget.FrameLayout",
+                                        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root",
+                                        "android.widget.FrameLayout@android:id/content",
+                                        "androidx.appcompat.widget.LinearLayoutCompat@com.wikihow.wikihowapp:id/action_search",
+                                        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_bar",
+                                        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_edit_frame",
+                                        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_plate",
+                                        "android.widget.EditText@com.wikihow.wikihowapp:id/search_src_text"
+                                    ]
+                                    properties: [
+                                        {
+                                            property_name: "text"
+                                            pattern: "\\bclean\\b|\\bwater dispenser\\b"
+                                        }
+                                        {
+                                            property_name: "clickable"
+                                            pattern: "true"
+                                        }
+                                    ]
+                                }
+                                transformation: "1"
+                            }
+                            {
+                                log_event: {
+                                    filters: ["jd:D"]
+                                    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(clean|water\+dispenser).*"
+                                }
+                                transformation: "1"
+                            }
+                        ]
+                    }
+                    id: 2
+                },
+                {
+                    or: {
+                        events: [
+                            {
+                                and: {
+                                    events: [
+                                        {
+                                            text_detect: {
+                                                expect: "How to Clean a Hot Water"
+                                                rect: {
+                                                    x0: 0.0
+                                                    y0: 0.1951
+                                                    x1: 1.0
+                                                    y1: 0.2963
+                                                }
+                                            }
+                                            transformation: "1"
+                                        },
+                                        {
+                                            text_detect: {
+                                                expect: "Dispenser"
+                                                rect: {
+                                                    x0: 0.0
+                                                    y0: 0.1951
+                                                    x1: 1.0
+                                                    y1: 0.2963
+                                                }
+                                            }
+                                            transformation: "1"
+                                        }
+                                    ]
+                                }
+                                transformation: "min(x)"
+                            },
+                            {
+                                log_event: {
+                                    filters: ["jd:D"]
+                                    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Clean-a-Hot-Water-Dispenser"
+                                }
+                                transformation: "1"
+                            }
+                        ]
+                    }
+                    id: 1
+                    transformation: "3*x"
+                }
+            ]
+        }
+    }
+    episode_end_listener: {
+        default_event: true
+        prerequisite: [1]
+        transformation: "True"
+    }
+    instruction_listener: {
+        default_event: true
+        prerequisite: [2]
+        transformation: "\"Access the article \\\"How to Clean a Hot Water Dispenser\\\"\""
+    }
+}
+
+command: "Search an article to learn how to clean a water dispenser."
+vocabulary: ["how to", "clean", "water", "dispenser"]

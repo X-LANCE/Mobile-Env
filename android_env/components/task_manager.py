@@ -290,6 +290,9 @@ class TaskManager():
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
           transformation=transformation, cast=cast, wrap=wrap, update=update)
       self._log_events.append(event)
+    elif event_definition.HasField("default_event"):
+      event = event_listeners.DefaultEvent(transformation=event_definition.transformation,
+          wrap=wrap, update=update)
     #  }}} Other Events # 
     #  Combined Events {{{ # 
     elif event_definition.HasField("or"):
