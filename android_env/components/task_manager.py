@@ -292,7 +292,7 @@ class TaskManager():
       self._log_events.append(event)
     elif event_definition.HasField("default_event"):
       event = event_listeners.DefaultEvent(transformation=event_definition.transformation,
-          wrap=wrap, update=update)
+          cast=cast, wrap=wrap)
     #  }}} Other Events # 
     #  Combined Events {{{ # 
     elif event_definition.HasField("or"):
@@ -361,6 +361,7 @@ class TaskManager():
 
   #  Episode Management {{{ # 
   def _reset_counters(self):
+    #  method `_reset_counters` {{{ # 
     """Reset counters at the end of an RL episode."""
 
     if not self._is_bad_episode:
@@ -377,11 +378,18 @@ class TaskManager():
           #'extra': {},
           #'episode_end': False,
       }
-      self._score_event.clear()
-      self._reward_event.clear()
-      self._episode_end_event.clear()
-      self._extra_event.clear()
-      self._json_extra_event.clear()
+      #self._score_event.clear()
+      #self._reward_event.clear()
+      #self._episode_end_event.clear()
+      #self._extra_event.clear()
+      #self._json_extra_event.clear()
+      self._score_event.reset()
+      self._reward_event.reset()
+      self._episode_end_event.reset()
+      self._extra_event.reset()
+      self._json_extra_event.reset()
+      self._instruction_event.reset()
+    #  }}} method `_reset_counters` # 
 
   def setup_task(self,
                  adb_controller: adb_control.AdbController,
@@ -556,6 +564,16 @@ class TaskManager():
 
     return False
     #  }}} method `check_if_episode_ended` # 
+
+  def clear_events(self):
+    #  method `clear_events` {{{ # 
+    self._score_event.clear_cache()
+    self._reward_event.clear_cache()
+    self._episode_end_event.clear_cache()
+    self._extra_event.clear_cache()
+    self._json_extra_event.clear_cache()
+    self._instruction_event.clear_cache()
+    #  }}} method `clear_events` # 
 
   #  Deprecated `_check_player_exited` method {{{ # 
   # zdy

@@ -277,10 +277,12 @@ class Coordinator():
     try:
       self._latest_observation_time = time.time()
       observation = self._simulator.get_observation()
+
       reward = self._task_manager.get_current_reward(observation["pixels"]) # zdy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
+      self._task_manager.clear_events()
       return observation, reward, task_extras, instructions, episode_end
     except (errors.ReadObservationError, socket.error):
       logging.exception('Unable to fetch observation. Restarting simulator.')

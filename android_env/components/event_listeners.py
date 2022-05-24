@@ -12,8 +12,6 @@ from typing import Iterable
 #                         \    _transform             /
 #                          \_________________________/
 
-# TODO: add type annotations
-
 I = TypeVar("Input")
 V = TypeVar("Verified")
 C = TypeVar("Cast")
@@ -51,6 +49,9 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
 
         self._flag: bool = False
         self._value: Optional[W] = None
+
+        self._flag_cache: bool = False
+        self._value_cache: Optional[W] = None
 
         self._ever_set: bool = False
         self._prerequisites: List[Event] = []
@@ -105,9 +106,14 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         #  }}} abstract method `_verify` # 
     def clear(self):
         #  method `clear` {{{ # 
+        self._flag_cache = self.is_set()
+        self._value_cache = self.get()
+        #  }}} method `clear` # 
+    def _clear(self):
+        #  method `_clear` {{{ # 
         self._flag = False
         self._value = None
-        #  }}} method `clear` # 
+        #  }}} method `_clear` # 
     def is_set(self) -> bool:
         return self._flag
     def get(self) -> Optional[W]:
@@ -119,11 +125,23 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         return self._value if self.is_set() else None
         #  }}} method `get` # 
 
+    def get_cache(self) -> Tuple[bool, Optional[W]]:
+        #  method `get_cache` {{{ # 
+        return self._flag_cache, self._value_cache
+        #  }}} method `get_cache` # 
+    def clear_cache(self):
+        #  method `clear_cache` {{{ # 
+        self._flag_cache = False
+        self._value_cache = False
+        #  }}} method `clear_cache` # 
+
     def is_ever_set(self) -> bool:
         return self._ever_set
     def reset(self):
-        self._flag = False
-        self._value = None
+        #self._flag = False
+        #self._value = None
+        self.clear()
+        self.clear_cache()
         self._ever_set = False
     def add_prerequisites(self, *prerequisites: Iterable["Event"]):
         #  method `add_prerequisites` {{{ # 
@@ -149,15 +167,18 @@ class EmptyEvent(Event[Any, None, None, None, None]):
         return None
     #  }}} class `EmptyEvent` # 
 
-class DefaultEvent(Event[Any, None, None, T, W]):
-    #  class `DefaultEvent` {{{ # 
+class VirtualEvent(Event[Any, V, C, T, W], abc.ABC):
+    #  class `VirtualEvent` {{{ # 
     def __init__(self,
             transformation: Optional[str] = None,
+            cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
             update: Optional[Callable[[W, W], W]] = None):
         #  method `__init__` {{{ # 
         """
         transformation - str or None
+        cast - callable accepting the verified type returning the cast type or
+          None
         wrap - callable accepting the transformed type returning the wrapped
           type or None
         update - callable accepting
@@ -166,14 +187,93 @@ class DefaultEvent(Event[Any, None, None, T, W]):
           and returning the wrapped type
         """
 
-        super(DefaultEvent, self).__init__(transformation, lambda _: None, wrap, update)
+        self.(VirtualEvent, self).__init__(transformation, cast, wrap, update)
         #  }}} method `__init__` # 
 
+    def set(self, value: Any):
+        pass
     def _verify(self, value: Any) -> Tuple[bool, None]:
-        return True, None
+        return False, None
+
+    def is_set(self) -> bool:
+        #  method `is_set` {{{ # 
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return False
+        if self._is_set():
+            self._ever_set = True
+            return True
+        return False
+        #  }}} method `is_set` # 
+    @abc.abstractclassmethod
+    def _is_set(self) -> bool:
+        #  method `_is_set` {{{ # 
+        raise NotImplementedError
+        #  }}} method `_is_set` # 
+
+    def get(self) -> Optional[W]:
+        #  method `get` {{{ # 
+        """
+        return the wrapped type or None
+        """
+
+        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
+            return None
+        return self._get()
+        #  }}} method `get` # 
+    @abc.abstractclassmethod
+    def _get(self) -> Optional[W]:
+        raise NotImplementedError
+
+    def is_ever_set(self) -> bool:
+        if not self._ever_set:
+            return self.is_set()
+        return True
+    #  }}} class `VirtualEvent` # 
+
+class DefaultEvent(VirtualEvent[V, C, T, W]):
+    #  class `DefaultEvent` {{{ # 
+    def __init__(self,
+            transformation: Optional[str] = None,
+            cast: Optional[Callable[[V], C]] = None,
+            wrap: Optional[Callable[[T], W]] = None):
+        #  method `__init__` {{{ # 
+        """
+        transformation - str or None
+        cast - callable accepting the verified type returning the cast type or
+          None
+        wrap - callable accepting the transformed type returning the wrapped
+          type or None
+        """
+
+        super(DefaultEvent, self).__init__(transformation, cast, wrap, None)
+
+        self._mask: bool = True
+        #  }}} method `__init__` # 
+
+    def _is_set(self) -> bool:
+        #  method `_is_set` {{{ # 
+        """
+        return bool
+        """
+
+        return self._mask and all(map(lambda evt: evt.get_cache()[0], self._prerequisites))
+        #  }}} method `_is_set` # 
+    def _clear(self):
+        if self.is_set():
+            self._mask = False
+    def force_clear(self):
+        for evt in self._prerequisites:
+            evt.clear_cache()
+
+    def _get(self) -> Optional[W]:
+        return self._wrap(
+                self._transform(
+                    list(
+                        map(lambda x: x.get(),
+                            self._prerequisites)))) if self.is_set() else None
     #  }}} class `DefaultEvent` # 
 
-class Or(Event[Any, V, C, T, W]):
+class Or(VirtualEvent[V, C, T, W]):
     #  class `Or` {{{ # 
     def __init__(self,
             events: Iterable[Event[Any, Any, Any, Any, V]],
@@ -201,39 +301,27 @@ class Or(Event[Any, V, C, T, W]):
         self._events: List[Event[Any, Any, Any, Any, V]] = list(events)
         #  }}} method `__init__` # 
 
-    def set(self, value: Any):
-        pass
-    def _verify(self, value: Any) -> Tuple[bool, None]:
-        return False, None
-
-    def is_set(self) -> bool:
-        #  method `is_set` {{{ # 
+    def _is_set(self) -> bool:
+        #  method `_is_set` {{{ # 
         """
         return bool
         """
 
-        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
-            return False
-        if any(map(lambda x: x.is_set(), self._events)):
-            self._ever_set = True
-            return True
-        return False
-        #  }}} method `is_set` # 
+        return any(map(lambda x: x.is_set(), self._events)):
+        #  }}} method `_is_set` # 
 
-    def clear(self):
-        #  method `clear` {{{ # 
+    def _clear(self):
+        #  method `_clear` {{{ # 
         for evt in self._events:
             evt.clear()
-        #  }}} method `clear` # 
+        #  }}} method `_clear` # 
 
-    def get(self) -> Optional[W]:
-        #  method `get` {{{ # 
+    def _get(self) -> Optional[W]:
+        #  method `_get` {{{ # 
         """
-        return the wrapped type returns or None
+        return the wrapped type or None
         """
 
-        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
-            return None
         value = None
         is_set = False
         for evt in self._events:
@@ -242,15 +330,10 @@ class Or(Event[Any, V, C, T, W]):
                 self._ever_set = True
                 value = self._update(value, self._wrap(self._transform(evt.get())))
         return value if is_set else None
-        #  }}} method `get` # 
-
-    def is_ever_set(self) -> bool:
-        if not self._ever_set:
-            return self.is_set()
-        return True
+        #  }}} method `_get` # 
     #  }}} class `Or` # 
 
-class And(Event[Any, V, C, T, W]):
+class And(VirtualEvent[V, C, T, W]):
     #  class `And` {{{ # 
     def __init__(self,
             events: Iterable[Event[Any, Any, Any, Any, V]],
@@ -272,58 +355,42 @@ class And(Event[Any, V, C, T, W]):
         self._events: List[Event[Any, Any, Any, Any, V]] = list(events)
         #  }}} method `__init__` # 
 
-    def set(self, value: Any):
-        pass
-    def _verify(self, value: Any) -> Tuple[bool, None]:
-        return False, None
-
-    def is_set(self) -> bool:
-        #  method `is_set` {{{ # 
+    def _is_set(self) -> bool:
+        #  method `_is_set` {{{ # 
         """
         return bool
         """
 
-        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
-            return False
         if len(self._events)==0:
             return False
-        if any(map(lambda x: not x.is_set(), self._events)):
-            return False
-        self._ever_set = True
-        return True
-        #  }}} method `is_set` # 
+        return all(map(lambda x: x.is_set(), self._events)):
+        #  }}} method `_is_set` # 
 
-    def clear(self):
-        #  method `clear` {{{ # 
+    def _clear(self):
+        #  method `_clear` {{{ # 
         if self.is_set():
             for evt in self._events:
                 evt.clear()
-        #  }}} method `clear` # 
+        #  }}} method `_clear` # 
     def force_clear(self):
         #  method `force_clear` {{{ # 
         for evt in self._events:
             evt.clear()
+        self.clear_cache()
         #  }}} method `force_clear` # 
 
-    def get(self) -> Optional[W]:
-        #  method `get` {{{ # 
+    def _get(self) -> Optional[W]:
+        #  method `_get` {{{ # 
         """
-        return the wrapped type returns or None
+        return the wrapped type or None
         """
 
-        if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
-            return None
         return self._wrap(
                 self._transform(
                     list(
                         map(lambda x: x.get(),
                             self._events)))) if self.is_set() else None
-        #  }}} method `get` # 
-
-    def is_ever_set(self) -> bool:
-        if not self._ever_set:
-            return self.is_set()
-        return True
+        #  }}} method `_get` # 
     #  }}} class `And` # 
 
 class RegionEvent(Event[I, V, C, T, W], abc.ABC):
