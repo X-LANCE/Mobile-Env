@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+if {$argc >= 1} {
+    set emulator_path [lindex $argv 0]
+} else {
+    set emulator_path "$env(HOME)/Android/Sdk/emulator"
+}
+if {$argc >= 2} {
+    set avd_name [lindex $argv 1]
+} else {
+    set avd_name "Pixel_2_API_30_x64"
+}
+if {$argc >= 3} {
+    set certificate_path [lindex $argv 2]
+} else {
+    set certificate_path "$env(HOME)/.mitmproxy/mitmproxy-ca-cert.cer"
+}
+
+set env(LD_LIBRARY_PATH) "$emulator_path/lib64:$emulator_path/lib64/qt/lib:$emulator_path/lib64/gles_swiftshader"
+spawn $emulator_path/emulator -writable-system -no-snapshot -no-audio -verbose -avd $avd_name -ports 33375,5555
+set emulator_process $spawn_id
+set timeout 300
+
+expect {
+    timeout {
+        puts "\x1b\[5;31mTIMEOUT!\x1b\[0m"
+        exit
+    }
+    -i $emulator_process "boot completed" {puts "\x1b\[32mBOOTED!\x1b\[0m"}
+}
+set results [exec adb root]
+puts $results
+interact
