@@ -473,7 +473,8 @@ class AdbController():
       rindex = view_hierarchy_output.rfind(b">")
       view_hierarchy_output = view_hierarchy_output[:rindex+1] if rindex!=-1\
           else view_hierarchy_output
-      logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.decode("utf-8")))
+      #logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.decode("utf-8")))
+      logging.info("Fetched View Hierarchy XML")
       root = lxml.etree.fromstring(view_hierarchy_output)
       return root
     return None
