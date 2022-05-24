@@ -604,7 +604,7 @@ class AdbController():
     logging.info('Getting orientation...')
     dumpsys = self._execute_command(
         ['shell', 'dumpsys', 'input'], timeout=timeout)
-    logging.info('dumpsys: %r', dumpsys)
+    #logging.info('dumpsys: %r', dumpsys)
     if not dumpsys:
       logging.error('Empty dumpsys.')
       return None

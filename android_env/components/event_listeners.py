@@ -1,6 +1,7 @@
 import abc
 import re
 import itertools
+import enum
 
 from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern
@@ -47,9 +48,6 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         update = update or (lambda x, y: y)
         self._update: Callable[[Optional[W], W], W] = lambda x, y: update(x, y) if x is not None else y
 
-        self._flag: bool = False
-        self._value: Optional[W] = None
-
         self._flag_cache: bool = False
         self._value_cache: Optional[W] = None
 
@@ -73,6 +71,133 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         return eval(self._transformation_str) if self._transformation_str else x
         #  }}} method `_transformation` # 
 
+    @abc.abstractmethod
+    def set(self, value: I):
+        """
+        value - the input type
+        """
+
+        raise NotImplementedError
+    @abc.abstractmethod
+    def is_set(self) -> bool:
+        """
+        return bool
+        """
+
+        raise NotImplementedError
+    @abc.abstractmethod
+    def get(self) -> Optional[W]:
+        """
+        return the wrapped type else None
+        """
+
+        raise NotImplementedError
+    @abc.abstractmethod
+    def is_ever_set(self) -> bool:
+        """
+        return bool
+        """
+
+        raise NotImplementedError
+
+    def clear(self):
+        #  method `clear` {{{ # 
+        self._flag_cache = self.is_set()
+        self._value_cache = self.get()
+        self._clear()
+        #  }}} method `clear` # 
+    @abc.abstractmethod
+    def _clear(self):
+        raise NotImplementedError
+
+    def get_cache(self) -> Tuple[bool, Optional[W]]:
+        #  method `get_cache` {{{ # 
+        return self._flag_cache, self._value_cache
+        #  }}} method `get_cache` # 
+    def clear_cache(self):
+        #  method `clear_cache` {{{ # 
+        self._flag_cache = False
+        self._value_cache = False
+        #  }}} method `clear_cache` # 
+
+    def reset(self):
+        #  method `reset` {{{ # 
+        self.clear()
+        self.clear_cache()
+        self._reset()
+        self._ever_set = False
+        #  }}} method `reset` # 
+    @abc.abstractmethod
+    def _reset(self):
+        raise NotImplementedError
+    def add_prerequisites(self, *prerequisites: Iterable["Event"]):
+        #  method `add_prerequisites` {{{ # 
+        """
+        prerequisites - iterable of Event
+        """
+
+        self._prerequisites += prerequisites
+        #  }}} method `add_prerequisites` # 
+    #  }}} abstract class `Event` # 
+
+class EmptyEvent(Event[Any, None, None, None, None]):
+    #  class `EmptyEvent` {{{ # 
+    def __init__(self):
+        super(EmptyEvent, self).__init__()
+    def set(self, value: Any):
+        pass
+    def is_set(self) -> bool:
+        return False
+    def get(self) -> None:
+        return None
+    def is_ever_set(self) -> bool:
+        return False
+    def _clear(self):
+        pass
+    def _reset(self):
+        pass
+    #  }}} class `EmptyEvent` # 
+
+class ConcreteEvent(Event[I, V, C, T, W], abc.ABC):
+    #  abstract class `ConcreteEvent` {{{ # 
+    class Repeatability(enum.IntEnum):
+        NONE = 0
+        LAST = 1
+        UNLIMITED = 2
+
+    def __init__(self,
+            transformation: Optional[str] = None,
+            cast: Optional[Callable[[V], C]] = None,
+            wrap: Optional[Callable[[T], W]] = None,
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: Repeatability = Repeatability.NONE):
+        #  method `__init__` {{{ # 
+        """
+        transformation - str representing a python expression that can be
+          evaluated by `eval` function or None for a default identity mapping.
+          "x" should be used to indicate the input variable. `x` could be a
+          scalar or a list.
+        cast - callable accepting the verified type returning the cast type or
+          None
+        wrap - callable accepting the transformed type returning the wrapped
+          type or None
+        update - callable accepting
+          + the wrapped type
+          + the wrapped type
+          and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
+        """
+
+        super(ConcreteEvent, self).__init__(transformation, cast, wrap, update)
+
+        self._repeatability: Repeatability = repeatability
+        self._last_input: I = None # the last input, both activating and not activating
+        self._input_history: List[I] = [] # history list of the activating inputs
+
+        self._flag: bool = False
+        self._value: Optional[W] = None
+        #  }}} method `__init__` # 
+
     def set(self, value: I):
         #  method `set` {{{ # 
         """
@@ -81,11 +206,20 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
 
         if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
             return
-        is_validate, value = self._verify(value)
+
+        if self._repeatability==ConcreteEvent.Repeatability.NONE and value in self._input_history or\
+                self._repeatability==ConcreteEvent.Repeatability.LAST and value == self._last_input:
+            return
+        self._last_input = value
+
+        is_validate, value_ = self._verify(value)
         if is_validate:
-            value = self._transform(value)
-            value = self._wrap(value)
-            self._value = self._update(self._value, value)
+            self._input_history.append(value)
+
+            value_ = self._transform(value_)
+            value_ = self._wrap(value_)
+            self._value = self._update(self._value, value_)
+
             self._flag = True
             self._ever_set = True
         #  }}} method `set` # 
@@ -104,16 +238,6 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
 
         raise NotImplementedError()
         #  }}} abstract method `_verify` # 
-    def clear(self):
-        #  method `clear` {{{ # 
-        self._flag_cache = self.is_set()
-        self._value_cache = self.get()
-        #  }}} method `clear` # 
-    def _clear(self):
-        #  method `_clear` {{{ # 
-        self._flag = False
-        self._value = None
-        #  }}} method `_clear` # 
     def is_set(self) -> bool:
         return self._flag
     def get(self) -> Optional[W]:
@@ -124,51 +248,20 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
 
         return self._value if self.is_set() else None
         #  }}} method `get` # 
-
-    def get_cache(self) -> Tuple[bool, Optional[W]]:
-        #  method `get_cache` {{{ # 
-        return self._flag_cache, self._value_cache
-        #  }}} method `get_cache` # 
-    def clear_cache(self):
-        #  method `clear_cache` {{{ # 
-        self._flag_cache = False
-        self._value_cache = False
-        #  }}} method `clear_cache` # 
-
     def is_ever_set(self) -> bool:
         return self._ever_set
-    def reset(self):
-        #self._flag = False
-        #self._value = None
-        self.clear()
-        self.clear_cache()
-        self._ever_set = False
-    def add_prerequisites(self, *prerequisites: Iterable["Event"]):
-        #  method `add_prerequisites` {{{ # 
-        """
-        prerequisites - iterable of Event
-        """
-
-        self._prerequisites += prerequisites
-        #  }}} method `add_prerequisites` # 
-    #  }}} abstract class `Event` # 
-
-class EmptyEvent(Event[Any, None, None, None, None]):
-    #  class `EmptyEvent` {{{ # 
-    def __init__(self):
-        super(EmptyEvent, self).__init__()
-    def set(self, value: Any):
-        pass
-    def _verify(self, value: Any) -> Tuple[bool, None]:
-        return False, None
-    def is_set(self) -> Tuple[bool]:
-        return False
-    def get(self) -> None:
-        return None
-    #  }}} class `EmptyEvent` # 
+    def _clear(self):
+        #  method `_clear` {{{ # 
+        self._flag = False
+        self._value = None
+        #  }}} method `_clear` # 
+    def _reset(self):
+        self._last_input = None
+        self._input_history = []
+    #  }}} abstract class `ConcreteEvent` # 
 
 class VirtualEvent(Event[Any, V, C, T, W], abc.ABC):
-    #  class `VirtualEvent` {{{ # 
+    #  abstract class `VirtualEvent` {{{ # 
     def __init__(self,
             transformation: Optional[str] = None,
             cast: Optional[Callable[[V], C]] = None,
@@ -187,13 +280,11 @@ class VirtualEvent(Event[Any, V, C, T, W], abc.ABC):
           and returning the wrapped type
         """
 
-        self.(VirtualEvent, self).__init__(transformation, cast, wrap, update)
+        super(VirtualEvent, self).__init__(transformation, cast, wrap, update)
         #  }}} method `__init__` # 
 
     def set(self, value: Any):
         pass
-    def _verify(self, value: Any) -> Tuple[bool, None]:
-        return False, None
 
     def is_set(self) -> bool:
         #  method `is_set` {{{ # 
@@ -228,7 +319,9 @@ class VirtualEvent(Event[Any, V, C, T, W], abc.ABC):
         if not self._ever_set:
             return self.is_set()
         return True
-    #  }}} class `VirtualEvent` # 
+    def _reset(self):
+        pass
+    #  }}} abstract class `VirtualEvent` # 
 
 class DefaultEvent(VirtualEvent[V, C, T, W]):
     #  class `DefaultEvent` {{{ # 
@@ -269,7 +362,7 @@ class DefaultEvent(VirtualEvent[V, C, T, W]):
         return self._wrap(
                 self._transform(
                     list(
-                        map(lambda x: x.get(),
+                        map(lambda x: x.get_cache()[1],
                             self._prerequisites)))) if self.is_set() else None
     #  }}} class `DefaultEvent` # 
 
@@ -307,7 +400,7 @@ class Or(VirtualEvent[V, C, T, W]):
         return bool
         """
 
-        return any(map(lambda x: x.is_set(), self._events)):
+        return any(map(lambda x: x.is_set(), self._events))
         #  }}} method `_is_set` # 
 
     def _clear(self):
@@ -363,7 +456,7 @@ class And(VirtualEvent[V, C, T, W]):
 
         if len(self._events)==0:
             return False
-        return all(map(lambda x: x.is_set(), self._events)):
+        return all(map(lambda x: x.is_set(), self._events))
         #  }}} method `_is_set` # 
 
     def _clear(self):
@@ -393,13 +486,14 @@ class And(VirtualEvent[V, C, T, W]):
         #  }}} method `_get` # 
     #  }}} class `And` # 
 
-class RegionEvent(Event[I, V, C, T, W], abc.ABC):
+class RegionEvent(ConcreteEvent[I, V, C, T, W], abc.ABC):
     #  abstract class `RegionEvent` {{{ # 
     def __init__(self, region: Iterable[float], needs_detection: bool = False,
             transformation: Optional[str] = None,
             cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         region - iterable of four floats as [x0, y0, x1, y1]
@@ -413,9 +507,10 @@ class RegionEvent(Event[I, V, C, T, W], abc.ABC):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(RegionEvent, self).__init__(transformation, cast, wrap, update)
+        super(RegionEvent, self).__init__(transformation, cast, wrap, update, repeatability)
         self._region: List[float] = list(itertools.islice(region, 4))
         self._needs_detection: bool = needs_detection
         #  }}} method `__init__` # 
@@ -435,7 +530,8 @@ class TextEvent(RegionEvent[Optional[str], str, C, T, W]):
             transformation: Optional[str] = None,
             cast: Optional[Callable[[str], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         expect - str
@@ -450,9 +546,10 @@ class TextEvent(RegionEvent[Optional[str], str, C, T, W]):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(TextEvent, self).__init__(region, needs_detection, transformation, cast, wrap, update)
+        super(TextEvent, self).__init__(region, needs_detection, transformation, cast, wrap, update, repeatability)
 
         self._expect: Pattern[str] = re.compile(expect)
         #  }}} method `__init__` # 
@@ -480,7 +577,8 @@ class IconRecogEvent(RegionEvent[str, bool, bool, T, W]):
             region: Iterable[float], needs_detection: bool = False,
             transformation: Optional[str] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         icon_class - str
@@ -493,9 +591,10 @@ class IconRecogEvent(RegionEvent[str, bool, bool, T, W]):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(IconRecogEvent, self).__init__(region, needs_detection, transformation, None, wrap, update)
+        super(IconRecogEvent, self).__init__(region, needs_detection, transformation, None, wrap, update, repeatability)
 
         self._icon_class: str = icon_class
         #  }}} method `__init__` # 
@@ -519,7 +618,8 @@ class IconMatchEvent(RegionEvent[bool, bool, bool, T, W]):
             region: Iterable[float], needs_detection: bool = False,
             transformation: Optional[str] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         path - str
@@ -532,9 +632,10 @@ class IconMatchEvent(RegionEvent[bool, bool, bool, T, W]):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(IconMatchEvent, self).__init__(region, needs_detection, transformation, None, wrap, update)
+        super(IconMatchEvent, self).__init__(region, needs_detection, transformation, None, wrap, update, repeatability)
 
         self._path: str = path
         #  }}} method `__init__` # 
@@ -557,7 +658,7 @@ class IconMatchEvent(RegionEvent[bool, bool, bool, T, W]):
 
 P = TypeVar("Property")
 
-class ViewHierarchyEvent(Event[List, Any, C, T, W]):
+class ViewHierarchyEvent(ConcreteEvent[List, Any, C, T, W]):
     #  class `ViewHierarchyEvent` {{{ # 
     class Property(abc.ABC, Generic[P]):
         #  class `Property` {{{ # 
@@ -656,7 +757,8 @@ class ViewHierarchyEvent(Event[List, Any, C, T, W]):
             transformation: Optional[str] = None,
             cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         vh_path - iterable of str
@@ -670,9 +772,10 @@ class ViewHierarchyEvent(Event[List, Any, C, T, W]):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(ViewHierarchyEvent, self).__init__(transformation, cast, wrap, update)
+        super(ViewHierarchyEvent, self).__init__(transformation, cast, wrap, update, repeatability)
 
         self._vh_path: List[str] = list(vh_path)
         self._vh_properties: List[Property] = list(vh_properties)
@@ -703,13 +806,14 @@ class ViewHierarchyEvent(Event[List, Any, C, T, W]):
         #  }}} method `_verify` # 
     #  }}} class `ViewHierarchyEvent` # 
 
-class LogEvent(Event[str, str, C, T, W]):
+class LogEvent(ConcreteEvent[str, str, C, T, W]):
     #  class `LogEvent` {{{ # 
     def __init__(self, filters: Iterable[str], pattern: str,
             transformation: Optional[str] = None,
             cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+            update: Optional[Callable[[W, W], W]] = None,
+            repeatability: ConcreteEvent.Repeatability = ConcreteEvent.Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         filters - iterable of str
@@ -722,9 +826,10 @@ class LogEvent(Event[str, str, C, T, W]):
           + the wrapped type
           + the wrapped type
           and returning the wrapped type
+        repeatability - ConcreteEvent.Repeatability
         """
 
-        super(LogEvent, self).__init__(transformation, cast, wrap, update)
+        super(LogEvent, self).__init__(transformation, cast, wrap, update, repeatability)
 
         self._filters: List[str] = list(filters)
         self._pattern: Pattern[str] = re.compile(pattern)

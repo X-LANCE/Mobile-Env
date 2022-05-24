@@ -225,7 +225,7 @@ def match_path2(node: lxml.etree.Element, vh_path: List[str])\
   for ch in matched_children:
     matches, leaf = match_path2(ch, tail)
     if matches:
-      return True, leaf or node
+      return True, leaf if leaf is not None else node
   return False, None
   #  }}} function `match_path2` # 
 

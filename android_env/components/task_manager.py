@@ -226,36 +226,42 @@ class TaskManager():
     if event_definition.HasField("text_recognize"):
       event = event_listeners.TextEvent(event_definition.text_recognize.expect,
           _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
-          transformation=transformation, cast=cast, wrap=wrap, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._text_events.append(event)
     elif event_definition.HasField("text_detect"):
       event = event_listeners.TextEvent(event_definition.text_detect.expect,
           _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
-          transformation=transformation, cast=cast, wrap=wrap, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
     elif event_definition.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
           _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
-          transformation=transformation, wrap=wrap, update=update)
+          transformation=transformation, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._icon_events.append(event)
     elif event_definition.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
           _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
-          transformation=transformation, wrap=wrap, update=update)
+          transformation=transformation, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._icon_events.append(event)
     #  }}} Icon Events # 
     #  Icon Match Events {{{ # 
     elif event_definition.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
           _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
-          transformation=transformation, wrap=wrap, update=update)
+          transformation=transformation, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._icon_match_events.append(event)
     elif event_definition.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
           _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
-          transformation=transformation, wrap=wrap, update=update)
+          transformation=transformation, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._icon_match_events.append(event)
     #  }}} Icon Match Events # 
     #  Other Events {{{ # 
@@ -283,12 +289,14 @@ class TaskManager():
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
-          properties, transformation=transformation, cast=cast, wrap=wrap, update=update)
+          properties, transformation=transformation, cast=cast, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._view_hierarchy_events.append(event)
     elif event_definition.HasField("log_event"):
       self._log_filters |= set(event_definition.log_event.filters)
       event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
-          transformation=transformation, cast=cast, wrap=wrap, update=update)
+          transformation=transformation, cast=cast, wrap=wrap, update=update,
+          repeatability=event_definition.repeatability)
       self._log_events.append(event)
     elif event_definition.HasField("default_event"):
       event = event_listeners.DefaultEvent(transformation=event_definition.transformation,
