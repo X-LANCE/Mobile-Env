@@ -21,13 +21,64 @@ spawn $emulator_path/emulator -writable-system -no-snapshot -no-audio -verbose -
 set emulator_process $spawn_id
 set timeout 300
 
-expect {
-    timeout {
-        puts "\x1b\[5;31mTIMEOUT!\x1b\[0m"
-        exit
+proc wait_for_adb {} {
+    while {[catch {exec adb get-state} results]} {
+        puts "\x1b\[5;31m$results\x1b\[0m"
+        sleep 1
     }
-    -i $emulator_process "boot completed" {puts "\x1b\[32mBOOTED!\x1b\[0m"}
+    if {$results == "device"} {
+        return true
+    } else {
+        return false
+    }
 }
-set results [exec adb root]
-puts $results
-interact
+
+proc wait_for_launch {emulator_process} {
+    expect {
+        timeout {
+            puts "\x1b\[5;31mTIMEOUT!\x1b\[0m"
+            exit
+        }
+        -i $emulator_process "boot completed" {
+            puts "\x1b\[32mBOOTED!\x1b\[0m"
+            sleep 1
+        }
+    }
+    wait_for_adb
+}
+
+proc execute_step args {
+    set results [eval exec $args]
+    puts "\x1b\[32mSTEP: \x1b\[0m$results"
+    sleep 1
+}
+
+wait_for_launch $emulator_process
+execute_step adb root
+wait_for_adb
+execute_step adb shell avbctl disable-verification
+execute_step adb reboot
+
+wait_for_launch $emulator_process
+execute_step adb root
+wait_for_adb
+catch {exec adb remount} results
+puts "\x1b\[32mSTEP: \x1b\[0m$results"
+sleep 1
+execute_step adb reboot
+
+set certificate_hash [exec openssl x509 -noout -subject_hash_old -in $certificate_path]
+puts "\x1b\[32mHASH: \x1b\[0m$certificate_hash"
+
+wait_for_launch $emulator_process
+execute_step adb root
+wait_for_adb
+execute_step adb remount
+execute_step adb push $certificate_path "/system/etc/security/cacerts/$certificate_hash.0"
+execute_step adb shell chmod 664 "/system/etc/security/cacerts/$certificate_hash.0"
+execute_step adb reboot
+
+wait_for_launch $emulator_process
+puts "\x1b\[32mSysCert Configured Successfully!\x1b\[0m"
+#interact
+exit
