@@ -118,7 +118,11 @@ class Event(abc.ABC, Generic[I, V, C, T, W]):
         #  method `clear_cache` {{{ # 
         self._flag_cache = False
         self._value_cache = False
+        self._clear_cache()
         #  }}} method `clear_cache` # 
+    @abc.abstractmethod
+    def _clear_cache(self):
+        raise NotImplementedError
 
     def reset(self):
         #  method `reset` {{{ # 
@@ -255,6 +259,8 @@ class ConcreteEvent(Event[I, V, C, T, W], abc.ABC):
         self._flag = False
         self._value = None
         #  }}} method `_clear` # 
+    def _clear_cache(self):
+        pass
     def _reset(self):
         self._last_input = None
         self._input_history = []
@@ -319,8 +325,8 @@ class VirtualEvent(Event[Any, V, C, T, W], abc.ABC):
         if not self._ever_set:
             return self.is_set()
         return True
-    def _reset(self):
-        pass
+    #def _reset(self):
+        #pass
     #  }}} abstract class `VirtualEvent` # 
 
 class DefaultEvent(VirtualEvent[V, C, T, W]):
@@ -364,6 +370,14 @@ class DefaultEvent(VirtualEvent[V, C, T, W]):
                     list(
                         map(lambda x: x.get_cache()[1],
                             self._prerequisites)))) if self.is_set() else None
+
+    def _clear_cache(self):
+        self.force_clear()
+    def _reset(self):
+        #  method `_reset` {{{ # 
+        for evt in self._prerequisites:
+            evt.reset()
+        #  }}} method `_reset` # 
     #  }}} class `DefaultEvent` # 
 
 class Or(VirtualEvent[V, C, T, W]):
@@ -424,6 +438,17 @@ class Or(VirtualEvent[V, C, T, W]):
                 value = self._update(value, self._wrap(self._transform(evt.get())))
         return value if is_set else None
         #  }}} method `_get` # 
+
+    def _clear_cache(self):
+        #  method `_clear_cache` {{{ # 
+        for evt in self._events:
+            evt.clear_cache()
+    def _reset(self):
+        #  method `_reset` {{{ # 
+        for evt in self._events:
+            evt.reset()
+        #  }}} method `_reset` # 
+        #  }}} method `_clear_cache` # 
     #  }}} class `Or` # 
 
 class And(VirtualEvent[V, C, T, W]):
@@ -484,6 +509,17 @@ class And(VirtualEvent[V, C, T, W]):
                         map(lambda x: x.get(),
                             self._events)))) if self.is_set() else None
         #  }}} method `_get` # 
+
+    def _clear_cache(self):
+        #  method `_clear_cache` {{{ # 
+        for evt in self._events:
+            evt.clear_cache()
+        #  }}} method `_clear_cache` # 
+    def _reset(self):
+        #  method `_reset` {{{ # 
+        for evt in self._events:
+            evt.reset()
+        #  }}} method `_reset` # 
     #  }}} class `And` # 
 
 class RegionEvent(ConcreteEvent[I, V, C, T, W], abc.ABC):
