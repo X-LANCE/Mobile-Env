@@ -98,6 +98,7 @@ class TaskManager():
     self._events_with_id: Dict[int, event_listeners.Event] = {}
     self._events_in_need: Dict[int, List[event_listeners.Event]] = {}
 
+    # Event Sources
     self._text_events: List[event_listeners.TextEvent] = []
     self._icon_events: List[event_listeners.IconRecogEvent] = []
     self._icon_match_events: List[event_listeners.IconMatchEvent] = []
@@ -105,17 +106,20 @@ class TaskManager():
     self._log_events: List[event_listeners.LogEvent] = []
     self._log_filters: Set[str] = set()
 
+    for evt_s in task.event_sources:
+      self._parse_event_source(evt_s)
+
     self._score_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.score_listener, cast=float)\
+      self._parse_event_listeners(task.event_slots.score_listener, cast=float)\
         if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
         else event_listeners.EmptyEvent()
     self._reward_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.reward_listener, cast=float,
+      self._parse_event_listeners(task.event_slots.reward_listener, cast=float,
           update=operator.add)\
         if task.HasField("event_slots") and task.event_slots.HasField("reward_listener")\
         else event_listeners.EmptyEvent()
     self._episode_end_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.episode_end_listener)\
+      self._parse_event_listeners(task.event_slots.episode_end_listener)\
         if task.HasField("event_slots") and task.event_slots.HasField("episode_end_listener")\
         else event_listeners.EmptyEvent()
 
@@ -131,7 +135,7 @@ class TaskManager():
           dict1[k] = dict1[k][-buffer_size_limit:]
       return dict1
     self._extra_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.extra_listener,
+      self._parse_event_listeners(task.event_slots.extra_listener,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("extra_listener")\
         else event_listeners.EmptyEvent()
@@ -144,7 +148,7 @@ class TaskManager():
         extra = {}
       return extra
     self._json_extra_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.json_extra_listener,
+      self._parse_event_listeners(task.event_slots.json_extra_listener,
           wrap=_parse_json,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("json_extra_listener")\
@@ -154,7 +158,7 @@ class TaskManager():
       instruction1 += instruction2
       return instruction1
     self._instruction_event: event_listeners.Event =\
-      self.parse_event_listeners(task.event_slots.instruction_listener,
+      self._parse_event_listeners(task.event_slots.instruction_listener,
           cast=str, wrap=(lambda instrct: instrct if isinstance(instrct, list) else [instrct]),
           update=functools.partial(_update_list, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("instruction_listener")\
@@ -182,36 +186,16 @@ class TaskManager():
     #  }}} method `__init__` # 
 
   # zdy
-  # TODO: test the correctness
-  def parse_event_listeners(self, event_definition: task_pb2.Event,
-      cast: Optional[Callable[[event_listeners.V], event_listeners.C]] = None,
-      wrap: Optional[Callable[[event_listeners.T], event_listeners.W]] = None,
-      update: Optional[Callable[[event_listeners.W, event_listeners.W],
-        event_listeners.W]] = None)\
-            -> event_listeners.Event[event_listeners.I,
-                event_listeners.V,
-                event_listeners.C,
-                event_listeners.T,
-                event_listeners.W]:
-    #  method `parse_event_listeners` {{{ # 
+  def _parse_event_source(self, event_source: task_pb2.EventSource):
+    #  method `_parse_event_source` {{{ # 
     """
-    event_definition - task_pb2.Event
-    cast - callable accepting the verified type returning the cast type or
-      None
-    wrap - callable accepting the transformed type returning the wrapped
-      type or None
-    update - callable accepting
-      + the wrapped type
-      + the wrapped type
-      and returning the wrapped type
-
-    return event_listeners.Event
+    event_source - task_pb2.EventSource
     """
 
-    def _rect_to_list(rect: task_pb2.Event.Rect) -> List[float]:
+    def _rect_to_list(rect: task_pb2.EventSource.Rect) -> List[float]:
       #  function `_rect_to_list` {{{ # 
       """
-      rect - task_pb2.Event.Rect
+      rect - task_pb2.EventSource.Rect
 
       return list of four floats
       """
@@ -219,55 +203,46 @@ class TaskManager():
       return [rect.x0, rect.y0, rect.x1, rect.y1]
       #  }}} function `_rect_to_list` # 
 
-    transformation = event_definition.transformation if len(event_definition.transformation)>0\
-        else "x"
-
     #  Text Events {{{ # 
-    if event_definition.HasField("text_recognize"):
-      event = event_listeners.TextEvent(event_definition.text_recognize.expect,
-          _rect_to_list(event_definition.text_recognize.rect), needs_detection=False,
-          transformation=transformation, cast=cast, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    if event_source.HasField("text_recognize"):
+      event = event_listeners.TextEvent(event_source.text_recognize.expect,
+          _rect_to_list(event_source.text_recognize.rect), needs_detection=False,
+          repeatability=event_source.repeatability)
       self._text_events.append(event)
-    elif event_definition.HasField("text_detect"):
-      event = event_listeners.TextEvent(event_definition.text_detect.expect,
-          _rect_to_list(event_definition.text_detect.rect), needs_detection=True,
-          transformation=transformation, cast=cast, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("text_detect"):
+      event = event_listeners.TextEvent(event_source.text_detect.expect,
+          _rect_to_list(event_source.text_detect.rect), needs_detection=True,
+          repeatability=event_source.repeatability)
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
-    elif event_definition.HasField("icon_recognize"):
-      event = event_listeners.IconRecogEvent(getattr(event_definition.icon_recognize, "class"),
-          _rect_to_list(event_definition.icon_recognize.rect), needs_detection=False,
-          transformation=transformation, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("icon_recognize"):
+      event = event_listeners.IconRecogEvent(getattr(event_source.icon_recognize, "class"),
+          _rect_to_list(event_source.icon_recognize.rect), needs_detection=False,
+          repeatability=event_source.repeatability)
       self._icon_events.append(event)
-    elif event_definition.HasField("icon_detect"):
-      event = event_listeners.IconRecogEvent(getattr(event_definition.icon_detect, "class"),
-          _rect_to_list(event_definition.icon_detect.rect), needs_detection=True,
-          transformation=transformation, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("icon_detect"):
+      event = event_listeners.IconRecogEvent(getattr(event_source.icon_detect, "class"),
+          _rect_to_list(event_source.icon_detect.rect), needs_detection=True,
+          repeatability=event_source.repeatability)
       self._icon_events.append(event)
     #  }}} Icon Events # 
     #  Icon Match Events {{{ # 
-    elif event_definition.HasField("icon_match"):
-      event = event_listeners.IconMatchEvent(event_definition.icon_match.path,
-          _rect_to_list(event_definition.icon_match.rect), needs_detection=False,
-          transformation=transformation, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("icon_match"):
+      event = event_listeners.IconMatchEvent(event_source.icon_match.path,
+          _rect_to_list(event_source.icon_match.rect), needs_detection=False,
+          repeatability=event_source.repeatability)
       self._icon_match_events.append(event)
-    elif event_definition.HasField("icon_detect_match"):
-      event = event_listeners.IconMatchEvent(event_definition.icon_detect_match.path,
-          _rect_to_list(event_definition.icon_detect_match.rect), needs_detection=True,
-          transformation=transformation, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("icon_detect_match"):
+      event = event_listeners.IconMatchEvent(event_source.icon_detect_match.path,
+          _rect_to_list(event_source.icon_detect_match.rect), needs_detection=True,
+          repeatability=event_source.repeatability)
       self._icon_match_events.append(event)
     #  }}} Icon Match Events # 
     #  Other Events {{{ # 
-    elif event_definition.HasField("view_hierarchy_event"):
+    elif event_source.HasField("view_hierarchy_event"):
       properties = []
-      for prpt in event_definition.view_hierarchy_event.properties:
+      for prpt in event_source.view_hierarchy_event.properties:
         #if not prpt.HasField("property_value"):
           #property_ = event_listeners.ViewHierarchyEvent.PureProperty(prpt.property_name)
         if prpt.HasField("pattern"):
@@ -288,29 +263,61 @@ class TaskManager():
           property_ = event_listeners.ViewHierarchyEvent.ScalarProperty(prpt.property_name,
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
-      event = event_listeners.ViewHierarchyEvent(event_definition.view_hierarchy_event.view_hierarchy_path,
-          properties, transformation=transformation, cast=cast, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+      event = event_listeners.ViewHierarchyEvent(event_source.view_hierarchy_event.view_hierarchy_path,
+          properties, repeatability=event_source.repeatability)
       self._view_hierarchy_events.append(event)
-    elif event_definition.HasField("log_event"):
-      self._log_filters |= set(event_definition.log_event.filters)
-      event = event_listeners.LogEvent(event_definition.log_event.filters, event_definition.log_event.pattern,
-          transformation=transformation, cast=cast, wrap=wrap, update=update,
-          repeatability=event_definition.repeatability)
+    elif event_source.HasField("log_event"):
+      self._log_filters |= set(event_source.log_event.filters)
+      event = event_listeners.LogEvent(event_source.log_event.filters, event_source.log_event.pattern,
+          repeatability=event_source.repeatability)
       self._log_events.append(event)
-    elif event_definition.HasField("default_event"):
-      event = event_listeners.DefaultEvent(transformation=event_definition.transformation,
-          cast=cast, wrap=wrap)
     #  }}} Other Events # 
+
+    #  Handle the id {{{ # 
+    if event_source.id!=0:
+      self._events_with_id[event_source.id] = event
+    #  }}} Handle the id # 
+    #  }}} method `_parse_event_source` # 
+
+  # zdy
+  # TODO: test the correctness
+  def _parse_event_listeners(self, event_definition: task_pb2.Event,
+      cast: Optional[Callable[[event_listeners.V], event_listeners.C]] = None,
+      wrap: Optional[Callable[[event_listeners.T], event_listeners.W]] = None,
+      update: Optional[Callable[[event_listeners.W, event_listeners.W],
+        event_listeners.W]] = None)\
+            -> event_listeners.Event[event_listeners.I,
+                event_listeners.V,
+                event_listeners.C,
+                event_listeners.T,
+                event_listeners.W]:
+    #  method `_parse_event_listeners` {{{ # 
+    """
+    event_definition - task_pb2.Event
+    cast - callable accepting the verified type returning the cast type or
+      None
+    wrap - callable accepting the transformed type returning the wrapped
+      type or None
+    update - callable accepting
+      + the wrapped type
+      + the wrapped type
+      and returning the wrapped type
+
+    return event_listeners.Event
+    """
+
+    transformation = event_definition.transformation if len(event_definition.transformation)>0\
+        else "x"
+
     #  Combined Events {{{ # 
     elif event_definition.HasField("or"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast, wrap=wrap, update=update),
+          map(functools.partial(self._parse_event_listeners, cast=cast, wrap=wrap, update=update),
             getattr(event_definition, "or").events))
       event = event_listeners.Or(sub_events, transformation, cast, wrap, update)
     elif event_definition.HasField("and"):
       sub_events = list(
-          map(functools.partial(self.parse_event_listeners, cast=cast, wrap=wrap, update=update),
+          map(functools.partial(self._parse_event_listeners, cast=cast, wrap=wrap, update=update),
             getattr(event_definition, "and").events))
       event = event_listeners.And(sub_events, transformation, cast, wrap)
     #  }}} Combined Events # 
@@ -334,7 +341,7 @@ class TaskManager():
     #  }}} Handle the prerequisites # 
 
     return event
-    #  }}} method `parse_event_listeners` # 
+    #  }}} method `_parse_event_listeners` # 
 
   #  Properties {{{ # 
   def task(self) -> task_pb2.Task:
