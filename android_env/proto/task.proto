@@ -209,15 +209,22 @@ message EventSlot {
         OR = 2;
     }
 
-    Type type = 1
+    message FakeSource {
+        oneof source {
+            int32 id = 1;
+            EventSlot event = 2;
+        }
+    }
+
+    Type type = 1;
     int32 id = 2;
-    repeated int32 events = 3;
+    repeated FakeSource events = 3;
     repeated int32 prerequisite = 4;
-    // Python expression that could be evaluated by `eval` function. Use `x`
-    // to indicate the input variable. 
+    // Python statement that could be evaluated by `exec` function. Use `x` to
+    // indicate the input variable and `y` for the output variable. 
     //
-    // e.g., use "x" to indicate the identity transformation
-    // e.g., use expression like "3" to indicate the constant transformation
+    // e.g., use "y = x" to indicate the identity transformation
+    // e.g., use expression like "y = 3" to indicate the constant transformation
     //
     // NOTE: for `and`, use `x[i]` to indicate the input from the i-th event
     // NOTE: for `or`, use `x` to represent the input from the exclusive active
@@ -282,12 +289,12 @@ message EventSlot {
 // }}} original `LogParsingConfig` 
 
 message TaskEventSlots {
-  Event score_listener = 1;
-  Event reward_listener = 2;
-  Event episode_end_listener = 3;
-  Event extra_listener = 4;
-  Event json_extra_listener = 5;
-  Event instruction_listener = 6;
+  EventSlot score_listener = 1;
+  EventSlot reward_listener = 2;
+  EventSlot episode_end_listener = 3;
+  EventSlot extra_listener = 4;
+  EventSlot json_extra_listener = 5;
+  EventSlot instruction_listener = 6;
 }
 
 // Description of a reinforcement learning task to be solved by an agent.
@@ -323,9 +330,8 @@ message Task {
   // zdy
   // Defines parameters for parsing messages from logcat.
   //LogParsingConfig log_parsing_config = 9;
-  TaskEventSlots event_slots = 9;
-  // zdy
-  repeated string command = 11;
+  repeated EventSource event_sources = 9;
+  TaskEventSlots event_slots = 10;
 
   // (Optional): The task may also define extras to help the RL agent.
   // An Extra in AndroidEnv is any information that apps may send to aid the
@@ -341,7 +347,9 @@ message Task {
   // This specification ensures that only extras specified in the Task
   // definition will be passed to the agent, everything else is excluded.
   // The name of an extra must be unique across all extras.
-  repeated ArraySpec extras_spec = 10;
+  repeated ArraySpec extras_spec = 11;
 
-  repeated string vocabulary = 12;
+  // zdy
+  repeated string command = 12;
+  repeated string vocabulary = 13;
 }
