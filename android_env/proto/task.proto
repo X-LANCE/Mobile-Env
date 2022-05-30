@@ -114,8 +114,8 @@ message ArraySpec {
 }
 
 // zdy
-// new message `Event` {{{ 
-message Event {
+// message `EventSource` {{{ 
+message EventSource {
     // floats in range [0, 1]
     message Rect {
         float x0 = 2;
@@ -170,9 +170,9 @@ message Event {
         string pattern = 2;
     }
 
-    message EventGroup {
-        repeated Event events = 1;
-    }
+    //message EventGroup {
+        //repeated Event events = 1;
+    //}
 
     enum Repeatability {
         NONE = 0;
@@ -181,8 +181,8 @@ message Event {
     }
 
     oneof event {
-        EventGroup and = 1;
-        EventGroup or = 2;
+        //EventGroup and = 1;
+        //EventGroup or = 2;
         TextEvent text_recognize = 3;
         TextEvent text_detect = 4;
         IconRecogEvent icon_recognize = 5;
@@ -191,12 +191,28 @@ message Event {
         IconMatchEvent icon_detect_match = 8;
         ViewHierarchyEvent view_hierarchy_event = 9;
         LogEvent log_event = 10;
-        bool default_event = 11;
+        //bool default_event = 11;
     }
 
     int32 id = 12;
-    repeated int32 prerequisite=13;
+    //repeated int32 prerequisite=13;
     Repeatability repeatability = 14;
+    //string transformation = 15;
+}
+// }}} message `EventSource` 
+
+// message `EventSlot` {{{ -
+message EventSlot {
+    enum Type {
+        SINGLE = 0;
+        AND = 1;
+        OR = 2;
+    }
+
+    Type type = 1
+    int32 id = 2;
+    repeated int32 events = 3;
+    repeated int32 prerequisite = 4;
     // Python expression that could be evaluated by `eval` function. Use `x`
     // to indicate the input variable. 
     //
@@ -206,9 +222,9 @@ message Event {
     // NOTE: for `and`, use `x[i]` to indicate the input from the i-th event
     // NOTE: for `or`, use `x` to represent the input from the exclusive active
     // event
-    string transformation = 15;
+    repeated string transformation = 5;
 }
-// }}} new message `Event` 
+// }}} message `EventSlot` -
 
 // original `LogParsingConfig` {{{ 
 //message LogParsingConfig {
