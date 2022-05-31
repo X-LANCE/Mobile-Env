@@ -137,6 +137,7 @@ class EmulatorLauncher():
     command = [
         self._emulator_path,
         '-no-snapshot',
+        '-read-only',
         '-gpu', self._gpu_mode,
         '-no-audio',
         '-verbose',

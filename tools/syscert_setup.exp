@@ -17,7 +17,7 @@ if {$argc >= 3} {
 }
 
 set env(LD_LIBRARY_PATH) "$emulator_path/lib64:$emulator_path/lib64/qt/lib:$emulator_path/lib64/gles_swiftshader"
-spawn $emulator_path/emulator -writable-system -no-snapshot -no-audio -verbose -avd $avd_name -ports 33375,5555
+spawn $emulator_path/emulator -writable-system -no-snapshot -no-skin -no-window -no-audio -verbose -avd $avd_name -ports 33375,5555
 set emulator_process $spawn_id
 set timeout 300
 

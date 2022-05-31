@@ -10,7 +10,7 @@ rm -f ${FRIDA_SERVER%.xz}
 expect <<"EOF"
 #puts $env(HOME)
 set env(LD_LIBRARY_PATH) "$env(EMULATOR_PATH)/lib64:$env(EMULATOR_PATH)/lib64/qt/lib:$env(EMULATOR_PATH)/lib64/gles_swiftshader"
-spawn $env(EMULATOR_PATH)/emulator -writable-system -no-snapshot -no-audio -verbose -avd $env(AVD_NAME) -ports 33375,5555
+spawn $env(EMULATOR_PATH)/emulator -writable-system -no-snapshot -no-skin -no-window -no-audio -verbose -avd $env(AVD_NAME) -ports 33375,5555
 set emulator_process $spawn_id
 set timeout 300
 
