@@ -206,7 +206,7 @@ def match_path2(node: lxml.etree.Element, vh_path: List[str])\
   """
 
   if len(vh_path)==0:
-    return True, None
+    return True, node
 
   head = vh_path[0]
   tail = vh_path[1:]
@@ -225,7 +225,7 @@ def match_path2(node: lxml.etree.Element, vh_path: List[str])\
   for ch in matched_children:
     matches, leaf = match_path2(ch, tail)
     if matches:
-      return True, leaf if leaf is not None else node
+      return True, leaf
   return False, None
   #  }}} function `match_path2` # 
 
@@ -308,6 +308,8 @@ class AppScreenChecker():
     """
 
     view_hierarchy = self._adb_controller.get_view_hierarchy()
+    if view_hierarchy is None:
+      return
 
     for evnt in self._event_listeners:
       # 1. match the path

@@ -458,12 +458,12 @@ class AdbController():
       self._execute_command(
           ['shell', 'pm', 'grant', package, permission], timeout=timeout)
 
-  def get_view_hierarchy(self, timeout=None):
+  def get_view_hierarchy(self, timeout=None) -> Optional[lxml.etree.Element]:
     #  method `get_view_hierarchy` {{{ # 
     """
     timeout - floating or None
 
-    return lxml.etree.Element
+    return lxml.etree.Element or None
     """
     view_hierarchy_output = self._execute_command(["shell", "uiautomator", "dump", "/dev/stdout"], timeout=timeout)
     if view_hierarchy_output:
@@ -475,7 +475,11 @@ class AdbController():
           else view_hierarchy_output
       #logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.decode("utf-8")))
       logging.info("Fetched View Hierarchy XML")
-      root = lxml.etree.fromstring(view_hierarchy_output)
+      try:
+        root = lxml.etree.fromstring(view_hierarchy_output)
+      except lxml.etree.XMLSyntaxError:
+        logging.error("View Hierarchy XML Parsing Error!")
+        root = None
       return root
     return None
     #  }}} method `get_view_hierarchy` # 

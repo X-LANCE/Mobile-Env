@@ -8,6 +8,8 @@ from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern
 from typing import Iterable
 
+from absl import logging
+
 # The whole data flow for the event flag classes:
 # value -> verification -> transform -> wrap -> update
 #        \______________/ \__________________________/
@@ -275,9 +277,11 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         #except:
             #x = x0
         #return eval(self._transformation_str) if self._transformation_str else x
+        local_env = {"x": x}
         for cmmd in self._transformation_str:
-            exec(cmmd)
-        return y
+            #logging.info("\x1b[1;33m{:}\x1b[0m".format(cmmd))
+            exec(cmmd, globals(), local_env)
+        return local_env["y"]
         #  }}} method `_transformation` # 
 
 
@@ -467,7 +471,7 @@ class And(EventSlot[V, T, W]):
           #and returning the wrapped type
         """
 
-        super(And, self).__init__(sources, transformation, wrap)
+        super(And, self).__init__(events, transformation, wrap)
 
         #self._events: List[Event[Any, Any, Any, Any, V]] = list(events)
         #  }}} method `__init__` # 
@@ -577,7 +581,7 @@ class TextEvent(RegionEvent[Optional[str], str]):
 
         if text is None:
             return False, None
-        match_ = self._expect.match(text)
+        match_ = self._expect.search(text)
         if match_ is not None:
             return True, match_.groups()
         return False, None
@@ -764,7 +768,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
             return bool
             """
 
-            return self._pattern.match(value) is not None
+            return self._pattern.search(value) is not None
             #  }}} method `match` # 
         #  }}} class `StringProperty` # 
 
@@ -816,6 +820,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
 
         if all(map(lambda p: p[0].match(p[1]),
                 itertools.zip_longest(self._vh_properties, values))):
+            logging.info("\x1b[5;31mVH Event\x1b[0m")
             return True, values
         return False, None
         #  }}} method `_verify` # 
@@ -865,8 +870,9 @@ class LogEvent(EventSource[str, str]):
         return bool, list of str or None
         """
 
-        match_ = self._pattern.match(line)
+        match_ = self._pattern.search(line)
         if match_ is not None:
+            logging.info("\x1b[5;31mLog Event\x1b[0m")
             return True, match_.groups()
         return False, None
         #  }}} method `_verify` # 

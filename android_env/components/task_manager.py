@@ -23,8 +23,10 @@ import json
 import queue
 import re
 import threading
-from typing import Any, Dict, List, Set, Optional, Callable
+from typing import Any, Optional, Callable, Union
+from typing import Dict, List, Set
 import functools
+import itertools
 import operator
 
 from absl import logging
@@ -291,7 +293,6 @@ class TaskManager():
     #  }}} method `_parse_event_source` # 
 
   # zdy
-  # TODO: test the correctness
   def _parse_event_listeners(self, event_definition: task_pb2.EventSlot,
       #cast: Optional[Callable[[event_listeners.V], event_listeners.C]] = None,
       wrap: Optional[Callable[[event_listeners.T], event_listeners.W]] = None,
@@ -337,21 +338,20 @@ class TaskManager():
       for s_evt_dfnt in event_definition.events:
         if s_evt_dfnt.HasField("id"):
           sub_event = self._events_with_id[s_evt_dfnt.id]
-        elif s_evt_dfnt.HasField("event")
+        elif s_evt_dfnt.HasField("event"):
           sub_event = self._parse_event_listeners(s_evt_dfnt.event)
         sub_events.append(sub_event)
 
-      event = event_listeners.Or(sub_events, transformation, cast, wrap, update)
+      event = event_listeners.Or(sub_events, transformation, wrap, update)
 
     elif event_definition.type==task_pb2.EventSlot.Type.AND:
       sub_events = []
       for s_evt_dfnt in event_definition.events:
         if s_evt_dfnt.HasField("id"):
           sub_event = self._events_with_id[s_evt_dfnt.id]
-        elif s_evt_dfnt.HasField("event")
+        elif s_evt_dfnt.HasField("event"):
           sub_event = self._parse_event_listeners(s_evt_dfnt.event)
         sub_events.append(sub_event)
-            getattr(event_definition, "and").events))
 
       event = event_listeners.And(sub_events, transformation, wrap)
     #  }}} Combined Events # 
@@ -512,14 +512,14 @@ class TaskManager():
 
       # zdy
       if self._score_event.is_set():
-        score = self._score_event.get()
+        score = self._score_event.get()[0]
         reward = score - self._latest_values["score"]
         self._latest_values["score"] = score
         #self._score_event.clear()
       else:
         reward = 0
 
-      reward += self._reward_event.get() if self._reward_event.is_set() else 0 # zdy
+      reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
       #self._reward_event.clear() # zdy
     return reward
     #  }}} method `get_current_reward` # 
@@ -530,12 +530,12 @@ class TaskManager():
 
     with self._lock:
       # zdy
-      extras = self._extra_event.get() if self._extra_event.is_set() else {}
+      extras = self._extra_event.get()[0] if self._extra_event.is_set() else {}
       #self._extra_event.clear()
       extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
 
       if self._json_extra_event.is_set():
-        json_extras = self._json_extra_event.get()
+        json_extras = self._json_extra_event.get()[0]
         #self._json_extra_event.clear()
 
         if not isinstance(json_extras, dict):
@@ -564,7 +564,7 @@ class TaskManager():
     return list of str
     """
 
-    instructions = self._instruction_event.get() if self._instruction_event.is_set() else []
+    instructions = self._instruction_event.get()[0] if self._instruction_event.is_set() else []
     #self._instruction_event.clear()
 
     if not isinstance(instructions, list):
@@ -620,7 +620,7 @@ class TaskManager():
         self._icon_events,
         self._icon_match_events,
         self._view_hierarchy_events,
-        self._log_filters):
+        self._log_events):
       evt.snapshot()
     #  }}} method `snapshot_events` # 
 
@@ -630,7 +630,7 @@ class TaskManager():
         self._icon_events,
         self._icon_match_events,
         self._view_hierarchy_events,
-        self._log_filters):
+        self._log_events):
       evt.clear()
     #  }}} method `clear_events` # 
 
