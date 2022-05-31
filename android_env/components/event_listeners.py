@@ -8,11 +8,10 @@ from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern
 from typing import Iterable
 
-# The general data flow for the event flag classes:
-# value -> verification -> cast -> transform -> wrap -> update
-#                        \\_________________/          /
-#                         \    _transform             /
-#                          \_________________________/
+# The whole data flow for the event flag classes:
+# value -> verification -> transform -> wrap -> update
+#        \______________/ \__________________________/
+#         in EventSource          in EventSlot
 
 I = TypeVar("Input")
 V = TypeVar("Verified")
@@ -226,9 +225,9 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
 class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     #  abstract class `EventSlot` {{{ # 
     def __init__(self,
-            sources: Iterable[Event],
+            sources: Iterable[Event[V]],
             #cast: Optional[Callable[[V], C]] = None,
-            transformation: List[str] = None,
+            transformation: Optional[List[str]] = None,
             wrap: Optional[Callable[[T], W]] = None,
             update: Optional[Callable[[W, W], W]] = None):
         #  method `__init__` {{{ # 
@@ -236,7 +235,7 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         sources - iterable of Event
         #cast - callable accepting the verified type returning the cast type or
           #None
-        transformation - str or None
+        transformation - list of str or None
         wrap - callable accepting the transformed type returning the wrapped
           type or None
         update - callable accepting
@@ -247,7 +246,7 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
 
         super(EventSlot, self).__init__()
 
-        self._sources: List[Event] = list(sources)
+        self._sources: List[Event[V]] = list(sources)
 
         #self._cast: Callable[[V], C] = cast or (lambda x: x)
         self._transformation_str: List[str] = transformation or []
@@ -349,7 +348,7 @@ class DefaultEvent(EventSlot[V, T, W]):
     def __init__(self,
             sources: List[Event[V]],
             #cast: Optional[Callable[[V], C]] = None,
-            transformation: Optional[str] = None,
+            transformation: Optional[List[str]] = None,
             wrap: Optional[Callable[[T], W]] = None,
             update: Optional[Callable[[W, W], W]] = None):
         #  method `__init__` {{{ # 
@@ -357,7 +356,7 @@ class DefaultEvent(EventSlot[V, T, W]):
         sources - list of Event
         #cast - callable accepting the verified type returning the cast type or
           #None
-        transformation - str or None
+        transformation - list of str or None
         wrap - callable accepting the transformed type returning the wrapped
           type or None
         update - callable accepting
@@ -390,14 +389,14 @@ class Or(EventSlot[V, T, W]):
     #  class `Or` {{{ # 
     def __init__(self,
             events: Iterable[Event[V]],
-            transformation: Optional[str] = None,
+            transformation: Optional[List[str]] = None,
             #cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None,
             update: Optional[Callable[[W, W], W]] = None):
         #  method `__init__` {{{ # 
         """
         events - iterable of Event
-        transformation - str or None
+        transformation - list of str or None
         #cast - callable accepting the verified type returning the cast type or
           #None
         wrap - callable accepting the transformed type returning the wrapped
@@ -450,14 +449,14 @@ class And(EventSlot[V, T, W]):
     #  class `And` {{{ # 
     def __init__(self,
             events: Iterable[Event[V]],
-            transformation: Optional[str] = None,
+            transformation: Optional[List[str]] = None,
             #cast: Optional[Callable[[V], C]] = None,
             wrap: Optional[Callable[[T], W]] = None):
             #update: Optional[Callable[[W, W], W]] = None):
         #  method `__init__` {{{ # 
         """
         events - iterable of Event
-        transformation - str of None
+        transformation - list of str of None
         #cast - callable accepting the verified type returning the cast type or
           #None
         wrap - callable accepting the transformed type returning the wrapped
