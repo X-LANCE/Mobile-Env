@@ -185,10 +185,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
             x0, y0, x1, y1 = lstn.region
             bboxes.append(torch.tensor(
                 [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
+                    x0*width,
+                    y0*height,
+                    x1*width,
+                    y1*height
                 ])[None, :])
         if len(bboxes)>0:
             results = self._text_detector(screen, bboxes)
@@ -206,10 +206,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 x0, y0, x1, y1 = lstn.region
                 bboxes.append(torch.tensor(
                     [
-                        x0*height,
-                        y0*width,
-                        x1*height,
-                        y1*width
+                        x0*width,
+                        y0*height,
+                        x1*width,
+                        y1*height
                     ])[None, :])
             if len(bboxes)>0:
                 results = self._text_recognizer(screen, bboxes)
@@ -239,10 +239,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 x0, y0, x1, y1 = lstn.region
                 bboxes.append(torch.tensor(
                     [
-                        x0*height,
-                        y0*width,
-                        x1*height,
-                        y1*width
+                        x0*width,
+                        y0*height,
+                        x1*width,
+                        y1*height
                     ])[None, :])
             if len(bboxes)>0:
                 _, results = self._icon_detector(screen, bboxes)
@@ -264,10 +264,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 x0, y0, x1, y1 = lstn.region
                 bboxes.append(torch.tensor(
                     [
-                        x0*height,
-                        y0*width,
-                        x1*height,
-                        y1*width
+                        x0*width,
+                        y0*height,
+                        x1*width,
+                        y1*height
                     ])[None, :])
             if len(bboxes)>0:
                 results = self._icon_recognizer(screen, bboxes)
@@ -295,10 +295,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
             x0, y0, x1, y1 = lstn.region
             bboxes.append(torch.tensor(
                 [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
+                    x0*width,
+                    y0*height,
+                    x1*width,
+                    y1*height
                 ])[None, :])
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
@@ -324,10 +324,10 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
             x0, y0, x1, y1 = lstn.region
             bboxes.append(torch.tensor(
                 [
-                    x0*height,
-                    y0*width,
-                    x1*height,
-                    y1*width
+                    x0*width,
+                    y0*height,
+                    x1*width,
+                    y1*height
                 ])[None, :])
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
