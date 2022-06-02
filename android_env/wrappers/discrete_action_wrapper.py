@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +16,17 @@
 
 """Wraps the AndroidEnv environment to provide discrete actions."""
 
-from typing import Optional, Sequence, Dict
+from typing import Optional, Sequence
+from typing import Dict, Tuple
 
+import android_env
 from android_env.components import action_type
 from android_env.wrappers import base_wrapper
 import dm_env
 from dm_env import specs
 import numpy as np
 
+# TODO
 
 NOISE_CLIP_VALUE = 0.4999
 
@@ -31,35 +35,48 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with discrete actions."""
 
   def __init__(self,
-               env: dm_env.Environment,
-               action_grid: Optional[Sequence[int]] = (10, 10),
+               env: android_env.AndroidEnv
+               action_grid: Sequence[int] = (10, 10),
                redundant_actions: bool = True,
+               keep_repeat: bool = False,
                noise: float = 0.1):
+    #  method `__init__` {{{ # 
+    """
+    env - android_env.AndroidEnv
+    action_grid - Sequence of int as (height, width)
+    redundant_actions - bool
+    keep_repeat - bool
+    noise - floating
+    """
 
     super().__init__(env)
-    self._parent_action_spec = self._env.action_spec()
+    self._parent_action_spec: Dict[str, specs.Array] = self._env.action_spec()
     self._assert_base_env()
-    self._action_grid = action_grid  # [height, width]
-    self._grid_size = np.product(self._action_grid)
-    self._num_action_types = self._parent_action_spec['action_type'].num_values
-    self._redundant_actions = redundant_actions
-    self._noise = noise
+    self._action_grid: Tuple[int] = tuple(action_grid)  # [height, width]
+    self._grid_size: np.int64 = np.prod(self._action_grid)
+    self._num_action_types: int = self._parent_action_spec['action_type'].num_values
+    self._vocabulary_size: int = self._parent_action_spec['input_token'].num_values\
+            if "input_token" in self._parent_action_spec else 0
+    self._redundant_actions: bool = redundant_actions
+    self._noise: float = noise
+    #  }}} method `__init__` # 
 
   def _assert_base_env(self):
     """Checks that the wrapped env has the right action spec format."""
 
-    assert len(self._parent_action_spec) == 2
+    assert len(self._parent_action_spec) == 2 or len(self._parent_action_spec) == 3
     assert not self._parent_action_spec['action_type'].shape
     assert self._parent_action_spec['touch_position'].shape == (2,)
+    assert not self._parent_action_spec['input_token'].shape if "input_token" in self._parent_action_spec else True
 
   @property
   def num_actions(self) -> int:
     """Number of discrete actions."""
 
     if self._redundant_actions:
-      return np.product(self._action_grid) * self._num_action_types
+      return self._action_grid * self._num_action_types
     else:
-      return np.product(self._action_grid) + self._num_action_types - 1
+      return self._action_grid + self._num_action_types - 1
 
   def step(self, action: Dict[str, int]) -> dm_env.TimeStep:
     """Take a step in the base environment."""
