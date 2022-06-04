@@ -506,21 +506,22 @@ class TaskManager():
     except errors.NotAllowedError:
       self._latest_values["player_exited"] = True
 
-    with self._lock:
+    #with self._lock:
       #reward = self._latest_values['reward']
       #self._latest_values['reward'] = 0.0
 
-      # zdy
-      if self._score_event.is_set():
-        score = self._score_event.get()[0]
-        reward = score - self._latest_values["score"]
-        self._latest_values["score"] = score
-        #self._score_event.clear()
-      else:
-        reward = 0
+    # zdy
+    if self._score_event.is_set():
+      score = self._score_event.get()[0]
+      reward = score - self._latest_values["score"]
+      self._latest_values["score"] = score
+      #self._score_event.clear()
+    else:
+      reward = 0
 
-      reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
-      #self._reward_event.clear() # zdy
+    reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
+    #self._reward_event.clear() # zdy
+
     return reward
     #  }}} method `get_current_reward` # 
 
@@ -528,34 +529,36 @@ class TaskManager():
     #  method `get_current_extras` {{{ # 
     """Returns task extras accumulated since the last step."""
 
-    with self._lock:
+    #with self._lock:
       # zdy
-      extras = self._extra_event.get()[0] if self._extra_event.is_set() else {}
-      #self._extra_event.clear()
-      extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
+    extras = self._extra_event.get()[0] if self._extra_event.is_set() else {}
+    #self._extra_event.clear()
+    extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
 
-      if self._json_extra_event.is_set():
-        json_extras = self._json_extra_event.get()[0]
-        #self._json_extra_event.clear()
+    if self._json_extra_event.is_set():
+      json_extras = self._json_extra_event.get()[0]
+      #self._json_extra_event.clear()
+    else:
+      json_extras = {}
 
-        if not isinstance(json_extras, dict):
-          try:
-            json_extras = json.loads(json_extras)
-          except ValueError:
-            logging.error('JSON string could not be parsed: %s', json_extras)
-            json_extras = {}
+    if not isinstance(json_extras, dict):
+      try:
+        json_extras = json.loads(json_extras)
+      except ValueError:
+        logging.error('JSON string could not be parsed: %s', json_extras)
+        json_extras = {}
 
-        for k in json_extras:
-          if k in extras:
-            extras[k] += json_extras[k]
-          else:
-            extras[k] = json_extras[k]
+    for k in json_extras:
+      if k in extras:
+        extras[k] += json_extras[k]
+      else:
+        extras[k] = json_extras[k]
 
-      #for name, values in self._latest_values['extra'].items(): # zdy
-      for name, values in extras.items(): # zdy
-        extras[name] = np.stack(values)
-      #self._latest_values['extra'] = {} # zdy
-      return extras
+    #for name, values in self._latest_values['extra'].items(): # zdy
+    for name, values in extras.items(): # zdy
+      extras[name] = np.stack(values)
+    #self._latest_values['extra'] = {} # zdy
+    return extras
     #  }}} method `get_current_extras` # 
 
   def get_current_instructions(self) -> List[str]:
@@ -564,11 +567,14 @@ class TaskManager():
     return list of str
     """
 
+    #with self._lock:
     instructions = self._instruction_event.get()[0] if self._instruction_event.is_set() else []
     #self._instruction_event.clear()
 
-    if not isinstance(instructions, list):
-      instructions = [instructions]
+      if not isinstance(instructions, list):
+        instructions = [instructions]
+      else:
+        instructions = instructions.copy()
 
     return instructions
     #  }}} function `get_current_instructions` # 
@@ -586,13 +592,13 @@ class TaskManager():
       return True
 
     # Check if episode has ended
-    with self._lock:
+    #with self._lock:
       #if self._latest_values['episode_end']: # zdy
-      if self._episode_end_event.is_set(): # zdy
-        self._log_dict['reset_count_episode_end'] += 1
-        logging.info('End of episode from logcat! Ending episode.')
-        logging.info('************* END OF EPISODE *************')
-        return True
+    if self._episode_end_event.is_set(): # zdy
+      self._log_dict['reset_count_episode_end'] += 1
+      logging.info('End of episode from logcat! Ending episode.')
+      logging.info('************* END OF EPISODE *************')
+      return True
 
     # Check if step limit or time limit has been reached
     if self._task.max_num_steps > 0:
@@ -616,16 +622,18 @@ class TaskManager():
 
   def snapshot_events(self):
     #  method `snapshot_events` {{{ # 
-    for evt in itertools.chain(self._text_events,
-        self._icon_events,
-        self._icon_match_events,
-        self._view_hierarchy_events,
-        self._log_events):
-      evt.snapshot()
+    with self._lock:
+      for evt in itertools.chain(self._text_events,
+          self._icon_events,
+          self._icon_match_events,
+          self._view_hierarchy_events,
+          self._log_events):
+        evt.snapshot()
     #  }}} method `snapshot_events` # 
 
   def clear_events(self):
     #  method `clear_events` {{{ # 
+    #with self._lock:
     for evt in itertools.chain(self._text_events,
         self._icon_events,
         self._icon_match_events,
@@ -706,7 +714,8 @@ class TaskManager():
     # zdy
     self._logcat_thread = logcat_thread.LogcatThread(
         log_stream=log_stream,
-        log_filter=self._log_filters)
+        log_filter=self._log_filters,
+        lock=self._lock)
 
     #for event_listener in self._logcat_listeners():
     for event_listener in self._log_events: # zdy

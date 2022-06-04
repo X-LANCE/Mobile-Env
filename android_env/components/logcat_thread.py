@@ -43,6 +43,7 @@ class LogcatThread(thread_function.ThreadFunction):
       log_stream: log_stream_lib.LogStream,
       #log_parsing_config: task_pb2.LogParsingConfig,
       log_filter: Iterable[str],
+      lock: threading.Lock,
       name: str = 'logcat'):
     """Initializes this LogcatThread with optional filters.
 
@@ -54,12 +55,14 @@ class LogcatThread(thread_function.ThreadFunction):
       #log_parsing_config: Determines the types of messages we want logcat to
         #match. Contains `filters` and `log_regexps`.
       log_filter: Log filters given as an itrable of string.
+      lock: threading.Lock
       name: Name of the thread.
     """
 
     #self._regexps = log_parsing_config.log_regexps # zdy
     #self._listeners = {}
     self._listeners = [] # zdy
+    self._lock = lock
 
     self._desired_event = None
     self._thread_event = threading.Event()
@@ -157,12 +160,13 @@ class LogcatThread(thread_function.ThreadFunction):
         continue
 
       content = matches.group('message')
-      for evnt_lstn in self._listeners:
-        evnt_lstn.set(content)
-        if evnt_lstn.is_set():
-          if self._desired_event is not None and self._desired_event is evnt_lstn or\
-              self._desired_event is None:
-            self._thread_event.set()
+      with self._lock:
+        for evnt_lstn in self._listeners:
+          evnt_lstn.set(content)
+          if evnt_lstn.is_set():
+            if self._desired_event is not None and self._desired_event is evnt_lstn or\
+                self._desired_event is None:
+              self._thread_event.set()
 
       #for ev, listeners in self._listeners.items():
         #ev_matches = ev.match(content)
