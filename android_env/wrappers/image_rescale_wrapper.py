@@ -66,10 +66,10 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
     return timestep._replace(observation=processed_observation)
 
   def _process_pixels(self, raw_observation: np.ndarray) -> np.ndarray:
-    # We expect `raw_observation` to have shape (W, H, 3) - 3 for RGB
+    # We expect `raw_observation` to have shape (H, W, 3) - 3 for RGB
     new_shape = np.array(
         self._zoom_factors[0:2] * np.array(raw_observation.shape[0:2]),
-        dtype=np.int)[::-1]
+        dtype=np.int)[::-1] # ZDY_MARK: PIL.Image.Image.resize accepts (W, H) as the argument
     if self._grayscale:
       # When self._grayscale == True, we squash the RGB into a single layer
       image = np.dot(raw_observation, RGB_TO_GRAYSCALE_COEFFICIENTS)
@@ -103,7 +103,7 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
     out_shape = np.multiply(parent_spec['pixels'].shape,
                             self._zoom_factors).astype(np.int32)
     if self._grayscale:
-      # In grayscale mode we want the output shape to be [W, H, 1]
+      # In grayscale mode we want the output shape to be [H, W, 1]
       out_shape[-1] = 1
     parent_spec['pixels'] = specs.Array(
         shape=out_shape,

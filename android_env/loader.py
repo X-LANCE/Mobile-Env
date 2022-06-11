@@ -118,6 +118,12 @@ def load(task_path: str,
                 extension)
     #elif mitm_config["method"]=="syscert":
       #adb_root = True
+  for st in task.setup_steps:
+    if st.HasField("adb_call") and\
+        st.adb_call.HasField("install_apk"):
+      apk_path = st.adb_call.install_apk.filesystem.path
+      st.adb_call.install_apk.filesystem.path =\
+          os.path.normpath(os.path.join(os.path.dirname(task_path), apk_path))
 
   # Create simulator.
   #print("ZDY: BEFORE Simulator Initialization")

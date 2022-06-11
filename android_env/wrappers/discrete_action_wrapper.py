@@ -26,10 +26,7 @@ import dm_env
 from dm_env import specs
 import numpy as np
 
-# TODO
-
 NOISE_CLIP_VALUE = 0.4999
-
 
 class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with discrete actions."""
@@ -37,7 +34,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   def __init__(self,
                env: android_env.AndroidEnv
                action_grid: Sequence[int] = (10, 10),
-               redundant_actions: bool = True,
+               redundant_actions: bool = False,
                keep_repeat: bool = False,
                noise: float = 0.1):
     #  method `__init__` {{{ # 
@@ -52,12 +49,18 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     super().__init__(env)
     self._parent_action_spec: Dict[str, specs.Array] = self._env.action_spec()
     self._assert_base_env()
-    self._action_grid: Tuple[int] = tuple(action_grid)  # [height, width]
+
+    self._action_grid: Tuple[int, int] = tuple(action_grid)  # [height, width]
     self._grid_size: np.int64 = np.prod(self._action_grid)
+
     self._num_action_types: int = self._parent_action_spec['action_type'].num_values
+    if not keep_repeat:
+      self._num_action_types -= 1
     self._vocabulary_size: int = self._parent_action_spec['input_token'].num_values\
             if "input_token" in self._parent_action_spec else 0
+
     self._redundant_actions: bool = redundant_actions
+    self._keep_repeat = keep_repeat
     self._noise: float = noise
     #  }}} method `__init__` # 
 
@@ -74,9 +77,9 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     """Number of discrete actions."""
 
     if self._redundant_actions:
-      return self._action_grid * self._num_action_types
+      return (self._grid_size+self._vocabulary_size) * self._num_action_types
     else:
-      return self._action_grid + self._num_action_types - 1
+      return self._grid_size + self._num_action_types - 1 + max(0, self._vocabulary_size-1)
 
   def step(self, action: Dict[str, int]) -> dm_env.TimeStep:
     """Take a step in the base environment."""
@@ -86,16 +89,28 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   def _process_action(self, action: Dict[str, int]) -> Dict[str, np.ndarray]:
     """Transforms action so that it agrees with AndroidEnv's action spec."""
 
-    return {
-        'action_type':
-            np.array(self._get_action_type(action['action_id']),
-                     dtype=self._parent_action_spec['action_type'].dtype),
-        'touch_position':
-            np.array(self._get_touch_position(action['action_id']),
-                     dtype=self._parent_action_spec['touch_position'].dtype)
-    }
+    action_type = self._get_action_type(action['action_id'])
+    if action_type!=action_type.ActionType.TEXT:
+      return {
+          'action_type':
+              np.array(action_type,
+                       dtype=self._parent_action_spec['action_type'].dtype),
+          'touch_position':
+              np.array(self._get_touch_position(action['action_id']),
+                       dtype=self._parent_action_spec['touch_position'].dtype)
+      }
+    else:
+      return {
+          "action_type":
+            np.array(action_type,
+              dtype=self._parent_action_spec["action_type"].dtype),
+          "input_token":
+            np.array(action["action_id"]-self._grid_size-self._num_action_types+2,
+              dtype=self._parent_action_spec["input_token"].dtype)
+        }
 
   def _get_action_type(self, action_id: int) -> action_type.ActionType:
+    #  method `_get_action_type` {{{ # 
     """Compute action type corresponding to the given action_id.
 
     When `self._redundant_actions` == True the `grid_size` is "broadcast" over
@@ -114,19 +129,25 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     """
 
     if self._redundant_actions:
-      assert action_id < self._num_action_types * self._grid_size
-      return action_id // self._grid_size
+      assert action_id < self.num_actions
+      return action_id // (self._grid_size+self._vocabulary_size)
 
     else:
-      assert action_id <= self._grid_size + 1
+      assert action_id <= self.num_actions
       if action_id < self._grid_size:
         return action_type.ActionType.TOUCH
       elif action_id == self._grid_size:
         return action_type.ActionType.LIFT
       else:
-        return action_type.ActionType.REPEAT
+        if self._keep_repeat:
+          return action_type.ActionType.REPEAT if action_id==self._grid_size+1\
+              else action_type.ActionType.TEXT
+        else:
+          return action_type.ActionType.TEXT
+    #  }}} method `_get_action_type` # 
 
   def _get_touch_position(self, action_id: int) -> Sequence[float]:
+    #  method `_get_touch_position` {{{ # 
     """Compute the position corresponding to the given action_id.
 
     Note: in the touch_position (x, y) of an action, x corresponds to the
@@ -165,6 +186,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     y_pos = y_min + y_pos * (y_max - y_min)
 
     return [x_pos, y_pos]
+    #  }}} method `_get_touch_position` # 
 
   def action_spec(self) -> Dict[str, specs.Array]:
     """Action spec of the wrapped environment."""
