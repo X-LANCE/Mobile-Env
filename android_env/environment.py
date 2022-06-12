@@ -39,6 +39,7 @@ class AndroidEnv(dm_env.Environment):
     logging.info('Observation spec: %s', self.observation_spec())
     logging.info('Task extras spec: %s', self.task_extras_spec())
 
+  #  Informational Interfaces {{{ # 
   def action_spec(self) -> Dict[str, dm_env.specs.Array]:
     return self._coordinator.action_spec()
 
@@ -61,6 +62,17 @@ class AndroidEnv(dm_env.Environment):
     """
 
     return self._coordinator.vocabulary()
+
+  @property
+  def task_id(self) -> str:
+    return self._coordinator.task_id
+  @property
+  def task_name(self) -> str:
+    return self._coordinator.task_name
+  @property
+  def task_description(self) -> str:
+    return self._coordinator.task_description
+  #  }}} Informational Interfaces # 
 
   @property
   def raw_action(self):

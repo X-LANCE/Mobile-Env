@@ -32,7 +32,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with discrete actions."""
 
   def __init__(self,
-               env: android_env.AndroidEnv
+               env: dm_env.Environment,
                action_grid: Sequence[int] = (10, 10),
                redundant_actions: bool = False,
                keep_repeat: bool = False,

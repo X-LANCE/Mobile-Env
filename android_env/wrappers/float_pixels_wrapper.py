@@ -61,7 +61,7 @@ class FloatPixelsWrapper(base_wrapper.BaseWrapper):
           #observation['pixels'],
           #self._env.observation_spec()['pixels'],
           #np.float32)
-      float_pixels = normalize_pixels(pixels, self._imgnet_norm)
+      float_pixels = normalize_pixels(observation["pixels"], self._imgnet_norm)
       observation['pixels'] = float_pixels
     return observation
 

@@ -54,7 +54,7 @@ wait_for_adb
 execute_step adb push [string range $env(FRIDA_SERVER) 0 [expr [string length $env(FRIDA_SERVER)] - 4]] /data/local/tmp/frida-server
 execute_step adb shell chmod 755 /data/local/tmp/frida-server
 
-puts "\x1b\[32mSysCert Configured Successfully!\x1b\[0m"
+puts "\x1b\[32mFrida Configured Successfully!\x1b\[0m"
 #interact
 exit
 EOF

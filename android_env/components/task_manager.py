@@ -571,10 +571,10 @@ class TaskManager():
     instructions = self._instruction_event.get()[0] if self._instruction_event.is_set() else []
     #self._instruction_event.clear()
 
-      if not isinstance(instructions, list):
-        instructions = [instructions]
-      else:
-        instructions = instructions.copy()
+    if not isinstance(instructions, list):
+      instructions = [instructions]
+    else:
+      instructions = instructions.copy()
 
     return instructions
     #  }}} function `get_current_instructions` # 

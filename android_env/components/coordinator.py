@@ -43,6 +43,7 @@ class Coordinator():
       periodic_restart_time_min: float = 0.0,
       force_simulator_launch: bool = True,
   ):
+    #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
 
     Args:
@@ -89,7 +90,9 @@ class Coordinator():
 
     logging.info('Starting the simulator...')
     self._restart_simulator()
+    #  }}} method `__init__` # 
 
+  #  Informational Interfaces {{{ # 
   def action_spec(self) -> Dict[str, dm_env.specs.Array]:
     num_tokens = self._task_manager.nb_tokens()
     num_fingers = self._simulator.num_fingers()
@@ -115,6 +118,17 @@ class Coordinator():
     """
 
     return self._task_manager.vocabulary()
+
+  @property
+  def task_id(self) -> str:
+    return self._task_manager.task().id
+  @property
+  def task_name(self) -> str:
+    return self._task_manager.task().name
+  @property
+  def task_description(self) -> str:
+    return self._task_manager.task().description
+  #  }}} Informational Interfaces # 
 
   def reset_environment_state(self):
     """Resets the state of the simulation for a new RL episode.

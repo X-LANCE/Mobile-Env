@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,18 +48,19 @@ class GymInterfaceWrapper(base_wrapper.BaseWrapper, gym.Env):
           {name: self._spec_to_space(s) for name, s in spec.items()})
 
     if isinstance(spec, specs.DiscreteArray):
-      return spaces.Box(
-          shape=(),
-          dtype=spec.dtype,
-          low=0,
-          high=spec.num_values-1)
+      #return spaces.Box(
+          #shape=(),
+          #dtype=spec.dtype,
+          #low=0,
+          #high=spec.num_values-1)
+      return spaces.Discrete(spec.num_values)
 
     if isinstance(spec, specs.BoundedArray):
       return spaces.Box(
           shape=spec.shape,
           dtype=spec.dtype,
-          low=spec.minimum,
-          high=spec.maximum)
+          low=spec.minimum.item() if spec.minimum.size==1 else spec.minimum,
+          high=spec.maximum.item() if spec.maximum.size==1 else spec.maximum)
 
     if isinstance(spec, specs.Array):
       return spaces.Box(
