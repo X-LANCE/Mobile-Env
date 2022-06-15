@@ -89,11 +89,11 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   def _process_action(self, action: Dict[str, int]) -> Dict[str, np.ndarray]:
     """Transforms action so that it agrees with AndroidEnv's action spec."""
 
-    action_type = self._get_action_type(action['action_id'])
-    if action_type!=action_type.ActionType.TEXT:
+    action_type_ = self._get_action_type(action['action_id'])
+    if action_type_!=action_type.ActionType.TEXT:
       return {
           'action_type':
-              np.array(action_type,
+              np.array(action_type_,
                        dtype=self._parent_action_spec['action_type'].dtype),
           'touch_position':
               np.array(self._get_touch_position(action['action_id']),
@@ -102,7 +102,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     else:
       return {
           "action_type":
-            np.array(action_type,
+            np.array(action_type_,
               dtype=self._parent_action_spec["action_type"].dtype),
           "input_token":
             np.array(action["action_id"]-self._grid_size-self._num_action_types+2,
