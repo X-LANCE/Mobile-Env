@@ -117,6 +117,7 @@ setup(
         'portpicker>=1.2.0',
         'protobuf>=2.6',
         'pygame',
+        'lxml'
     ],
     extras_require={
         'acme': ['dm-acme'],
