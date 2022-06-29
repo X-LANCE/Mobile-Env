@@ -14,8 +14,8 @@ def naive_text_detector(screen, bboxes):
 
     decides = random.random()
     event_index = random.randrange(len(bboxes)) if decides<=0.2 else None
-    if decides<=0.2:
-        logging.info("\x1b[32;1;43mText Detected!\x1b[0m")
+    #if decides<=0.2:
+        #logging.info("\x1b[32;1;43mText Detected!\x1b[0m")
     return [["Instruction!"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
     #  }}} function `naive_text_detector` # 
 
@@ -30,8 +30,8 @@ def naive_text_recognizer(screen, bboxes):
 
     decides = random.random()
     event_index = random.randrange(len(bboxes)) if decides<=0.2 else None
-    if decides<=0.2:
-        logging.info("Text Reward!")
+    #if decides<=0.2:
+        #logging.info("Text Reward!")
     return ["Event String" if i==event_index else "Test String" for i, _ in enumerate(bboxes)]
     #  }}} function `naive_text_recognizer` # 
 
@@ -48,8 +48,8 @@ def naive_icon_detector(screen, bboxes):
 
     decides = random.random()
     event_index = random.randrange(len(bboxes)) if decides<=0.5 else None
-    if decides<=0.5:
-        logging.info("Icon Reward!")
+    #if decides<=0.5:
+        #logging.info("Icon Reward!")
     return torch.stack(bboxes),\
             [["Event String"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
     #  }}} function `naive_icon_detector` # 
