@@ -19,7 +19,8 @@
 import copy
 import socket
 import time
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Optional, Iterable
+from typing import Dict, Tuple, List
 
 from absl import logging
 from android_env.components import action_type as action_type_lib
@@ -37,7 +38,7 @@ class Coordinator():
   def __init__(
       self,
       simulator: base_simulator.BaseSimulator,
-      task_manager: task_manager_lib.TaskManager,
+      task_managers: Iterable[task_manager_lib.TaskManager],
       step_timeout_sec: int = 10,
       max_steps_per_sec: float = 15.0,
       periodic_restart_time_min: float = 0.0,
@@ -48,7 +49,8 @@ class Coordinator():
 
     Args:
       simulator: A BaseSimulator instance.
-      task_manager: The TaskManager, responsible for coordinating RL tasks.
+      task_managers: iterable of task_manager_lib.TaskManager as the
+        TaskManagers, responsible for coordinating RL tasks.
       step_timeout_sec: Timeout in seconds between steps. If step is not called
         within that time, the episode will reset at the next step. Set to 0 to
         disable.
@@ -61,8 +63,12 @@ class Coordinator():
       force_simulator_launch: Forces the simulator to relaunch even if it is
         already launched.
     """
-    self._simulator = simulator
-    self._task_manager = task_manager
+
+    self._simulator: base_simulator.BaseSimulator = simulator
+    self._task_manager_list: List[task_manager_lib.TaskManager] = list(task_managers)
+    self._task_manager_index: int = 0
+    self._task_manager: task_manager_lib.TaskManager = self._task_manager_list[self._task_manager_index]
+
     self._step_timeout_sec = step_timeout_sec
     self._max_steps_per_sec = max_steps_per_sec
     self._periodic_restart_time_min = periodic_restart_time_min
@@ -130,6 +136,7 @@ class Coordinator():
     return self._task_manager.task().description
   #  }}} Informational Interfaces # 
 
+  #  Reset Interfaces {{{ # 
   def reset_environment_state(self):
     """Resets the state of the simulation for a new RL episode.
 
@@ -222,7 +229,8 @@ class Coordinator():
           self._task_manager.pause_task()
           self._simulator.launch()
           self._simulator_start_time = time.time()
-        adb_controller = self._simulator.create_adb_controller()
+        if not hasattr(self, "_adb_controller") or self._adb_controller is None:
+          self._adb_controller = self._simulator.create_adb_controller()
         log_stream = self._simulator.get_log_stream()
       except errors.AdbControllerError:
         logging.error('Error launching the simulator.')
@@ -233,7 +241,7 @@ class Coordinator():
       # Start the task.
       try:
         self._task_manager.setup_task(
-            adb_controller=adb_controller,
+            adb_controller=self._adb_controller,
             #emulator_stub=self._simulator.get_emulator_stub(), # zdy
             #image_format=self._simulator.image_format, # zdy
             log_stream=log_stream)
@@ -245,6 +253,37 @@ class Coordinator():
 
       # Restart was successful.
       break
+
+  def add_task_manager(task_manager: task_manager_lib.TaskManager):
+    #  method `add_task_manager` {{{ # 
+    """
+    Args:
+        task_manager: task_manager_lib.TaskManager
+    """
+
+    self._task_manager_list.append(task_manager)
+    #  }}} method `add_task_manager` # 
+
+  def switch_task_manager(index: int):
+    #  method `change_task_manager` {{{ # 
+    self._task_manager_index = index
+    self._task_manager = self._task_manager_list[self._task_manager_index]
+
+    if not self._task_manager.setup_flag():
+      try:
+        self._task_manager.setup_task(
+            adb_controller=self._adb_controller,
+            #emulator_stub=self._simulator.get_emulator_stub(), # zdy
+            #image_format=self._simulator.image_format, # zdy
+            log_stream=self._simulator.get_log_stream())
+      except errors.StepCommandError:
+        logging.error('Failed to set up the task. Restarting simulator.')
+        self._log_dict['restart_count_setup_steps'] += 1
+        self._should_restart = True
+
+    self.reset_environment_state()
+    #  }}} method `change_task_manager` # 
+  #  }}} Reset Interfaces # 
 
   def execute_action(
       self,

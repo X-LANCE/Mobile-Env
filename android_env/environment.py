@@ -85,6 +85,34 @@ class AndroidEnv(dm_env.Environment):
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
 
+  def switch_task(index:int):
+    #  method `change_task` {{{ # 
+    logging.info('Changing Task to {:d}...'.format(index))
+
+    # Change the task and reset state of the environment.
+    self._coordinator.change_task_manager(index)
+
+    # Execute selected action (None when resetting).
+    obs, _, extras, instructions, _ = self._coordinator.execute_action(action=None)
+
+    # Process relevant information.
+    if obs is not None:
+      self._latest_observation = obs.copy()
+    self._latest_extras = extras.copy()
+    self._latest_instruction = instructions.copy()
+    self._latest_action = {}
+    self._reset_next_step = False
+
+    logging.info('Done Changing Task.')
+    logging.info('************* NEW EPISODE *************')
+
+    return dm_env.TimeStep(
+        step_type=dm_env.StepType.FIRST,
+        observation=self._latest_observation,
+        reward=0.0,
+        discount=0.0)
+    #  }}} method `change_task` # 
+
   def reset(self) -> dm_env.TimeStep:
     """Resets the environment for a new RL episode."""
 

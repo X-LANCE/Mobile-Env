@@ -186,6 +186,7 @@ class TaskManager():
     self._episode_steps = 0
     self._bad_state_counter = 0
     self._is_bad_episode = False
+    self._setup_flag: bool = False
 
     self._latest_values = {
         #'reward': 0.0,
@@ -461,6 +462,8 @@ class TaskManager():
     self._start_setup_step_interpreter()
     self._setup_step_interpreter.interpret(self._task.setup_steps)
 
+    self._setup_flag = True
+
   def reset_task(self) -> None:
     """Resets a task at the end of an RL episode."""
 
@@ -476,6 +479,9 @@ class TaskManager():
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
     self._start_screen_analyzer_thread() # zdy
+
+  def setup_flag(self) -> bool:
+    return self._setup_flag
   #  }}} Episode Management # 
 
   #  Interaction Methods {{{ # 

@@ -152,6 +152,7 @@ class AdbController():
     if hasattr(self, "_frida_processes"):
       for prcss in self._frida_processes.values():
         prcss.terminate()
+      self._frida_processes.clear()
     if hasattr(self, "_frida_server"):
       self._frida_server.terminate()
 
