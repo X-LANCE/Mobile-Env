@@ -32,14 +32,22 @@ attributes = [
         "sec-fetch-mode",
         "sec-fetch-user",
         "sec-fetch-dest",
+        "sec-fetch-site"
         "accept-encoding",
         "accept-language",
-        "cookie"
+        "cookie",
+        "content-type",
+        "content-length",
+        "range",
+        "origin",
+        "referer",
     ]
 attributes = {attrb: set() for attrb in attributes}
 new_attributes = set()
 
 status_codes = set()
+
+grouped_by_accepts = {}
 
 with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
         #open("wikihow-urls.list", "w") as opt_f:
@@ -53,6 +61,11 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
                     attributes[k] = set()
                     new_attributes.add(k)
                 attributes[k].add(v)
+
+            accept_value = f.request.headers["accept"]
+            if accept_value not in grouped_by_accepts:
+                grouped_by_accepts[accept_value] = []
+            grouped_by_accepts[accept_value].append(f.request.path)
 
             if f.response is not None:
                 status_codes.add(f.response.status_code)
@@ -73,3 +86,10 @@ for k in attributes:
 print("\x1b[32mStatus Codes\x1b[0m")
 for c in status_codes:
     print(c)
+
+with open("accept-url.list", "w") as f:
+    for val, urls in grouped_by_accepts.items():
+        f.write("{:}:\n".format(val))
+        for url in urls:
+            f.write("{:}\n".format(url))
+        f.write("\n")
