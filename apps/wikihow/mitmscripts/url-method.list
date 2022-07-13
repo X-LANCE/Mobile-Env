@@ -1,9 +1,17 @@
 [[:others:]]:
 GET
 
-/x/*:
-POST
+/x/collect\?t={first,later}&*:
 GET
+
+/x/zscsucgm\?:
+GET
+
+/x/collect\?t={exit,amp}&*:
+POST
+
+/x/amp-view\?*:
+POST
 
 /ev/*:
 GET
@@ -17,7 +25,7 @@ GET
 /Special:SherlockController:
 POST
 
-/Special:RCWidget?*:
+/Special:RCWidget\?*:
 GET
 
 /load.php\?*only=styles*:
