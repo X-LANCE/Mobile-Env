@@ -45,6 +45,7 @@ url_categories = [
 
 #grouped_by_accepts = {}
 grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
+grouped_by_methods = {}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
@@ -95,6 +96,12 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
 
             #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
             grouped_by_urls[url_key].add(f.request.method)
+            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-mode", None))
+
+            if url_key=="/x/*":
+                if f.request.method not in grouped_by_methods:
+                    grouped_by_methods[f.request.method] = []
+                grouped_by_methods[f.request.method].append(url)
 
             if f.response is not None:
                 status_codes.add(f.response.status_code)
@@ -126,11 +133,19 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #f.write("{:}\n".format(url))
         #f.write("\n")
 
-#with open("url-x_requested_with.list", "w") as f:
-with open("url-method.list", "w") as f:
-    for val, attrbs in grouped_by_urls.items():
+with open("method-url.list", "w") as f:
+    for val, urls in grouped_by_methods.items():
         f.write("{:}:\n".format(val))
-        for attrb in attrbs:
-            f.write("{:}\n".format(attrb))
+        for url in urls:
+            f.write("{:}\n".format(url))
         f.write("\n")
+
+#with open("url-x_requested_with.list", "w") as f:
+#with open("url-method.list", "w") as f:
+#with open("url-sec_fetch_mode.list", "w") as f:
+    #for val, attrbs in grouped_by_urls.items():
+        #f.write("{:}:\n".format(val))
+        #for attrb in attrbs:
+            #f.write("{:}\n".format(attrb))
+        #f.write("\n")
 #  }}} Output # 
