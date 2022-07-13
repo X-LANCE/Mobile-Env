@@ -93,30 +93,31 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
                 url_key = "[[:others:]]"
             #  }}} URL Classification # 
 
-            grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
+            grouped_by_urls[url_key].add(f.request.method)
 
             if f.response is not None:
                 status_codes.add(f.response.status_code)
 #  }}} Main Structure # 
 
 #  Output {{{ # 
-with open("attribute_statistics.list", "w") as f:
-    print("\x1b[32mNew Attributes\x1b[0m", file=f)
-    for k in new_attributes:
-        print(k, file=f)
-    print(file=f)
-
-    for k in attributes:
-        if k=="cookie" or k=="referer":
-            continue
-        print("\x1b[32mAttribute {:}\x1b[0m".format(k), file=f)
-        for v in attributes[k]:
-            print(v, file=f)
-        print(file=f)
-
-    print("\x1b[32mStatus Codes\x1b[0m", file=f)
-    for c in status_codes:
-        print(c, file=f)
+#with open("attribute_statistics.list", "w") as f:
+    #print("\x1b[32mNew Attributes\x1b[0m", file=f)
+    #for k in new_attributes:
+        #print(k, file=f)
+    #print(file=f)
+#
+    #for k in attributes:
+        #if k=="cookie" or k=="referer":
+            #continue
+        #print("\x1b[32mAttribute {:}\x1b[0m".format(k), file=f)
+        #for v in attributes[k]:
+            #print(v, file=f)
+        #print(file=f)
+#
+    #print("\x1b[32mStatus Codes\x1b[0m", file=f)
+    #for c in status_codes:
+        #print(c, file=f)
 
 #with open("accept-url.list", "w") as f:
     #for val, urls in grouped_by_accepts.items():
@@ -125,7 +126,8 @@ with open("attribute_statistics.list", "w") as f:
             #f.write("{:}\n".format(url))
         #f.write("\n")
 
-with open("url-x_requested_with.list", "w") as f:
+#with open("url-x_requested_with.list", "w") as f:
+with open("url-method.list", "w") as f:
     for val, attrbs in grouped_by_urls.items():
         f.write("{:}:\n".format(val))
         for attrb in attrbs:
