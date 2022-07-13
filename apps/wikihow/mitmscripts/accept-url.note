@@ -1,9 +1,10 @@
 text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9:
+[[:others:]]
 
 */*:
 /x/* ◆
 /ev/* ◆
-R /load.php?.\+$\(only=styles\)\@!
+R /load.php?.\+$\(only=styles\)\@! ◆
 /video/* ◆
 /Special:SherlockController ◆
 
@@ -12,3 +13,8 @@ text/javascript, application/javascript, application/ecmascript, application/x-e
 
 text/css,*/*;q=0.1:
 /load.php\?*only=styles* ◆
+
+image/webp,image/apng,image/*,*/*;q=0.8:
+/extensions/wikihow/* ◆
+/images/* ◆
+/skins/* ◆

@@ -1,2 +1,4 @@
 version.folder/
-*.list
+accept-url.list
+attribute_statistics.list
+wikihow-urls.list
