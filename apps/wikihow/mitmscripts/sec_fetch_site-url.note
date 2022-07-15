@@ -1,0 +1,7 @@
+# vimc: call SyntaxRange#Include('<markdown>', '</markdown>', 'markdown', 'NoneText'):
+# ⊙ [[:others:]] /x/collect\?t={exit,amp}&* /x/amp-view\?* /images/*
+
+<markdown>
+`cross-site`下的路径数量很少，且从`url-sec_fetch_site`的统计结果来看，该值没有出现在其他路径模式下。
+
+`[[:others:]]`类的路径，采用`same-origin`的也很有限，只有23个。绝大部分采用`none`值，同时`none`值也只在这类路径模式的请求中出现了。

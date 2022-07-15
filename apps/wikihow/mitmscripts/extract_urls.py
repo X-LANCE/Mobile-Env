@@ -49,6 +49,7 @@ url_categories = [
 #grouped_by_accepts = {}
 grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
 #grouped_by_methods = {}
+grouped_by_sec_fectch_sites = {}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
@@ -110,12 +111,24 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
             #grouped_by_urls[url_key].add(f.request.method)
             #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-mode", None))
-            grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-dest", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-dest", None))
+            grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-site", None))
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
                     #grouped_by_methods[f.request.method] = []
                 #grouped_by_methods[f.request.method].append(url)
+
+            if url_key in {
+                        r"[[:others:]]",
+                        #r"/x/collect\?t={exit,amp}&*",
+                        #r"/x/amp-view\?*",
+                        #r"/images/*"
+                    }:
+                sec_fetch_site = f.request.headers.get("sec-fetch-site", None)
+                if sec_fetch_site not in grouped_by_sec_fectch_sites:
+                    grouped_by_sec_fectch_sites[sec_fetch_site] = []
+                grouped_by_sec_fectch_sites[sec_fetch_site].append(url)
 
             if f.response is not None:
                 status_codes.add(f.response.status_code)
@@ -154,13 +167,21 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #f.write("{:}\n".format(url))
         #f.write("\n")
 
+with open("sec_fetch_site-url.list", "w") as f:
+    for val, urls in grouped_by_sec_fectch_sites.items():
+        f.write("{:}:\n".format(val))
+        for url in urls:
+            f.write("{:}\n".format(url))
+        f.write("\n")
+
 #with open("url-x_requested_with.list", "w") as f:
 #with open("url-method.list", "w") as f:
 #with open("url-sec_fetch_mode.list", "w") as f:
-with open("url-sec_fetch_dest.list", "w") as f:
-    for val, attrbs in grouped_by_urls.items():
-        f.write("{:}:\n".format(val))
-        for attrb in attrbs:
-            f.write("{:}\n".format(attrb))
-        f.write("\n")
+#with open("url-sec_fetch_dest.list", "w") as f:
+#with open("url-sec_fetch_site.list", "w") as f:
+    #for val, attrbs in grouped_by_urls.items():
+        #f.write("{:}:\n".format(val))
+        #for attrb in attrbs:
+            #f.write("{:}\n".format(attrb))
+        #f.write("\n")
 #  }}} Output # 
