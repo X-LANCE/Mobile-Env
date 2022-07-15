@@ -109,7 +109,8 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
 
             #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
             #grouped_by_urls[url_key].add(f.request.method)
-            grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-mode", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-mode", None))
+            grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-dest", None))
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
@@ -155,7 +156,8 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
 
 #with open("url-x_requested_with.list", "w") as f:
 #with open("url-method.list", "w") as f:
-with open("url-sec_fetch_mode.list", "w") as f:
+#with open("url-sec_fetch_mode.list", "w") as f:
+with open("url-sec_fetch_dest.list", "w") as f:
     for val, attrbs in grouped_by_urls.items():
         f.write("{:}:\n".format(val))
         for attrb in attrbs:
