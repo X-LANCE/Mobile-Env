@@ -50,7 +50,7 @@ url_categories = [
 grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
 #grouped_by_methods = {}
 #grouped_by_sec_fectch_sites = {}
-grouped_by_origin = {}
+#grouped_by_origin = {}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
@@ -116,7 +116,12 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-site", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("accept-encoding", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("content-type", None))
-            grouped_by_urls[url_key].add(f.request.headers.get("origin", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("origin", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("upgrade-insecure-requests", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-size", "null"))
+            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-user", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("accept-language", None))
+            grouped_by_urls[url_key].add(f.request.headers.get("range", None))
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
@@ -134,14 +139,14 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
                     #grouped_by_sec_fectch_sites[sec_fetch_site] = []
                 #grouped_by_sec_fectch_sites[sec_fetch_site].append(url)
 
-            if url_key in\
-                    { r"/x/collect\?t={exit,amp}&*"
-                    , r"/x/amp-view\?*"
-                    }:
-                origin = f.request.headers.get("origin", None)
-                if origin not in grouped_by_origin:
-                    grouped_by_origin[origin] = []
-                grouped_by_origin[origin].append(url)
+            #if url_key in\
+                    #{ r"/x/collect\?t={exit,amp}&*"
+                    #, r"/x/amp-view\?*"
+                    #}:
+                #origin = f.request.headers.get("origin", None)
+                #if origin not in grouped_by_origin:
+                    #grouped_by_origin[origin] = []
+                #grouped_by_origin[origin].append(url)
 
             if f.response is not None:
                 status_codes.add(f.response.status_code)
@@ -187,12 +192,12 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #f.write("{:}\n".format(url))
         #f.write("\n")
 
-with open("origin-url.list", "w") as f:
-    for val, urls in grouped_by_origin.items():
-        f.write("{:}:\n".format(val))
-        for url in urls:
-            f.write("{:}\n".format(url))
-        f.write("\n")
+#with open("origin-url.list", "w") as f:
+    #for val, urls in grouped_by_origin.items():
+        #f.write("{:}:\n".format(val))
+        #for url in urls:
+            #f.write("{:}\n".format(url))
+        #f.write("\n")
 
 #with open("url-x_requested_with.list", "w") as f:
 #with open("url-method.list", "w") as f:
@@ -201,7 +206,12 @@ with open("origin-url.list", "w") as f:
 #with open("url-sec_fetch_site.list", "w") as f:
 #with open("url-accept_encoding.list", "w") as f:
 #with open("url-content_type.list", "w") as f:
-with open("url-origin.list", "w") as f:
+#with open("url-origin.list", "w") as f:
+#with open("url-upgrade_insecure_requests.list", "w") as f:
+#with open("url-sec_fetch_size.list", "w") as f:
+#with open("url-sec_fetch_user.list", "w") as f:
+#with open("url-accept_language.list", "w") as f:
+with open("url-range.list", "w") as f:
     for val, attrbs in grouped_by_urls.items():
         f.write("{:}:\n".format(val))
         for attrb in attrbs:
