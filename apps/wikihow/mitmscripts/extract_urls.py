@@ -1,8 +1,11 @@
+#!/usr/bin/python3
+
 from mitmproxy import http
 from mitmproxy import addonmanager
 from mitmproxy import io
 
 import re
+import classify_url
 
 #  Data Structure Definition {{{ # 
 attributes = [
@@ -54,60 +57,27 @@ grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
-with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
-        #open("wikihow-urls.list", "w") as opt_f:
+with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f\
+        , open("wikihow-urlpaths.list", "w") as opt_f\
+        :
     flow_reader = io.FlowReader(fl_f)
     for f in flow_reader.stream():
         if isinstance(f, http.HTTPFlow) and f.request.pretty_host=="www.wikihow.com":
-            #opt_f.write(f.request.url + "\n")
+            opt_f.write(f.request.path + "\n")
 
-            for k, v in f.request.headers.items():
-                if k not in attributes:
-                    attributes[k] = set()
-                    new_attributes.add(k)
-                attributes[k].add(v)
+            #for k, v in f.request.headers.items():
+                #if k not in attributes:
+                    #attributes[k] = set()
+                    #new_attributes.add(k)
+                #attributes[k].add(v)
 
             #accept_value = f.request.headers["accept"]
             #if accept_value not in grouped_by_accepts:
                 #grouped_by_accepts[accept_value] = []
             #grouped_by_accepts[accept_value].append(f.request.path)
 
-            #  URL Classification {{{ # 
-            url = f.request.path
-            if url.startswith("/x/collect?t="):
-                if url[13:].startswith("first") or url[13:].startswith("later"):
-                    url_key = r"/x/collect\?t={first,later}&*"
-                elif url[13:].startswith("exit") or url[13:].startswith("amp"):
-                    url_key = r"/x/collect\?t={exit,amp}&*"
-                else:
-                    print("\x1b[1;31mError!\x1b[0m")
-                    exit
-            elif url=="/x/zscsucgm?":
-                url_key = r"/x/zscsucgm\?"
-            elif url.startswith("/x/amp-view?"):
-                url_key = r"/x/amp-view\?*"
-            elif url.startswith("/ev/"):
-                url_key = r"/ev/*"
-            elif url.startswith("/load.php?"):
-                if "only=styles" in url:
-                    url_key = r"/load.php\?*only=styles*"
-                else:
-                    url_key = r"R /load.php?.\+$\(only=styles\)\@!"
-            elif url.startswith("/video/"):
-                url_key = r"/video/*"
-            elif url=="/Special:SherlockController":
-                url_key = r"/Special:SherlockController"
-            elif url.startswith("/Special:RCWidget?"):
-                url_key = r"/Special:RCWidget\?*"
-            elif url.startswith("/extensions/wikihow/"):
-                url_key = r"/extensions/wikihow/*"
-            elif url.startswith("/images/"):
-                url_key = r"/images/*"
-            elif url.startswith("/skins/"):
-                url_key = r"/skins/*"
-            else:
-                url_key = "[[:others:]]"
-            #  }}} URL Classification # 
+            #url = f.request.path
+            #url_key = classify_url.classify(url)
 
             #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
             #grouped_by_urls[url_key].add(f.request.method)
@@ -118,10 +88,10 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #grouped_by_urls[url_key].add(f.request.headers.get("content-type", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("origin", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("upgrade-insecure-requests", None))
-            #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-size", "null"))
+            #grouped_by_urls[url_key].add("sec-fetch-size" in f.request.headers)
             #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-user", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("accept-language", None))
-            grouped_by_urls[url_key].add(f.request.headers.get("range", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("range", None))
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
@@ -148,8 +118,8 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
                     #grouped_by_origin[origin] = []
                 #grouped_by_origin[origin].append(url)
 
-            if f.response is not None:
-                status_codes.add(f.response.status_code)
+            #if f.response is not None:
+                #status_codes.add(f.response.status_code)
 #  }}} Main Structure # 
 
 #  Output {{{ # 
@@ -211,10 +181,10 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
 #with open("url-sec_fetch_size.list", "w") as f:
 #with open("url-sec_fetch_user.list", "w") as f:
 #with open("url-accept_language.list", "w") as f:
-with open("url-range.list", "w") as f:
-    for val, attrbs in grouped_by_urls.items():
-        f.write("{:}:\n".format(val))
-        for attrb in attrbs:
-            f.write("{:}\n".format(attrb))
-        f.write("\n")
+#with open("url-range.list", "w") as f:
+    #for val, attrbs in grouped_by_urls.items():
+        #f.write("{:}:\n".format(val))
+        #for attrb in attrbs:
+            #f.write("{:}\n".format(attrb))
+        #f.write("\n")
 #  }}} Output # 

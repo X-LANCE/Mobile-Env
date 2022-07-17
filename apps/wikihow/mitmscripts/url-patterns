@@ -1,0 +1,14 @@
+[[:others:]]
+/x/collect\?t={first,later}&*
+/x/zscsucgm\?
+/x/collect\?t={exit,amp}&*
+/x/amp-view\?*
+/ev/*
+R /load.php?.\+$\(only=styles\)\@!
+/video/*
+/Special:SherlockController
+/Special:RCWidget\?*
+/load.php\?*only=styles*
+/extensions/wikihow/*
+/images/*
+/skins/*

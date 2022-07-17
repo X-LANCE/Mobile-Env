@@ -1,42 +1,42 @@
 [[:others:]]:
-null
+False
 
 /x/collect\?t={first,later}&*:
-null
+False
 
 /x/zscsucgm\?:
-null
+False
 
 /x/collect\?t={exit,amp}&*:
-null
+False
 
 /x/amp-view\?*:
-null
+False
 
 /ev/*:
-null
+False
 
 R /load.php?.\+$\(only=styles\)\@!:
-null
+False
 
 /video/*:
-null
+False
 
 /Special:SherlockController:
-null
+False
 
 /Special:RCWidget\?*:
-null
+False
 
 /load.php\?*only=styles*:
-null
+False
 
 /extensions/wikihow/*:
-null
+False
 
 /images/*:
-null
+False
 
 /skins/*:
-null
+False
 
