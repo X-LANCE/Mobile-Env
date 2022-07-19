@@ -18,19 +18,25 @@ BEGIN {
 
     post_set["/x/collect\\?t={exit,amp}&*"] = 1;
     post_set["/x/amp-view\\?*"] = 1;
-    post_set["/Special:SherlockController"] = 1;
+    #post_set["/Special:SherlockController"] = 1;
 }
 
 {
-    "./classify_url.py \""$0"\"" | getline url_key;
-    filename = "headers/"urlkey_to_filename[url_key]".txt";
+    print($0, url_key)
 
-    if(url_key in post_set)
+    "../classify_url.py \""$0"\"" | getline url_key;
+    filename = "../headers/"urlkey_to_filename[url_key]".txt";
+
+    if(url_key=="/Special:SherlockController") ;
+    else if(url_key in post_set)
     {
-        system("curl --remote-name --header @"filename" --request POST \"https://www.wikihow.com"$0"\"");
+        system("curl -i --remote-name -A \"\" --output-dir test-mitmproxy --header @"filename" --request POST \"https://www.wikihow.com"$0"\"");
     }
     else
     {
-        system("curl --remote-name --header @"filename" \"https://www.wikihow.com"$0"\"");
+        system("curl -i --remote-name -A \"\" --output-dir test-mitmproxy --header @"filename" \"https://www.wikihow.com"$0"\"");
     }
+
+    if(NR==100)
+        exit;
 }
