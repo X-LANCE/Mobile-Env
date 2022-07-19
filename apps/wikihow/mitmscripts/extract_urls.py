@@ -57,14 +57,14 @@ grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
-with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
-        #, open("wikihow-requets.list", "wb") as opt_f\
-        #:
+with open("pages/main.page.flow", "rb") as fl_f\
+        , open("pages/main.page.path.list", "w") as opt_f\
+        :
     flow_reader = io.FlowReader(fl_f)
     counter = 0
     for f in flow_reader.stream():
         if isinstance(f, http.HTTPFlow) and f.request.pretty_host=="www.wikihow.com":
-            #opt_f.write(f.request.path + "\n")
+            opt_f.write(f.request.path + "\n")
 
             #for k, v in f.request.headers.items():
                 #if k not in attributes:
@@ -83,11 +83,11 @@ with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
             #if url_key==r"/Special:SherlockController":
                 #opt_f.write(f.request.content + b"\r")
 
-            print(f.request.path_components)
+            #print(f.request.path_components)
 
-            counter += 1
-            if counter==10:
-                break
+            #counter += 1
+            #if counter==10:
+                #break
 
             #grouped_by_urls[url_key].add(f.request.headers.get("x-requested-with", None))
             #grouped_by_urls[url_key].add(f.request.method)

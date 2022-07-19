@@ -27,16 +27,25 @@ BEGIN {
     "../classify_url.py \""$0"\"" | getline url_key;
     filename = "../headers/"urlkey_to_filename[url_key]".txt";
 
-    if(url_key=="/Special:SherlockController") ;
-    else if(url_key in post_set)
+    last_path = gensub(/\//, "%2f", "g")
+    if(length(last_path)>100)
+        output_name = substr(last_path, 1, 100);
+    else
+        output_name = last_path;
+
+    if(url_key=="/Special:SherlockController")
+        next;
+    if(url_key in post_set)
     {
-        system("curl -i --remote-name -A \"\" --output-dir test-mitmproxy --header @"filename" --request POST \"https://www.wikihow.com"$0"\"");
+        system("curl -i -A \"\" --output-dir test-mitmproxy --header @"filename" --request POST \"https://www.wikihow.com"$0"\" -o \""output_name"\"");
     }
     else
     {
-        system("curl -i --remote-name -A \"\" --output-dir test-mitmproxy --header @"filename" \"https://www.wikihow.com"$0"\"");
+        system("curl -i -A \"\" --output-dir test-mitmproxy --header @"filename" \"https://www.wikihow.com"$0"\" -o \""output_name"\"");
     }
 
-    if(NR==100)
-        exit;
+    #if(NR==100)
+        #exit;
+    if(NR%100==0)
+        system("sleep 10");
 }
