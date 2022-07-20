@@ -22,10 +22,14 @@ BEGIN {
 }
 
 {
-    print($0, url_key)
+    print($0)
+    if(FNR<1097)
+        next;
 
-    "../classify_url.py \""$0"\"" | getline url_key;
+    command = "../classify_url.py \""$0"\""
+    command | getline url_key;
     filename = "../headers/"urlkey_to_filename[url_key]".txt";
+    close(command);
 
     last_path = gensub(/\//, "%2f", "g")
     if(length(last_path)>100)

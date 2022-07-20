@@ -6,7 +6,9 @@ class Replayer:
     #  class `Replayer` {{{ # 
     def request(self, flow: http.HTTPFlow):
         if flow.request.pretty_host=="www.wikihow.com":
-            filename = flow.request.path.split("/")[-1]
+            filename = flow.request.path.replace("/", "%2f")
+            if len(filename)>100:
+                filename = filename[:100]
             filename = os.path.join("mitmscripts/pages/test-mitmproxy/", filename)
             if not os.path.exists(filename):
                 flow.response = http.Response.make(404)
