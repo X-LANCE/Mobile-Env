@@ -18,9 +18,9 @@ class Replayer:
                 header_bytes, _, content = response.partition(b"\r\n\r\n")
                 header_items = header_bytes.split(b"\r\n")
                 status_code = int(header_items[0].split()[1].strip())
-                header = {k: val for k, val in
-                        map(functools.partial(str.split, sep=b": ", maxsplit=1),
-                            header_bytes[1:])}
+                header = {k.decode(): val for k, val in
+                        map(functools.partial(bytes.split, sep=b": ", maxsplit=1),
+                            header_items[1:])}
 
                 flow.response = http.Response.make(status_code,
                         content=content,
