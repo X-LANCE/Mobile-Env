@@ -1,1 +1,4 @@
 window_dump.xml
+flows/*.flow
+!flows/wikihow-20220511-f.flow
+flows/version.folder

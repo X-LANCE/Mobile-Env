@@ -77,8 +77,8 @@ with open("pages/main.page.flow", "rb") as fl_f\
                 #grouped_by_accepts[accept_value] = []
             #grouped_by_accepts[accept_value].append(f.request.path)
 
-            #url = f.request.path
-            #url_key = classify_url.classify(url)
+            url = f.request.path
+            url_key = classify_url.classify(url)
 
             #if url_key==r"/Special:SherlockController":
                 #opt_f.write(f.request.content + b"\r")
@@ -102,6 +102,7 @@ with open("pages/main.page.flow", "rb") as fl_f\
             #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-user", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("accept-language", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("range", None))
+            grouped_by_urls[url_key].add(f.request.headers.get("user-agent", None))
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
@@ -192,9 +193,10 @@ with open("pages/main.page.flow", "rb") as fl_f\
 #with open("url-sec_fetch_user.list", "w") as f:
 #with open("url-accept_language.list", "w") as f:
 #with open("url-range.list", "w") as f:
-    #for val, attrbs in grouped_by_urls.items():
-        #f.write("{:}:\n".format(val))
-        #for attrb in attrbs:
-            #f.write("{:}\n".format(attrb))
-        #f.write("\n")
+with open("url-user_agent.list", "w") as f:
+    for val, attrbs in grouped_by_urls.items():
+        f.write("{:}:\n".format(val))
+        for attrb in attrbs:
+            f.write("{:}\n".format(attrb))
+        f.write("\n")
 #  }}} Output # 

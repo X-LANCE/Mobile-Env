@@ -24,7 +24,7 @@ class Replayer:
 
                 flow.response = http.Response.make(status_code,
                         content=content,
-                        headers=header)
+                        headers=header).refresh()
     #  }}} class `Replayer` # 
 
 addons = [
