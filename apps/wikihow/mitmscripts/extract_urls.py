@@ -54,17 +54,18 @@ grouped_by_urls = {url_ctgr: set() for url_ctgr in url_categories}
 #grouped_by_methods = {}
 #grouped_by_sec_fectch_sites = {}
 #grouped_by_origin = {}
+grouped_by_referers = {True: set(), False: set()}
 #  }}} Data Structure Definition # 
 
 #  Main Structure {{{ # 
-with open("pages/main.page.flow", "rb") as fl_f\
-        , open("pages/main.page.path.list", "w") as opt_f\
-        :
+with open("../flows/wikihow-20220511-f.flow", "rb") as fl_f:
+        #, open("pages/main.page.path.list", "w") as opt_f\
+        #:
     flow_reader = io.FlowReader(fl_f)
     counter = 0
     for f in flow_reader.stream():
         if isinstance(f, http.HTTPFlow) and f.request.pretty_host=="www.wikihow.com":
-            opt_f.write(f.request.path + "\n")
+            #opt_f.write(f.request.path + "\n")
 
             #for k, v in f.request.headers.items():
                 #if k not in attributes:
@@ -102,7 +103,8 @@ with open("pages/main.page.flow", "rb") as fl_f\
             #grouped_by_urls[url_key].add(f.request.headers.get("sec-fetch-user", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("accept-language", None))
             #grouped_by_urls[url_key].add(f.request.headers.get("range", None))
-            grouped_by_urls[url_key].add(f.request.headers.get("user-agent", None))
+            #grouped_by_urls[url_key].add(f.request.headers.get("user-agent", None))
+            grouped_by_urls[url_key].add("referer" in f.request.headers)
 
             #if url_key=="/x/*":
                 #if f.request.method not in grouped_by_methods:
@@ -128,6 +130,9 @@ with open("pages/main.page.flow", "rb") as fl_f\
                 #if origin not in grouped_by_origin:
                     #grouped_by_origin[origin] = []
                 #grouped_by_origin[origin].append(url)
+
+            if url_key==r"[[:others:]]":
+                grouped_by_referers["referer" in f.request.headers].add(url)
 
             #if f.response is not None:
                 #status_codes.add(f.response.status_code)
@@ -180,6 +185,13 @@ with open("pages/main.page.flow", "rb") as fl_f\
             #f.write("{:}\n".format(url))
         #f.write("\n")
 
+with open("referer-url.list", "w") as f:
+    for val, urls in grouped_by_referers.items():
+        f.write("{:}:\n".format(val))
+        for url in urls:
+            f.write("{:}\n".format(url))
+        f.write("\n")
+
 #with open("url-x_requested_with.list", "w") as f:
 #with open("url-method.list", "w") as f:
 #with open("url-sec_fetch_mode.list", "w") as f:
@@ -193,7 +205,8 @@ with open("pages/main.page.flow", "rb") as fl_f\
 #with open("url-sec_fetch_user.list", "w") as f:
 #with open("url-accept_language.list", "w") as f:
 #with open("url-range.list", "w") as f:
-with open("url-user_agent.list", "w") as f:
+#with open("url-user_agent.list", "w") as f:
+with open("url-referer.list", "w") as f:
     for val, attrbs in grouped_by_urls.items():
         f.write("{:}:\n".format(val))
         for attrb in attrbs:
