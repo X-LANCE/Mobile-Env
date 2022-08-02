@@ -7,7 +7,7 @@ python ../../examples/run_random_agent.py \
     --emulator_path=/home/david/Android/Sdk/emulator/emulator \
     --adb_path=/home/david/Android/Sdk/platform-tools/adb \
     --task_path=wikihow_search.textproto\
-    --num_steps=100\
-    --norun_headless\
+    --num_steps=500\
+    --run_headless\
     --mitm syscert\
     --frida_script ../../tools/frida-script.js

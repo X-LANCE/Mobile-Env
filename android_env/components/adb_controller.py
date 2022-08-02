@@ -467,6 +467,7 @@ class AdbController():
     return lxml.etree.Element or None
     """
     view_hierarchy_output = self._execute_command(["shell", "uiautomator", "dump", "/dev/stdout"], timeout=timeout)
+    #logging.info("Getted View Hierarchy Output")
     if view_hierarchy_output:
       view_hierarchy_output = view_hierarchy_output.strip()
       #if view_hierarchy_output.endswith(b"UI hierchary dumped to: /dev/stdout"):
@@ -478,6 +479,7 @@ class AdbController():
       logging.info("Fetched View Hierarchy XML")
       try:
         root = lxml.etree.fromstring(view_hierarchy_output)
+        #logging.info("Parsed View Hierarchy XML")
       except lxml.etree.XMLSyntaxError:
         logging.error("View Hierarchy XML Parsing Error!")
         root = None

@@ -135,7 +135,7 @@ def load(task_path: str,
   #print("ZDY: AFTER Simulator Initialization")
 
   task_manager = task_manager_lib.TaskManager(task)
-  coordinator = coordinator_lib.Coordinator(simulator, task_manager)
+  coordinator = coordinator_lib.Coordinator(simulator, [task_manager])
 
   # Load environment.
   return environment.AndroidEnv(coordinator=coordinator)
