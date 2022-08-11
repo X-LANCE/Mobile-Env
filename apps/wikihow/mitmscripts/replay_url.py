@@ -3,6 +3,7 @@ import os.path
 import functools
 import classify_url
 import datetime
+import load_response
 
 class Replayer:
     #  class `Replayer` {{{ # 
@@ -23,11 +24,11 @@ class Replayer:
 
                 headers = {}
 
-                response_time = datetime.utcnow()
+                response_time = datetime.datetime.utcnow()
                 headers["retry-after"] = "0"
                 headers["accept-ranges"] = "bytes"
                 headers["date"] = response_time.strftime("%a, %d %b %Y %X GMT")
-                headers["x-timer"] = "S{:.6f},VS0,VE0".format(response.timestamp())
+                headers["x-timer"] = "S{:.6f},VS0,VE0".format(response_time.timestamp())
                 headers["x-c"] = "cache-tyo{:d}-TYO,M".format(self.cache_index)
                 headers["x-content-type-options"] = "nosniff"
                 headers["x-xss-protection"] = "1; mode=block"
@@ -47,14 +48,7 @@ class Replayer:
                 if not os.path.exists(filename):
                     flow.response = http.Response.make(404)
                 else:
-                    with open(filename, "rb") as f:
-                        response = f.read()
-                    header_bytes, _, content = response.partition(b"\r\n\r\n")
-                    header_items = header_bytes.split(b"\r\n")
-                    status_code = int(header_items[0].split()[1].strip())
-                    header = {k.decode(): val for k, val in
-                            map(functools.partial(bytes.split, sep=b": ", maxsplit=1),
-                                header_items[1:])}
+                    status_code, header, content = load_response.load_response(filename)
 
                     flow.response = http.Response.make(status_code,
                             content=content,
