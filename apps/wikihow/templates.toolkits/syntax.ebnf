@@ -1,0 +1,8 @@
+item = "<" [ modifier [ "," modifier ] : ] identifier ">" ;
+
+modifier = "regex_list"
+    | "regex_esc"
+    | "url_space"
+    ;
+
+identifier = { alphabet-symbol | _ } ;
