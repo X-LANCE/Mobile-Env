@@ -3,6 +3,8 @@ item = "<" [ modifier [ "," modifier ] : ] identifier ">" ;
 modifier = "regex_list"
     | "regex_esc"
     | "url_space"
+    | "url_title"
+    | "to_list"
     ;
 
 identifier = { alphabet-symbol | _ } ;

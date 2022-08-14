@@ -51,7 +51,7 @@ event_sources: [
     },
     {
         text_detect: {
-            expect: "How to Clean a Hot Water"
+            expect: "How to <title>"
             rect: {
                 x0: 0.0
                 y0: 0.1951
@@ -62,21 +62,9 @@ event_sources: [
         id: 4
     },
     {
-        text_detect: {
-            expect: "Dispenser"
-            rect: {
-                x0: 0.0
-                y0: 0.1951
-                x1: 1.0
-                y1: 0.2963
-            }
-        }
-        id: 5
-    },
-    {
         log_event: {
             filters: ["jd:D"]
-            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Clean-a-Hot-Water-Dispenser"
+            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/<url_title:title>"
         }
         id: 6
     }
@@ -105,12 +93,8 @@ event_slots: {
                     events: [
                         {
                             event: {
-                                type: AND
-                                events: [
-                                    { id: 4 },
-                                    { id: 5 }
-                                ]
-                                transformation: ["y = min(map(len, x))"]
+                                events: [ { id: 4 } ]
+                                transformation: ["y = 1"]
                             }
                         },
                         {
@@ -131,9 +115,9 @@ event_slots: {
     }
     instruction_listener: {
         events: [ { id: 7 } ]
-        transformation: "y = \"Access the article \\\"How to Clean a Hot Water Dispenser\\\"\""
+        transformation: "y = \"Access the article \\\"<title>\\\"\""
     }
 }
 
-command: "Search an article to learn how to clean a water dispenser."
-vocabulary: ["how to", "clean", "water", "dispenser"]
+command: "Search an article to learn <command>."
+vocabulary: <to_list:vocabulary>

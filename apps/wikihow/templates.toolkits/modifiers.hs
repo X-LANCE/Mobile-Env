@@ -36,3 +36,15 @@ url_space :: Modifier
 url_space = map (\c -> case c of
                         ' ' -> '+'
                         o -> o)
+
+url_title :: Modifier
+-- 将题目转为网址中用“-”连接的形式
+url_title = map (\c -> case c of
+                        ' ' -> '-'
+                        o -> o)
+
+to_list :: Modifier
+-- 将逗号分隔的关键词列表转为proto定义中的字符串列表
+to_list x = "["
+          ++ map (\s -> "\"" ++ "\"") (split ',' x)
+          ++ "]"
