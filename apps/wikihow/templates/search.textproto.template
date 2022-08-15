@@ -1,8 +1,10 @@
 # vim: set filetype=conf nospell:
 
-id: "search_<name>"
+id: "search_<lower:name>"
 name: "WikiHow Search Task Primitive - Search <name>"
 description: "A demo task primitive requiring to search WikiHow for a specific article."
+
+# include basic.prototext.template
 
 event_sources: [
     {

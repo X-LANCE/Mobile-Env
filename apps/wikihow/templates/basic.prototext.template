@@ -61,5 +61,10 @@ reset_steps: [
 
 expected_app_screen: { activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity" }
 
+# ifndef HUMAN
 #max_duration_sec
 max_num_steps: 500
+# else
+max_duration_sec
+#max_num_steps: 500
+# endif

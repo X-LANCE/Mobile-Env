@@ -1,10 +1,13 @@
-item = "<" [ modifier [ "," modifier ] : ] identifier ">" ;
+item = "<" [ modifier { "," modifier } : ] identifier ">" ;
 
 modifier = "regex_list"
     | "regex_esc"
     | "url_space"
     | "url_title"
     | "to_list"
+    | "lower"
+    | "upper"
+    | "title"
     ;
 
-identifier = { alphabet-symbol | _ } ;
+identifier = (alphabet-symbol | _ ), { alphabet-symbol | _ } ;

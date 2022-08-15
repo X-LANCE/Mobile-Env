@@ -111,7 +111,7 @@ event_sources: [
     {
         log_event: {
             filters: ["jd:D"]
-            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(clean|water\+dispenser).*"
+            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(clean|water\\+dispenser).*"
         }
         id: 3
     },

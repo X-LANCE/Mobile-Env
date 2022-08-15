@@ -2,12 +2,23 @@ module Modifiers
   ( regex_list
   , regex_esc
   , url_space
+  , url_title
+  , to_list
+  , lower
+  , upper
+  , title
   )
 
 import Data.List
   ( intercalate
   )
 import qualified Network.URL as U
+
+import Data.Char
+  ( toLower
+  , toUpper
+  , isAlphaNum
+  )
 
 type Modifier = String -> String
 
@@ -23,13 +34,16 @@ regex_esc x = x >>= \c -> case c of
                             ' ' -> "\\\\+"
                             o -> [o]
 
+splitBy' :: (Char -> Bool) -> String -> ([String], [String])
+splitBy :: (Char -> Bool) -> String -> [String]
 split :: Char -> String -> [String]
-split c [] = []
-split c s = let (prfx, _:sffx) = break (== c) s
-                rmns = split c sffx
-            in case prfx of
-                [] -> rmns
-                p -> p:rmns
+splitBy' p [] = ([], [])
+splitBy' p s = case break p s of
+                (prfx, []) -> (prfx, [])
+                (prfx, spl:sffx) -> let (rst, spls) = splitBy' p sffx
+                                    in (prfx:rst, spl:spls)
+splitBy p s = fst $ splitBy' p s
+split c = splitBy (== c)
 
 url_space :: Modifier
 -- 将字符串按网址格式编码，如将空格替换为“+”等
@@ -46,5 +60,25 @@ url_title = map (\c -> case c of
 to_list :: Modifier
 -- 将逗号分隔的关键词列表转为proto定义中的字符串列表
 to_list x = "["
-          ++ map (\s -> "\"" ++ "\"") (split ',' x)
+          ++ (intercalate ", " $ map (\s -> "\"" ++ "\"") (split ',' x))
           ++ "]"
+
+lower :: Modifier
+upper :: Modifier
+title :: Modifier
+-- 转为小写
+lower = map toLower
+-- 转为大写
+upper = map toUpper
+-- 转为标题的首字母大写形式
+title x = concat $ zipWith (++) words' symbols'
+  where
+    (words, symbols) = splitBy' (not . isAlphaNum) x
+
+    symbols'
+      | length symbols < length words = symbols ++ [""]
+      | otherwise = symbols
+    words' = map title' words
+
+    title' [] = []
+    title' h:t = toUpper h : lower t
