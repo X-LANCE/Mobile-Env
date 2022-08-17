@@ -6,20 +6,22 @@ import os.path
 import re
 import modifiers
 from typing import Match, Dict, List
-from typing import Callable
+from typing import Callable, TypeVar
 import functools
 
 import argparse
+import sys
 
-template_item_pattern = re.compile(r"<(?P<modifiers>\w+(?:,\w+)*):(?P<identifier>\w+)>")
+template_item_pattern = re.compile(r"<(?:(?P<modifiers>\w+(?:,\w+)*):)?(?P<identifier>\w+)>")
 
 def replace_item(conf_dict: Dict[str, str], match_: Match[str]) -> str:
     identifier = match_.group("identifier")
     keyword = conf_dict.get(identifier, "")
 
-    modifiers_ = match_.group("modifiers").split(",")
-    for mdf in modifiers_[-1::-1]:
-        keyword = getattr(modifiers, mdf)(keyword)
+    if match_.group("modifiers") is not None:
+        modifiers_ = match_.group("modifiers").split(",")
+        for mdf in modifiers_[-1::-1]:
+            keyword = getattr(modifiers, mdf)(keyword)
     return keyword
 
 def max_id(event_slot: task_pb2.EventSlot) -> int:
@@ -36,14 +38,15 @@ def update_id(event_slot: task_pb2.EventSlot, bias: int):
     #  function `update_id` {{{ # 
     if not event_slot.IsInitialized():
         return
-    event_slot.id = event_slot.id + bias
+    if event_slot.id>0:
+        event_slot.id = event_slot.id + bias
     for evt in event_slot.events:
         if evt.HasField("id"):
             evt.id = evt.id + bias
         else:
             update_id(evt.event, bias)
-    for i in range(len(event_slot.prerequisites)):
-        event_slot.prerequisites[i] = event_slot.prerequisites[i] + bias
+    for i in range(len(event_slot.prerequisite)):
+        event_slot.prerequisite[i] = event_slot.prerequisite[i] + bias
     #  }}} function `update_id` # 
 
 C = TypeVar("C")
@@ -70,7 +73,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, required=True)
     parser.add_argument("--template-path", "-p", default="templates", type=str)
-    parser.add_argument("--output", type=str)
+    parser.add_argument("--output", "-o", type=str)
     args = parser.parse_args()
 
     with open(args.task) as f:
@@ -191,10 +194,26 @@ def main():
         #  }}} merge event slots # 
 
         target_task.extras_spec.extend(t.extras_spec)
-        t.command[0][0] = t.command[0][0].lower()
-        t.command[0] = "Then, " + t.command[0]
+        #t.command[0][0] = t.command[0][0].lower()
+        t.command[0] = "Then, "\
+                     + t.command[0][0].lower()\
+                     + t.command[0][1:]
         target_task.command.extend(t.command)
         target_task.vocabulary.extend(t.vocabulary)
+
+    target_task.vocabulary[:] = list(set(target_task.vocabulary))
+
+    if args.output is not None:
+        with open(args.output, "w") as f:
+            text_format.PrintMessage(target_task, f,
+                as_utf8=True,
+                use_short_repeated_primitives=True,
+                force_colon=True)
+    else:
+        text_format.PrintMessage(target_task, sys.stdout,
+            as_utf8=True,
+            use_short_repeated_primitives=True,
+            force_colon=True)
 
 if __name__ == "__main__":
     main()

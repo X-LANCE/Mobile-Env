@@ -10,4 +10,4 @@ modifier = "regex_list"
     | "title"
     ;
 
-identifier = (alphabet-symbol | _ ), { alphabet-symbol | _ } ;
+identifier = ( alphabet-symbol | _ ), { alphabet-symbol | _ } ;

@@ -65,6 +65,6 @@ expected_app_screen: { activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.
 #max_duration_sec
 max_num_steps: 500
 # else
-max_duration_sec
+max_duration_sec: 6000
 #max_num_steps: 500
 # endif

@@ -322,6 +322,9 @@ class TaskManager():
     transformation = event_definition.transformation if len(event_definition.transformation)>0\
         else ["y = x"]
 
+    if len(event_definition.events)==0:
+      return event_listeners.EmptyEvent()
+
     #  Combined Events {{{ # 
     if event_definition.type==task_pb2.EventSlot.Type.SINGLE:
       sub_event_definition = event_definition.events[0]
