@@ -45,6 +45,10 @@ class Replayer:
                         headers=headers)
 
                 self.cache_index += 1
+            #elif url_key in [ r"/load.php\?*only=styles*"
+                            #, r"R /load.php?.\+$\(only=styles\)\@!"
+                            #]:
+                #pass
             else:
                 filename = flow.request.path.replace("/", "%2f")
                 if len(filename)>100:
@@ -85,7 +89,7 @@ class Replayer:
                     flow.response.refresh()
                     #ctx.log.info("WARN: {:}".format(content==flow.response.content))
 
-                    #self.cache_index += 1
+                    self.cache_index += 1
         else:
             flow.response = http.Response.make(204)
     #  }}} class `Replayer` # 
