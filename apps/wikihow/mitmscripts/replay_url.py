@@ -3,30 +3,79 @@ from mitmproxy import ctx
 import os.path
 import functools
 import classify_url
-import datetime
 import load_response
+import datetime
 import locale
 import gzip
+import lxml.html
+import lxml.cssselect
+from pyserini.search.lucene import LuceneSearcher
+import csv
+import urllib.parse
+from typing import List
+from typing import Mapping
 
 class Replayer:
     #  class `Replayer` {{{ # 
-    def __init__(self, replay_path: str):
+    def __init__(self, start_cache_index: int,
+            replay_path: str,
+            template_path: str,
+            index_path: str,
+            meta_path: str):
+        self.cache_index: int = start_cache_index
+
+        self.replay_path: str = replay_path
+        self.template_path: str = template_path
+        self.index_path: str = index_path
+        self.meta_path: str = meta_path
+        with open(meta_path) as f:
+            reader = csv.DictReader(f)
+            self.meta_database: Dict[str, Mapping[str, str]]\
+                    = {itm["doc_id"]: itm for itm in reader}
+
         locale.setlocale(locale.LC_TIME, "en_US.utf8")
+        self.dateformat: str = "%a, %d %b %Y %H:%M:%S GMT"
+        self.searcher: LuceneSearcher = LuceneSearcher(self.index_path)
 
-        self.replay_path = replay_path
-        self.dateformat = "%a, %d %b %Y %H:%M:%S GMT"
+        #  Lucene Searchers {{{ # 
+        self.search_input_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("input#hs_query", translator="html")
+        #self.result_list_selector: lxml.cssselect.CSSSelector\
+                #= lxml.cssselect.CSSSelector("div#searchresults_list.wh_block", translator="html")
+        self.result_list_anchor_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("div#search_adblock_bottom", translator="html")
 
-        self.cache_index = 15090
+        self.result_thumb_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("di.#result_thumb", translator="html")
+        self.result_title_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("di.#result_title", translator="html")
+        self.result_view_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("li.sr_view", translator="html")
+        self.result_updated_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("li.sr_updated", translator="html")
+        self.result_verif_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("li.sp_verif", translator="html")
+        self.sha_index_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("input[name=\"sha_index\"]", translator="html")
+        self.sha_id_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("input[name=\"sha_id\"]", translator="html")
+        self.sha_title_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("input[name=\"sha_title\"]", translator="html")
+        #  }}} Lucene Searchers # 
+
+        self.search_page_capacity: int = 30
+        self.search_capacity: int = 300
 
     def request(self, flow: http.HTTPFlow):
         if flow.request.pretty_host=="www.wikihow.com":
-            url_key = classify_url.classify(flow.request.path)
+            url_path = flow.request.path
+            url_key = classify_url.classify(url_path)
             if url_key in [ r"/x/collect\?t={first,later}&*"
                           , r"/x/collect\?t={exit,amp}&*"
                           , r"/x/amp-view\?*"
                           , r"/ev/*"
                           ]:
-
+                #  Control Flows {{{ # 
                 headers = {}
 
                 response_time = datetime.datetime.utcnow()
@@ -45,12 +94,121 @@ class Replayer:
                         headers=headers)
 
                 self.cache_index += 1
-            #elif url_key in [ r"/load.php\?*only=styles*"
-                            #, r"R /load.php?.\+$\(only=styles\)\@!"
-                            #]:
-                #pass
+                #  }}} Control Flows # 
+            elif url_path.startswith("/wikiHowTo?search="):
+                #  Search Pages {{{ # 
+                # remove the leading "/wikiHowTo?search=" and the trailing "?wh_an=1&amp=1"
+                url_items = urllib.parse.urlparse(url_path)
+                queries = urllib.parse.parse_qs(url_items.query)
+                search_keywords = queries["search"]
+                start_index = int(queries.get("start", "0"))
+
+                hits = self.searcher.search(search_keywords, k=self.search_capacity)
+
+                # build the webpage
+                page_body = lxml.html.parse(
+                        os.path.join(self.template_path, "search-page.html.template")).get_root()
+
+                # 1. fill the parameters in the page body
+                search_input = self.search_input_selector(page_body)[0]
+                search_input.set("value", search_keywords)
+
+                # 2. prepare result list
+                #result_list = self.result_list_selector(page_body)[0]
+                result_list_bottom = self.result_list_anchor_selector(page_body)[0]
+                with open(os.path.join(self.template_path, "search-item.html.template")) as f:
+                    result_item_html = "".join(f.readlines())
+                for i, h in zip(range(start_index, start_index+self.search_page_capacity),
+                        hits[start_index, start_index+self.search_page_capacity]):
+                    docid = h.docid
+                    article_path = docid.replace("%2f", "/")
+
+                    result_item = lxml.html.fromstring(result_item_html)
+
+                    #  Update Item Parameters {{{ # 
+                    result_item.set("href", "https://www.wikihow.com/{:}".format(article_path))
+
+                    result_thumb = self.result_thumb_selector(result_item)[0]
+                    thumb_url = self.meta_database[docid]["thumb_url"]
+                    if thumb_url!="":
+                        result_thumb.set("style",
+                            "background-image: url(https://www.wikihow.com{:})".format(thumb_url))
+                    else:
+                        result_thumb.set("style",
+                            "background-image: url(https://www.wikihow.com/5/5f/{doc_id:}-Step-2.jpg/-crop-250-145-193px-{doc_id}-Step-2.jpg)".format(doc_id=article_path))
+
+                    new_result_title = lxml.html.fromstring(
+                            "<div class=\"result_title\">{:}</div>"\
+                                .format(" ".join(
+                                    map(lambda w: "<b>" + w + "</b>",
+                                        urllib.parse.unquote_plus(article_path.replace("-", " "))\
+                                            .split()))))
+                    result_title = self.result_title_selector(result_item)[0]
+                    result_title.getparent().replace(result_title, new_result_title)
+
+                    result_view = self.result_view_selector(result_item)[0]
+                    view_counts = self.meta_database[docid]["sr_view"]
+                    if view_counts!="":
+                        result_view.text = "{:} views\t\t\t\t\t\t".format(view_counts)
+                    else:
+                        result_view.text = "0 views\t\t\t\t\t\t"
+
+                    result_updated = self.result_updated_selector(result_item)[0]
+                    updated_date = self.meta_database[docid]["sr_updated"]
+                    if updated_date!="":
+                        updated_date = datetime.datetime.strptime(updated_date,
+                                "%B %d, %Y")
+                        response_time = datetime.datetime.utcnow()
+                        updating_duration = response_time-updated_date
+                        #  Calculate Time Diff String {{{ # 
+                        days = updating_duration.days
+                        if days<7:
+                            time_diff_str = "{:} day{:} ago".format(
+                                    days, "" if days=1 else "s")
+                        elif days<30:
+                            weeks = days // 7
+                            time_diff_str = "{:} week{:} ago".format(
+                                    weeks, "" if weeks=1 else "s")
+                        elif days<365:
+                            months = days // 30
+                            time_diff_str = "{:} month{:} ago".format(
+                                    months, "" if months=1 else "s")
+                        else:
+                            years = days // 365
+                            time_diff_str = "{:} year{:} ago".format(
+                                    years, "" if years=1 else "s")
+                        #  }}} Calculate Time Diff String # 
+                        list(result_updated)[0].tail = time_diff_str + "\t\t\t\t\t\t"
+                    else:
+                        list(result_updated)[0].tail = "12 hours ago\t\t\t\t\t\t"
+
+                    result_verif = self.result_verif_selector(result_item)[0]
+                    verif_type = self.meta_database[docid]["sr_verif"]
+                    if verif_type=="E":
+                        result_verif.text = "Expert Co-Authored\t\t\t\t\t\t\t"
+                    elif verif_type="Q":
+                        result_verif.text = "Quality Tested\t\t\t\t\t\t\t"
+                    else:
+                        result_verif.getparent().remove(result_verif)
+
+                    sha_index = self.sha_index_selector(result_item)[0]
+                    sha_index.set("value", str(i))
+
+                    sha_id = self.sha_id_selector(result_item)[0]
+                    sha_id.set("value", self.meta_database[docid]["sha_id"])
+
+                    sha_title = self.sha_title_selector(result_item)[0]
+                    sha_title.set("value", article_path)
+                    #  }}} Update Item Parameters # 
+
+                    result_list_anchor_selector.addprevious(result_item)
+
+                # 3. prepare footer
+                # TODO
+                #  }}} Search Pages # 
             else:
-                filename = flow.request.path.replace("/", "%2f")
+                #  Normal Pages {{{ # 
+                filename = url_path.replace("/", "%2f")
                 if len(filename)>100:
                     filename = filename[:100]
                 filename = os.path.join(self.replay_path, filename)
@@ -90,10 +248,11 @@ class Replayer:
                     #ctx.log.info("WARN: {:}".format(content==flow.response.content))
 
                     self.cache_index += 1
+                #  }}} Normal Pages # 
         else:
             flow.response = http.Response.make(204)
     #  }}} class `Replayer` # 
 
 addons = [
-        Replayer("../../../small-web-crawler/dumps")
+        Replayer(15090, "../../../small-web-crawler/dumps", "", "", "")
     ]
