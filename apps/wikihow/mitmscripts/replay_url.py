@@ -44,6 +44,8 @@ class Replayer:
                 #= lxml.cssselect.CSSSelector("div#searchresults_list.wh_block", translator="html")
         self.result_list_anchor_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("div#search_adblock_bottom", translator="html")
+        self.result_footer_anchor_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("div#searchresults_footer>div.sr_text", translator="html")
 
         self.result_thumb_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("di.#result_thumb", translator="html")
@@ -97,13 +99,13 @@ class Replayer:
                 #  }}} Control Flows # 
             elif url_path.startswith("/wikiHowTo?search="):
                 #  Search Pages {{{ # 
-                # remove the leading "/wikiHowTo?search=" and the trailing "?wh_an=1&amp=1"
                 url_items = urllib.parse.urlparse(url_path)
                 queries = urllib.parse.parse_qs(url_items.query)
                 search_keywords = queries["search"]
                 start_index = int(queries.get("start", "0"))
 
                 hits = self.searcher.search(search_keywords, k=self.search_capacity)
+                response_time = datetime.datetime.utcnow()
 
                 # build the webpage
                 page_body = lxml.html.parse(
@@ -158,8 +160,7 @@ class Replayer:
                     if updated_date!="":
                         updated_date = datetime.datetime.strptime(updated_date,
                                 "%B %d, %Y")
-                        response_time = datetime.datetime.utcnow()
-                        updating_duration = response_time-updated_date
+                        updating_duration = response_time - updated_date
                         #  Calculate Time Diff String {{{ # 
                         days = updating_duration.days
                         if days<7:
@@ -192,7 +193,7 @@ class Replayer:
                         result_verif.getparent().remove(result_verif)
 
                     sha_index = self.sha_index_selector(result_item)[0]
-                    sha_index.set("value", str(i))
+                    sha_index.set("value", str(i+1))
 
                     sha_id = self.sha_id_selector(result_item)[0]
                     sha_id.set("value", self.meta_database[docid]["sha_id"])
@@ -204,7 +205,67 @@ class Replayer:
                     result_list_anchor_selector.addprevious(result_item)
 
                 # 3. prepare footer
-                # TODO
+                result_footer_bottom = self.result_footer_anchor_selector(page_body)[0]
+                with open(os.path.join(self.template_path, "search-button.html.template")) as f:
+                    result_footer = lxml.html.fromstring("".join(f.readlines()))
+                next_button, previous_button, statistics_text = list(result_footer)
+
+                if start_index+self.search_page_capacity<self.search_capacity:
+                    # has next
+                    next_button.set("href", "/wikiHowTo?search={:}&start={:}&wh_an=1".format(
+                            urllib.parse.quote_plus(search_keywords),
+                            start_index+self.search_page_capacity))
+                    result_footer_bottom.addprevious(next_button)
+                else:
+                    disabled_next = lxml.html.fromstring(
+                            "<span class=\"button buttonright primary disabled\">Next ></span>")
+                    result_footer_bottom.addprevious(disabled_next)
+
+                if start_index>0:
+                    # has previous
+                    enabled_previous = lxml.html.fromstring(
+                            "<a class=\"button buttonleft primary\">&lt; Previous</a>")
+                    enabled_previous.set("href",
+                        "/wikiHowTo?search={:}&start={:}&wh_an=1".format(
+                            urllib.parse.quote_plus(search_keywords),
+                            start_index-self.search_page_capacity))
+                    result_footer_bottom.addprevious(enabled_previous)
+                else:
+                    result_footer_bottom.addprevious(previous_button)
+
+                statistics_text.text = "{:} Results".format(self.search_capacity)
+                result_footer_bottom.addprevious(statistics_text)
+
+                # 4. return result
+                full_page = lxml.html.tostring(page_body)
+
+                headers = {}
+                headers["content-type"] = "text/html; charset=UTF-8"
+                headers["content-language"] = "en"
+                headers["x-frame-options"] = "SAMEORIGIN"
+                headers["x-p"] = "ma"
+                headers["expires"] = (response_time + datetime.timedelta(days=1))\
+                        .strftime(self.dateformat)
+                headers["cache-control"] = "s-maxage=86400, must-revalidate, max-age=0"
+                headers["content-encoding"] = "gzip"
+                headers["accept-ranges"] = "bytes"
+                headers["date"] = response_time.strftime(self.dateformat)
+                headers["age"] = 0
+                headers["x-timer"] = "S{:.6f},VS0,VE0".format(response_time.timestamp())
+                headers["x-c"] = "cache-tyo{:d}-TYO,M".format(self.cache_index)
+                headers["x-content-type-options"] = "nosniff"
+                headers["x-xss-protection"] = "1; mode=block"
+                headers["strict-transport-security"] = "max-age=31536000; includeSubDomains; preload"
+                headers["set-cookie"] =\
+                    "whv=lbYVTnTp1cUHHoDGDOwR; expires={:}; domain=.wikihow.com; path=/; secure"\
+                        .format((response_time + datetime.timedelta(days=3654)).strftime(self.dateformat))
+                headers["vary"] = "Cookie, Accept-Encoding"
+
+                flow.response = http.Response.make(200,
+                        content=full_page,
+                        headers=headers)
+
+                self.cache_index += 1
                 #  }}} Search Pages # 
             else:
                 #  Normal Pages {{{ # 
