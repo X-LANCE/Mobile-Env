@@ -14,6 +14,7 @@ import csv
 import urllib.parse
 from typing import List
 from typing import Mapping
+import random
 
 class Replayer:
     #  class `Replayer` {{{ # 
@@ -32,6 +33,7 @@ class Replayer:
             reader = csv.DictReader(f)
             self.meta_database: Dict[str, Mapping[str, str]]\
                     = {itm["doc_id"]: itm for itm in reader}
+        self.doc_list: List[str] = list(self.meta_database.keys())
 
         locale.setlocale(locale.LC_TIME, "en_US.utf8")
         self.dateformat: str = "%a, %d %b %Y %H:%M:%S GMT"
@@ -267,6 +269,35 @@ class Replayer:
 
                 self.cache_index += 1
                 #  }}} Search Pages # 
+            elif url_path.startswith("/Special:Randomizer"):
+                #  Random Page {{{ # 
+                random_index = random.randrange(len(self.doc_list))
+                doc_id = self.doc_list[random_index]
+                article_path = doc_id.replace("%2f", "/")
+
+                headers = {}
+
+                response_time = datetime.datetime.utcnow()
+                headers["content-type"] = "text/html; charset=UTF-8"
+                headers["expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
+                headers["cache-control"] = "private, must-revalidate, max-age=0"
+                headers["x-p"] = "ma"
+                headers["location"] = "https://www.wikihow.com/{:}".format(article_path)
+                headers["content-encoding"] = "gzip"
+                headers["accept-ranges"] = "bytes"
+                headers["date"] = response_time.strftime(self.dateformat)
+                headers["x-timer"] = "S{:.6f},VS0,VE0".format(response_time.timestamp())
+                headers["x-c"] = "cache-tyo{:d}-TYO,M".format(self.cache_index)
+                headers["x-content-type-options"] = "nosniff"
+                headers["x-xss-protection"] = "1; mode=block"
+                headers["strict-transport-security"] = "max-age=31536000; includeSubDomains; preload"
+                headers["vary"] = "Cookie, Accept-Encoding"
+
+                flow.response = http.Response.make(302,
+                        headers=headers)
+
+                self.cache_index += 1
+                #  }}} Random Page # 
             else:
                 #  Normal Pages {{{ # 
                 filename = url_path.replace("/", "%2f")
