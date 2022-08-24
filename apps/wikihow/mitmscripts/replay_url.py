@@ -37,20 +37,20 @@ class Replayer:
         self.dateformat: str = "%a, %d %b %Y %H:%M:%S GMT"
         self.searcher: LuceneSearcher = LuceneSearcher(self.index_path)
 
-        #  Lucene Searchers {{{ # 
+        #  CSS Selectors {{{ # 
         self.search_input_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("input#hs_query", translator="html")
-        #self.result_list_selector: lxml.cssselect.CSSSelector\
-                #= lxml.cssselect.CSSSelector("div#searchresults_list.wh_block", translator="html")
+        self.result_list_selector: lxml.cssselect.CSSSelector\
+                = lxml.cssselect.CSSSelector("div#searchresults_list.wh_block", translator="html")
         self.result_list_anchor_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("div#search_adblock_bottom", translator="html")
         self.result_footer_anchor_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("div#searchresults_footer>div.sr_text", translator="html")
 
         self.result_thumb_selector: lxml.cssselect.CSSSelector\
-                = lxml.cssselect.CSSSelector("di.#result_thumb", translator="html")
+                = lxml.cssselect.CSSSelector("div.result_thumb", translator="html")
         self.result_title_selector: lxml.cssselect.CSSSelector\
-                = lxml.cssselect.CSSSelector("di.#result_title", translator="html")
+                = lxml.cssselect.CSSSelector("div.result_title", translator="html")
         self.result_view_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("li.sr_view", translator="html")
         self.result_updated_selector: lxml.cssselect.CSSSelector\
@@ -63,7 +63,7 @@ class Replayer:
                 = lxml.cssselect.CSSSelector("input[name=\"sha_id\"]", translator="html")
         self.sha_title_selector: lxml.cssselect.CSSSelector\
                 = lxml.cssselect.CSSSelector("input[name=\"sha_title\"]", translator="html")
-        #  }}} Lucene Searchers # 
+        #  }}} CSS Selectors # 
 
         self.search_page_capacity: int = 30
         self.search_capacity: int = 300
@@ -101,15 +101,15 @@ class Replayer:
                 #  Search Pages {{{ # 
                 url_items = urllib.parse.urlparse(url_path)
                 queries = urllib.parse.parse_qs(url_items.query)
-                search_keywords = queries["search"]
-                start_index = int(queries.get("start", "0"))
+                search_keywords = queries["search"][0]
+                start_index = int(queries.get("start", ["0"])[0])
 
                 hits = self.searcher.search(search_keywords, k=self.search_capacity)
                 response_time = datetime.datetime.utcnow()
 
                 # build the webpage
                 page_body = lxml.html.parse(
-                        os.path.join(self.template_path, "search-page.html.template")).get_root()
+                        os.path.join(self.template_path, "search-page.html.template")).getroot()
 
                 # 1. fill the parameters in the page body
                 search_input = self.search_input_selector(page_body)[0]
@@ -121,7 +121,7 @@ class Replayer:
                 with open(os.path.join(self.template_path, "search-item.html.template")) as f:
                     result_item_html = "".join(f.readlines())
                 for i, h in zip(range(start_index, start_index+self.search_page_capacity),
-                        hits[start_index, start_index+self.search_page_capacity]):
+                        hits[start_index:start_index+self.search_page_capacity]):
                     docid = h.docid
                     article_path = docid.replace("%2f", "/")
 
@@ -134,7 +134,7 @@ class Replayer:
                     thumb_url = self.meta_database[docid]["thumb_url"]
                     if thumb_url!="":
                         result_thumb.set("style",
-                            "background-image: url(https://www.wikihow.com{:})".format(thumb_url))
+                            "background-image: url(https://www.wikihow.com{:})".format(thumb_url.replace("%2f", "/")))
                     else:
                         result_thumb.set("style",
                             "background-image: url(https://www.wikihow.com/5/5f/{doc_id:}-Step-2.jpg/-crop-250-145-193px-{doc_id}-Step-2.jpg)".format(doc_id=article_path))
@@ -143,8 +143,8 @@ class Replayer:
                             "<div class=\"result_title\">{:}</div>"\
                                 .format(" ".join(
                                     map(lambda w: "<b>" + w + "</b>",
-                                        urllib.parse.unquote_plus(article_path.replace("-", " "))\
-                                            .split()))))
+                                        ["How" "to"] + urllib.parse.unquote_plus(article_path.replace("-", " "))\
+                                                .split()))))
                     result_title = self.result_title_selector(result_item)[0]
                     result_title.getparent().replace(result_title, new_result_title)
 
@@ -165,29 +165,29 @@ class Replayer:
                         days = updating_duration.days
                         if days<7:
                             time_diff_str = "{:} day{:} ago".format(
-                                    days, "" if days=1 else "s")
+                                    days, "" if days==1 else "s")
                         elif days<30:
                             weeks = days // 7
                             time_diff_str = "{:} week{:} ago".format(
-                                    weeks, "" if weeks=1 else "s")
+                                    weeks, "" if weeks==1 else "s")
                         elif days<365:
                             months = days // 30
                             time_diff_str = "{:} month{:} ago".format(
-                                    months, "" if months=1 else "s")
+                                    months, "" if months==1 else "s")
                         else:
                             years = days // 365
                             time_diff_str = "{:} year{:} ago".format(
-                                    years, "" if years=1 else "s")
+                                    years, "" if years==1 else "s")
                         #  }}} Calculate Time Diff String # 
                         list(result_updated)[0].tail = time_diff_str + "\t\t\t\t\t\t"
                     else:
                         list(result_updated)[0].tail = "12 hours ago\t\t\t\t\t\t"
 
-                    result_verif = self.result_verif_selector(result_item)[0]
+                    result_verif = self.result_verif_selector(result_item)[-1]
                     verif_type = self.meta_database[docid]["sr_verif"]
                     if verif_type=="E":
                         result_verif.text = "Expert Co-Authored\t\t\t\t\t\t\t"
-                    elif verif_type="Q":
+                    elif verif_type=="Q":
                         result_verif.text = "Quality Tested\t\t\t\t\t\t\t"
                     else:
                         result_verif.getparent().remove(result_verif)
@@ -202,7 +202,7 @@ class Replayer:
                     sha_title.set("value", article_path)
                     #  }}} Update Item Parameters # 
 
-                    result_list_anchor_selector.addprevious(result_item)
+                    result_list_bottom.addprevious(result_item)
 
                 # 3. prepare footer
                 result_footer_bottom = self.result_footer_anchor_selector(page_body)[0]
@@ -250,7 +250,7 @@ class Replayer:
                 headers["content-encoding"] = "gzip"
                 headers["accept-ranges"] = "bytes"
                 headers["date"] = response_time.strftime(self.dateformat)
-                headers["age"] = 0
+                headers["age"] = "0"
                 headers["x-timer"] = "S{:.6f},VS0,VE0".format(response_time.timestamp())
                 headers["x-c"] = "cache-tyo{:d}-TYO,M".format(self.cache_index)
                 headers["x-content-type-options"] = "nosniff"
@@ -315,5 +315,9 @@ class Replayer:
     #  }}} class `Replayer` # 
 
 addons = [
-        Replayer(15090, "../../../small-web-crawler/dumps", "", "", "")
+        Replayer(15090,
+            "../../../small-web-crawler/dumps",
+            "../../../small-web-crawler/templates",
+            "../../../small-web-crawler/indices-t/indices",
+            "../../../small-web-crawler/indices-t/docs/doc_meta.csv")
     ]
