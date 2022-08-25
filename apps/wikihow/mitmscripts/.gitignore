@@ -10,4 +10,9 @@ origin-url.list
 wikihow-urlpaths.list
 wikihow-requets.list
 
+F.html
+F.html.gz
+wikihow-*.wiki
+wikihow-*.flow
+
 pages

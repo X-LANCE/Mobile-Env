@@ -14,6 +14,7 @@ import csv
 import urllib.parse
 from typing import List
 from typing import Mapping
+from mitmproxy.coretypes.multidict import MultiDict
 import random
 
 class Replayer:
@@ -298,6 +299,51 @@ class Replayer:
 
                 self.cache_index += 1
                 #  }}} Random Page # 
+            elif url_path.startswith("/Special:RateItem"):
+                #  Reting Flows {{{ # 
+                headers = {}
+
+                response_time = datetime.datetime.utcnow()
+                headers["content-type"] = "text/html; charset=UTF-8"
+                headers["access-control-allow-credentials"] = "true"
+                headers["access-control-allow-origin"] = "https://www.wikihow.com"
+                headers["access-control-expose-headers"] = "AMP-Access-Control-Allow-Source-Origin"
+                headers["amp-access-control-allow-source-origin"] = "https://www.wikihow.com"
+                #headers["set-cookie"] =\
+                        #"UseDC=master; expires={:}; Max-Age=10; path=/; domain=www.wikihow.com; secure; HttpOnly"
+                headers["content-language"] = "en"
+                headers["x-frame-options"] = "SAMEORIGIN"
+                headers["expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
+                headers["cache-control"] = "private, must-revalidate, max-age=0"
+                headers["x-p"] = "ck ma"
+                headers["content-encoding"] = "gzip"
+                headers["accept-ranges"] = "bytes"
+                headers["date"] = response_time.strftime(self.dateformat)
+                headers["x-timer"] = "S{:.6f},VS0,VE0".format(response_time.timestamp())
+                headers["x-c"] = "cache-tyo{:d}-TYO,M".format(self.cache_index)
+                headers["x-content-type-options"] = "nosniff"
+                headers["x-xss-protection"] = "1; mode=block"
+                headers["strict-transport-security"] = "max-age=31536000; includeSubDomains; preload"
+                headers["vary"] = "Cookie, Accept-Encoding"
+
+                flow.response = http.Response.make(200,
+                        content=b'{"result":"true"}',
+                        headers=headers)
+
+                cookies_attribute = MultiDict([
+                            ("expires", (response_time + datetime.timedelta(seconds=10))\
+                                    .strftime(self.dateformat)),
+                            ("Max-Age", "10"),
+                            ("path", "/"),
+                            ("domain", "www.wikihow.com"),
+                            ("secure", None),
+                            ("HttpOnly", None)
+                        ])
+                flow.response.cookies["UseDC"] = ("master", cookies_attribute)
+                flow.response.cookies["UseCDNCache"] = ("false", cookies_attribute.copy())
+
+                self.cache_index += 1
+                #  }}} Reting Flows # 
             else:
                 #  Normal Pages {{{ # 
                 filename = url_path.replace("/", "%2f")
@@ -341,8 +387,9 @@ class Replayer:
 
                     self.cache_index += 1
                 #  }}} Normal Pages # 
-        else:
-            flow.response = http.Response.make(204)
+        #else:
+            #flow.response = http.Response.make(204)
+            #pass
     #  }}} class `Replayer` # 
 
 addons = [
