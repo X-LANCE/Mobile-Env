@@ -21,7 +21,7 @@ with open(sys.argv[1], "rb") as fl_f:
 
             url = f.request.path
             #l_f.write(url + "\n")
-            if url=="/Flirt-With-Body-Language?wh_an=1&amp=1":
-                with open("F.html.gz", "wb") as cpr_f:
+            if url=="/Special:SortQuestions?wh_an=1&amp=1":
+                with open("SQ.html.gz", "wb") as cpr_f:
                     cpr_f.write(f.response.raw_content)
 #  }}} Main Structure # 

@@ -12,6 +12,8 @@ wikihow-requets.list
 
 F.html
 F.html.gz
+SQ*.html
+SQ*.html.gz
 wikihow-*.wiki
 wikihow-*.flow
 
