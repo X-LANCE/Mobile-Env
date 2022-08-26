@@ -4,27 +4,13 @@ from mitmproxy import http
 from mitmproxy import io
 
 import os.path
-import re
 import classify_url
 
 dump_path = "../../../../small-web-crawler/dumps"
 
-special_strs = [ "RCLite"
-               , "UsageLogs"
-               , "Spellchecker"
-               , "SortQuestions"
-               , "TechFeedback"
-               , "MobileSpellchecker"
-               , "MobileCategoryGuardian"
-               , "CategoryGuardian"
-               , "UnitGuardian"
-               #, "QuizYourself"
-    ]
-special_pattern = re.compile(r"^/Special:(?:{:})".format("|".join(special_strs)))
-
 counter = {}
 
-with open("../flows/wikihow-20220826.flow", "rb") as fl_f:
+with open("../flows/wikihow-quiz-20220826.flow", "rb") as fl_f:
     reader = io.FlowReader(fl_f)
     for fl in reader.stream():
         if isinstance(fl, http.HTTPFlow) and fl.request.pretty_host=="www.wikihow.com":
@@ -41,16 +27,18 @@ with open("../flows/wikihow-20220826.flow", "rb") as fl_f:
             if len(dump_name)>100:
                 dump_name = dump_name[:100]
 
-            if url_path.startswith("/Special:"):
-                match_ = special_pattern.match(url_path)
-                if match_ is not None:
-                    if url_path not in counter:
-                        counter[url_path] = 0
-                    dump_name = dump_name + "-{:}".format(counter[url_path])
-                    counter[url_path] += 1
+            if url_path=="/Special:QuizYourself":
+                #print(fl.request.urlencoded_form)
+                if fl.request.urlencoded_form["action"]=="get_quiz":
+                    categ = fl.request.urlencoded_form["category"]
+                    if categ not in counter:
+                        counter[categ] = 0
+                    dump_name = dump_name + "-{:}-{:}".format(categ, counter[categ])
+                    counter[categ] += 1
+                else:
+                    dump_name = dump_name + "-CATEG"
 
-            if url_path.startswith("/Special:CommunityDashboard")\
-                    or url_path.startswith("/Special:MobileCommunityDashboard"):
+            if url_path=="/Special:QuizYourself?wh_an=1&amp=1":
                 print("Dumped {:}".format(dump_name))
                 with open(os.path.join(dump_path, dump_name), "wb") as f:
                     f.write("HTTP/2 {:d}\r\n".format(fl.response.status_code).encode())
