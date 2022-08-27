@@ -4,7 +4,6 @@ import os.path
 import functools
 import classify_url
 import load_response
-import re
 import datetime
 import locale
 import gzip
@@ -18,19 +17,6 @@ from typing import Mapping
 from mitmproxy.coretypes.multidict import MultiDict
 import random
 
-special_strs = [ "RCLite"
-               , "UsageLogs"
-               , "SpellChecker"
-               , "SortQuestions"
-               , "TechFeedback"
-               , "MobileSpellchecker"
-               , "MobileCategoryGuardian"
-               , "CategoryGuardian"
-               , "UnitGuardian"
-               #, "QuizYourself"
-               ]
-special_pattern = re.compile(r"^/Special:(?:{:})".format("|".join(special_strs)))
-
 class Replayer:
     #  class `Replayer` {{{ # 
     def __init__(self, start_cache_index: int,
@@ -39,8 +25,6 @@ class Replayer:
             index_path: str,
             meta_path: str):
         self.cache_index: int = start_cache_index
-        self.special_counter: Dict[str, int] = {}
-        self.quiz_counter: Dict[str, int] = {}
 
         self.replay_path: str = replay_path
         self.template_path: str = template_path
@@ -364,43 +348,10 @@ class Replayer:
                 #  Normal Pages {{{ # 
                 if url_key==r"/Special:RCWidget\?*":
                     filename = "%2fSpecial:RCWidget?function=WH.RCWidget.rcwOnLoadData&GuVHo&nabrequest=0&anonview=1"
-                elif url_path=="/Special:QuizYourself":
-                    if flow.request.urlencoded_form["action"]=="get_quiz":
-                        categ = flow.request.urlencoded_form["category"]
-                        if categ not in self.quiz_counter:
-                            self.quiz_counter[categ] = 0
-
-                        filename = filename + "-{:}".format(categ)
-                        filename_ - filename + "-{:}".format(self.quiz_counter[categ])
-                        if not os.path.exists(os.path.join(self.replay_path, filename_)):
-                            filename_ = filename + "-0"
-                            self.quiz_counter[categ] = 0
-                        self.quiz_counter[categ] += 1
-
-                        filename = filename_
-                    else:
-                        filename = filename + "-CATEG"
-                    ctx.log.info("Quiz: {:}".format(filename))
                 else:
                     filename = url_path.replace("/", "%2f")
                     if len(filename)>100:
                         filename = filename[:100]
-
-                    #  Special Requests on the Contribution Page {{{ # 
-                    match_ = special_pattern.match(url_path)
-                    if match_ is not None:
-                        if url_path not in self.special_counter:
-                            self.special_counter[url_path] = 0
-
-                        filename_ = filename + "-{:}".format(self.special_counter[url_path])
-                        if not os.path.exists(os.path.join(self.replay_path, filename_)):
-                            filename_ = filename + "-0"
-                            self.special_counter[url_path] = 0
-                        self.special_counter[url_path] += 1
-
-                        filename = filename_
-                        ctx.log.info("Special: {:}".format(filename))
-                    #  }}} Special Requests on the Contribution Page # 
 
                 filename = os.path.join(self.replay_path, filename)
                 #ctx.log.info("Requesting {:}".format(filename))
