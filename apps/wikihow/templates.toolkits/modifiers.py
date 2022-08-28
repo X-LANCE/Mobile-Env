@@ -20,3 +20,6 @@ def to_list(x: str) -> str:
 lower = str.lower
 upper = str.upper
 title = str.title
+
+def filter_comma(x: str) -> str:
+    return x.replace(",", "")

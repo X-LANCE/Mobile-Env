@@ -7,6 +7,7 @@ module Modifiers
   , lower
   , upper
   , title
+  , filter_comma
   )
 
 import Data.List
@@ -82,3 +83,6 @@ title x = concat $ zipWith (++) words' symbols'
 
     title' [] = []
     title' h:t = toUpper h : lower t
+
+filter_comma :: Modifier
+filter_comma = filter (/= ',')

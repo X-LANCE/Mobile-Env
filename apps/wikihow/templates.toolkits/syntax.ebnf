@@ -8,6 +8,7 @@ modifier = "regex_list"
     | "lower"
     | "upper"
     | "title"
+    | "filter_comma"
     ;
 
 identifier = ( alphabet-symbol | _ ), { alphabet-symbol | _ } ;

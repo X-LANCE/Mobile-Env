@@ -1,0 +1,72 @@
+# vim: set filetype=conf:
+
+id: "author_page"
+name: "WikiHow Browsing Task Primitive - Access the Author Page"
+description: "A demo task asking to access the author page"
+
+#include basic.prototext.template
+
+event_sources: [
+  {
+    text_detect: {
+      expect: "<author>"
+      rect: {
+        x0: 0.0
+        y0: 0.5
+        x1: 1.0
+        y1: 0.65
+      }
+    }
+    id: 1
+  },
+  {
+    log_event: {
+      filters: ["jd:D"]
+      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/<url_title:filter_comma:author>"
+    }
+    id: 2
+  },
+  {
+    view_hierarchy_event: {
+      view_hierarchy_path: [
+        "android.widget.FrameLayout",
+        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root",
+        "android.widget.FrameLayout@android:id/content",
+        "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout",
+        "android.webkit.WebView",
+        "android.view.View@mw-mf-viewport",
+        "android.view.View@mw-mf-page-center",
+        "android.view.View@content_wrapper",
+        "android.view.View@mw-content-text",
+        "android.view.View@authors_container",
+        "android.widget.Image"
+      ]
+      properties: [
+        {
+          property_name: "text"
+          pattern: "<author>"
+        }
+      ]
+    }
+    id: 3
+  }
+]
+
+event_slots: {
+  reward_listener: {
+    type: OR
+    id: 4
+    events: [
+      { id: 1 },
+      { id: 2 },
+      { id: 3 }
+    ]
+    transformation: ["y = 1"]
+  }
+  episode_end_listener: {
+    events: [ { id: 4 } ]
+    transformation: ["y = True"]
+  }
+}
+
+command: "Check the author page of <author>."

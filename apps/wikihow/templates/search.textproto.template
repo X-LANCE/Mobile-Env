@@ -106,7 +106,7 @@ event_slots: {
                             }
                         }
                     ]
-                    transformation: ["y = 3*x"]
+                    transformation: ["y = x"]
                 }
             }
         ]

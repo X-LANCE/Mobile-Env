@@ -111,16 +111,16 @@ class TaskManager():
     for evt_s in task.event_sources:
       self._parse_event_source(evt_s)
 
-    self._score_event: event_listeners.EventSlot[Any, Any, Optional[int]] =\
+    self._score_event: event_listeners.EventSlot[Any, Any, float] =\
       self._parse_event_listeners(task.event_slots.score_listener, wrap=float)\
         if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
         else event_listeners.EmptyEvent()
-    self._reward_event: event_listeners.EventSlot[Any, Any, Optional[int]] =\
+    self._reward_event: event_listeners.EventSlot[Any, Any, float] =\
       self._parse_event_listeners(task.event_slots.reward_listener, wrap=float,
           update=operator.add)\
         if task.HasField("event_slots") and task.event_slots.HasField("reward_listener")\
         else event_listeners.EmptyEvent()
-    self._episode_end_event: event_listeners.EventSlot[Any, Any, Optional[int]] =\
+    self._episode_end_event: event_listeners.EventSlot[Any, Any, Any] =\
       self._parse_event_listeners(task.event_slots.episode_end_listener)\
         if task.HasField("event_slots") and task.event_slots.HasField("episode_end_listener")\
         else event_listeners.EmptyEvent()
@@ -138,7 +138,7 @@ class TaskManager():
           dict1[k] = dict1[k][-buffer_size_limit:]
       return dict1
       #  }}} function `_update_dict` # 
-    self._extra_event: event_listeners.EventSlot[Any, Any, Optional[Dict[str, str]]] =\
+    self._extra_event: event_listeners.EventSlot[Any, Any, Dict[str, str]] =\
       self._parse_event_listeners(task.event_slots.extra_listener,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("extra_listener")\
@@ -157,8 +157,8 @@ class TaskManager():
       return extra
       #  }}} function `_parse_json` # 
     self._json_extra_event: event_listeners.EventSlot[Any,
-        Optional[Union[Dict[str, Any], str]],
-        Optional[Dict[str, str]]] =\
+        Union[Dict[str, Any], str],
+        Dict[str, str]] =\
       self._parse_event_listeners(task.event_slots.json_extra_listener,
           wrap=_parse_json,
           update=functools.partial(_update_dict, self._extras_max_buffer_size))\
@@ -169,8 +169,8 @@ class TaskManager():
       instruction1 += instruction2
       return instruction1
     self._instruction_event: event_listeners.EventSlot[Any,
-        Optional[Union[List, str]],
-        Optional[List[str]]] =\
+        Union[List[str], str],
+        List[str]] =\
       self._parse_event_listeners(task.event_slots.instruction_listener,
           wrap=(lambda instrct: instrct if isinstance(instrct, list) else [instrct]),
           update=functools.partial(_update_list, self._extras_max_buffer_size))\
