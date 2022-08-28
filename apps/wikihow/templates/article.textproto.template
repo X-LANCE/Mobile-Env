@@ -1,0 +1,57 @@
+# vim: set filetype=conf:
+
+id: "article_<lower:title>"
+name: "WikiHow Search Task Primitive - Access <title>"
+description: "A demo task primitive requiring to access a specific article."
+
+#include basic.prototext.template
+
+event_sources: [
+  {
+    text_detect: {
+      expect: "How to <title>"
+      rect: {
+        x0: 0.0
+        y0: 0.19
+        x1: 1.0
+        y1: 0.30
+      }
+    }
+    id: 1
+  },
+  {
+    log_event: {
+      filters: ["jd:D"]
+      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/<url_title:title>"
+    }
+    id: 2
+  }
+]
+
+event_slots: {
+  reward_listener: {
+    type: OR
+    id: 3
+    events: [
+      {
+        event: {
+          events: [ { id: 1 } ]
+          transformation: ["y = 1"]
+        }
+      },
+      {
+        event: {
+          events: [ { id: 2 } ]
+          transformation: ["y = 1"]
+        }
+      }
+    ]
+    transformation: ["y = x"]
+  }
+  episode_end_listener: {
+    events: [ { id: 3 } ]
+    transformation: "y = True"
+  }
+}
+
+command: ["Access the article \"<title>\""]

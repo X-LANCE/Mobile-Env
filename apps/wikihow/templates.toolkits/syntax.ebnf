@@ -3,6 +3,7 @@ item = "<" [ modifier { "," modifier } : ] identifier ">" ;
 modifier = "regex_list"
     | "regex_esc"
     | "url_space"
+    | "url_quote"
     | "url_title"
     | "to_list"
     | "lower"

@@ -1,20 +1,20 @@
 # vim: set filetype=conf:
 
-id: "author_page"
-name: "WikiHow Browsing Task Primitive - Access the Author Page"
-description: "A demo task asking to access the author page"
+id: "about_page"
+name: "WikiHow Browsing Task Primitive - Access the About Page"
+description: "A demo task asking to access the about page"
 
 #include basic.prototext.template
 
 event_sources: [
   {
     text_detect: {
-      expect: "<author>"
+      expect: "Information You Can Trust|A Guide to our Editorial Process"
       rect: {
         x0: 0.0
-        y0: 0.5
+        y0: 0.1
         x1: 1.0
-        y1: 0.65
+        y1: 0.6
       }
     }
     id: 1
@@ -22,7 +22,7 @@ event_sources: [
   {
     log_event: {
       filters: ["jd:D"]
-      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/<url_title,filter_comma:author>"
+      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHow:Delivering-a-Trustworthy-Experience"
     }
     id: 2
   },
@@ -35,16 +35,14 @@ event_sources: [
         "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout",
         "android.webkit.WebView",
         "android.view.View@mw-mf-viewport",
-        "android.view.View@mw-mf-page-center",
-        "android.view.View@content_wrapper",
-        "android.view.View@mw-content-text",
-        "android.view.View@authors_container",
-        "android.widget.Image"
+        "android.view.View@trustworthy_top",
+        "android.view.View@trustworthy_head",
+        "android.view.View"
       ]
       properties: [
         {
           property_name: "text"
-          pattern: "<author>"
+          pattern: "Information You Can Trust"
         }
       ]
     }
@@ -69,4 +67,4 @@ event_slots: {
   }
 }
 
-command: ["Check the author page of <author>."]
+command: ["Access the about page to learn why people trust wikihow."]

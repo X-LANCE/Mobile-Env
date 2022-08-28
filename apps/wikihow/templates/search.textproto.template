@@ -50,74 +50,23 @@ event_sources: [
             pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*<regex_esc,url_space,regex_list:keywords>.*"
         }
         id: 3
-    },
-    {
-        text_detect: {
-            expect: "How to <title>"
-            rect: {
-                x0: 0.0
-                y0: 0.19
-                x1: 1.0
-                y1: 0.30
-            }
-        }
-        id: 4
-    },
-    {
-        log_event: {
-            filters: ["jd:D"]
-            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/<url_title:title>"
-        }
-        id: 6
     }
 ]
 
 event_slots: {
     reward_listener: {
-        type: OR
-        events: [
-            {
-                event: {
-                    type: OR
-                    id: 7
-                    events: [
-                        { id: 1 },
-                        { id: 2 },
-                        { id: 3 }
-                    ]
-                    transformation: ["y = 1"]
-                }
-            },
-            {
-                event: {
-                    type: OR
-                    id: 8
-                    events: [
-                        {
-                            event: {
-                                events: [ { id: 4 } ]
-                                transformation: ["y = 1"]
-                            }
-                        },
-                        {
-                            event: {
-                                events: [ { id: 6 } ]
-                                transformation: ["y = 1"]
-                            }
-                        }
-                    ]
-                    transformation: ["y = x"]
-                }
-            }
-        ]
-    }
+		type: OR
+		id: 7
+		events: [
+			{ id: 1 },
+			{ id: 2 },
+			{ id: 3 }
+		]
+		transformation: ["y = 1"]
+	}
     episode_end_listener: {
         events: [ { id: 8 } ]
         transformation: "y = True"
-    }
-    instruction_listener: {
-        events: [ { id: 7 } ]
-        transformation: "y = \"Access the article \\\"<title>\\\"\""
     }
 }
 
