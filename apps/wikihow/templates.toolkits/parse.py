@@ -124,11 +124,11 @@ def main():
     instance.event.CopyFrom(task_list[0].event_slots.reward_listener)
     target_task.event_slots.reward_listener.CopyFrom(reward_slot)
 
-    episode_end_slot = task_pb2.EventSlot()
-    episode_end_slot.type = task_pb2.EventSlot.Type.OR
-    instance = episode_end_slot.events.add()
-    instance.event.CopyFrom(task_list[0].event_slots.episode_end_listener)
-    target_task.event_slots.episode_end_listener.CopyFrom(episode_end_slot)
+    #episode_end_slot = task_pb2.EventSlot()
+    #episode_end_slot.type = task_pb2.EventSlot.Type.OR
+    #instance = episode_end_slot.events.add()
+    #instance.event.CopyFrom(task_list[0].event_slots.episode_end_listener)
+    #target_task.event_slots.episode_end_listener.CopyFrom(episode_end_slot)
 
     extra_slot = task_pb2.EventSlot()
     extra_slot.type = task_pb2.EventSlot.Type.OR
@@ -153,7 +153,7 @@ def main():
             max(map(lambda evt: evt.id, task_list[0].event_sources)),
             max(apply_to_event_slots(max_id, task_list[0].event_slots)))
 
-    for t in task_list[1:]:
+    for i, t in enumerate(task_list[1:]):
         target_task.id = "{:}-{:}".format(target_task.id, t.id)
         target_task.name = "{:}, {:}".format(target_task.name,
             t.name.split(" - ", maxsplit=1)[1])
@@ -180,8 +180,8 @@ def main():
         new_slot = target_task.event_slots.reward_listener.events.add()
         new_slot.event.CopyFrom(t.event_slots.reward_listener)
 
-        new_slot = target_task.event_slots.episode_end_listener.events.add()
-        new_slot.event.CopyFrom(t.event_slots.episode_end_listener)
+        #new_slot = target_task.event_slots.episode_end_listener.events.add()
+        #new_slot.event.CopyFrom(t.event_slots.episode_end_listener)
 
         new_slot = target_task.event_slots.extra_listener.events.add()
         new_slot.event.CopyFrom(t.event_slots.extra_listener)
@@ -190,16 +190,25 @@ def main():
         new_slot.event.CopyFrom(t.event_slots.json_extra_listener)
 
         new_slot = target_task.event_slots.instruction_listener.events.add()
+        new_slot.event.CopyFrom(task_list[i].event_slots.episode_end_listener)
+        del new_slot.event.transformation[:]
+        new_slot.event.transformation.append("y = ["\
+                                            + ", ".join(map(repr, t.command))\
+                                            + "]")
+
+        new_slot = target_task.event_slots.instruction_listener.events.add()
         new_slot.event.CopyFrom(t.event_slots.instruction_listener)
         #  }}} merge event slots # 
 
         target_task.extras_spec.extend(t.extras_spec)
-        #t.command[0][0] = t.command[0][0].lower()
         t.command[0] = "Then, "\
                      + t.command[0][0].lower()\
                      + t.command[0][1:]
         target_task.command.extend(t.command)
         target_task.vocabulary.extend(t.vocabulary)
+
+    target_task.event_slots.episode_end_listener.CopyFrom(
+        task_list[-1].event_slots.episode_end_listener)
 
     target_task.vocabulary[:] = list(set(target_task.vocabulary))
 

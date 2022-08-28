@@ -84,7 +84,7 @@ class TaskManager():
     self._image_format = None
     self._setup_step_interpreter = None
 
-    self._vocabulary: List[str] = self._task.vocabulary
+    self._vocabulary: List[str] = list(self._task.vocabulary)
 
     # Logging settings
     self._log_dict = {
@@ -389,7 +389,7 @@ class TaskManager():
     return list of str
     """
 
-    return self._task.command
+    return list(self._task.command)
   def nb_tokens(self) -> int:
     """
     return int

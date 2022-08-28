@@ -11,12 +11,12 @@ else
 endif
 
 task_confs := $(wildcard $(INSTANCE_DIR)/*.task)
-task_protos = $(addsuffix .textproto,$(basename $(task_confs)))
+task_protos := $(addsuffix .textproto,$(basename $(task_confs)))
 
 .PHONY: all clean
 all: $(addprefix $(OUTPUT_DIR)/,$(notdir $(task_protos)))
 clean:
-	rm $(OUTPUT_DIR)/*.textproto
+	rm -f $(OUTPUT_DIR)/*.textproto
 
 .ONESHELL:
 $(OUTPUT_DIR)/%.textproto: $(INSTANCE_DIR)/%.task

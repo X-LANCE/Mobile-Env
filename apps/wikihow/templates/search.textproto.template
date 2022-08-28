@@ -56,9 +56,9 @@ event_sources: [
             expect: "How to <title>"
             rect: {
                 x0: 0.0
-                y0: 0.0
+                y0: 0.19
                 x1: 1.0
-                y1: 1.0
+                y1: 0.30
             }
         }
         id: 4

@@ -22,7 +22,7 @@ event_sources: [
   {
     log_event: {
       filters: ["jd:D"]
-      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/<url_title:filter_comma:author>"
+      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/<url_title,filter_comma:author>"
     }
     id: 2
   },
