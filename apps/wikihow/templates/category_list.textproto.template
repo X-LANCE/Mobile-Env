@@ -1,42 +1,30 @@
 # vim: set filetype=conf:
 
-id: "category_page_<lower:categ>"
-name: "WikiHow Browsing Task Primitive - Access the page of category <categ>"
-description: "A demo task asking to access the category page."
+id: "category_list"
+name: "WikiHow Browsing Task Primitive - Access the category list page"
+description: "A demo task asking to access the category list page."
 
 #include basic.prototext.template
 
 event_sources: [
   {
     text_detect: {
-      expect: "<categ>"
+      expect: "Top Categories"
       rect: {
-        x0: 0.11
-        y0: 0.19
+        x0: 0.0
+        y0: 0.10
         x1: 1.0
-        y1: 0.20
+        y1: 0.189
       }
     }
     id: 1
   },
   {
-    text_detect: {
-      expect: "<categ>"
-      rect: {
-        x0: 0.0
-        y0: 0.165
-        x1: 1.0
-        y1: 0.568
-      }
-    }
-    id: 2
-  },
-  {
     log_event: {
       filters: ["jd:D"]
-      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Category:<url_title:categ>"
+      pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Special:Categorylisting"
     }
-    id: 3
+    id: 2
   },
   {
     view_hierarchy_event: {
@@ -48,38 +36,36 @@ event_sources: [
         "android.webkit.WebView",
         "android.view.View@mw-mf-viewport",
         "android.view.View@mw-mf-page-center",
-        "android.view.View@content_wrapper",
         "android.view.View@content_inner",
         "android.view.View@cat_navigation",
-        "android.view.View"
+        "android.view.View@section_0",
       ]
       properties: [
         {
           property_name: "text"
-          pattern: "<categ>"
+          pattern: "Top Categories"
         }
       ]
     }
-    id: 4
+    id: 3
   }
 ]
 
 event_slots: {
   reward_listener: {
     type: OR
-    id: 5
+    id: 4
     events: [
       { id: 1 },
       { id: 2 },
-      { id: 3 },
-      { id: 4 }
+      { id: 3 }
     ]
     transformation: ["y = 1"]
   }
   episode_end_listener: {
-    events: [ { id : 5 } ]
+    events: [ { id : 4 } ]
     transformation: ["y = True"]
   }
 }
 
-command: ["Access the page of category <categ>"]
+command: ["Access the category listing page"]
