@@ -211,9 +211,9 @@ class Recorder():
       record["input_token"] = action["input_token"].item()
     elif current_type==action_type.ActionType.TOUCH:
       record["touch_position"] = action["touch_position"]
-    record["reward"] = timestep.reward
-    record["observation"] = timestep.observation["pixels"]
-    record["orientation"] = np.argmax(timestep.observation["orientation"])
+    #record["reward"] = timestep.reward
+    #record["observation"] = timestep.observation["pixels"]
+    #record["orientation"] = np.argmax(timestep.observation["orientation"])
     self.current_trajectory.append(record)
 
     if timestep.last():

@@ -1,15 +1,15 @@
 item = "<" [ modifier { "," modifier } : ] identifier ">" ;
 
-modifier = "regex_list"
-    | "regex_esc"
-    | "url_space"
-    | "url_quote"
-    | "url_title"
-    | "to_list"
-    | "lower"
-    | "upper"
-    | "title"
-    | "filter_comma"
-    ;
+modifier = ( "regex_list"
+           | "regex_esc"
+           | "url_space"
+           | "url_quote"
+           | "url_title"
+           | "to_list"
+           | "lower"
+           | "upper"
+           | "title"
+           | "filter_comma"
+           ) , "'" ;
 
 identifier = ( alphabet-symbol | _ ), { alphabet-symbol | _ } ;

@@ -9,7 +9,7 @@ setup_steps: [
         }
         adb_call: {
             install_apk: {
-                filesystem: { path: "wikiHow：万事指南_2.9.6_apkcombo.com.apk" }
+                filesystem: { path: "../wikiHow：万事指南_2.9.6_apkcombo.com.apk" }
             }
         }
     },

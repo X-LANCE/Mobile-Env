@@ -47,7 +47,7 @@ event_sources: [
     {
         log_event: {
             filters: ["jd:D"]
-            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*<regex_esc,url_space,regex_list:keywords>.*"
+            pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*<regex_esc,regex_list,url_space':keywords>.*"
         }
         id: 3
     }

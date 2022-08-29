@@ -12,7 +12,7 @@ import functools
 import argparse
 import sys
 
-template_item_pattern = re.compile(r"<(?:(?P<modifiers>\w+(?:,\w+)*):)?(?P<identifier>\w+)>")
+template_item_pattern = re.compile(r"<(?:(?P<modifiers>\w+'?(?:,\w+'?)*):)?(?P<identifier>\w+)>")
 
 def replace_item(conf_dict: Dict[str, str], match_: Match[str]) -> str:
     identifier = match_.group("identifier")
@@ -21,7 +21,10 @@ def replace_item(conf_dict: Dict[str, str], match_: Match[str]) -> str:
     if match_.group("modifiers") is not None:
         modifiers_ = match_.group("modifiers").split(",")
         for mdf in modifiers_[-1::-1]:
-            keyword = getattr(modifiers, mdf)(keyword)
+            if mdf[-1]=="'":
+                keyword = ",".join(map(getattr(modifiers, mdf[:-1]), keyword.split(",")))
+            else:
+                keyword = getattr(modifiers, mdf)(keyword)
     return keyword
 
 def max_id(event_slot: task_pb2.EventSlot) -> int:
