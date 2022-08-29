@@ -7,6 +7,7 @@ python ../../examples/run_human_agent.py \
     --emulator_path=/home/david/Android/Sdk/emulator/emulator \
     --adb_path=/home/david/Android/Sdk/platform-tools/adb \
     --task_path=wikihow_search.textproto\
-    --norun_headless\
+    --run_headless\
     --mitm syscert\
-    --frida_script ../../tools/frida-script.js
+    --frida_script ../../tools/frida-script.js\
+    --screen_size 405,720

@@ -17,7 +17,9 @@
 """Loads an interactive session where a human acts on behalf of an agent."""
 
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
+from typing import Dict, List, Tuple
+import pickle as pkl
 
 from absl import app
 from absl import flags
@@ -172,6 +174,52 @@ def _render_pygame_frame(
 
   pygame.display.flip()
 
+class Recorder():
+  #  class `Recorder` {{{ # 
+  def __init__(self, dump_file: str):
+    self.dump_file: str = dump_file
+    self.prev_type: action_type.ActionType = action_type.ActionType.LIFT
+
+    self.trajectories:\
+      List[List[Dict[str, Any]]]\
+        = []
+    self.current_trajectory:\
+      List[Dict[str, Any]]\
+        = []
+
+  def __enter__(self):
+    return self
+  def __exit__(self, *args):
+    if len(self.current_trajectory)>0:
+      self.trajectories.append(self.current_trajectory)
+
+    with open(self.dump_file, "wb") as f:
+      pkl.dump(self.trajectories, f)
+    logging.info("\x1b[32mDUMPED TRAJECTORY RECORDS\x1b[0m")
+
+  def log(self,
+      action: Dict[str, np.ndarray],
+      timestep: dm_env.TimeStep):
+    current_type = action["action_type"].item()
+    if current_type==action_type.ActionType.LIFT\
+        and self.prev_type==action_type.ActionType.LIFT:
+      return
+
+    record = {}
+    record["action_type"] = current_type
+    if current_type==action_type.ActionType.TEXT:
+      record["input_token"] = action["input_token"].item()
+    elif current_type==action_type.ActionType.TOUCH:
+      record["touch_position"] = action["touch_position"]
+    record["reward"] = timestep.reward
+    record["observation"] = timestep.observation["pixels"]
+    record["orientation"] = np.argmax(timestep.observation["orientation"])
+    self.current_trajectory.append(record)
+
+    if timestep.last():
+      self.trajectories.append(self.current_trajectory)
+      self.current_trajectory = []
+  #  }}} class `Recorder` # 
 
 def main(_):
 
@@ -186,14 +234,15 @@ def main(_):
     mitm_config["frida-script"] = FLAGS.frida_script
 
   with android_env.load(
-      emulator_path=FLAGS.emulator_path,
-      android_sdk_root=FLAGS.android_sdk_root,
-      android_avd_home=FLAGS.android_avd_home,
-      avd_name=FLAGS.avd_name,
-      adb_path=FLAGS.adb_path,
-      task_path=FLAGS.task_path,
-      run_headless=FLAGS.run_headless,
-      mitm_config=mitm_config) as env:
+        emulator_path=FLAGS.emulator_path,
+        android_sdk_root=FLAGS.android_sdk_root,
+        android_avd_home=FLAGS.android_avd_home,
+        avd_name=FLAGS.avd_name,
+        adb_path=FLAGS.adb_path,
+        task_path=FLAGS.task_path,
+        run_headless=FLAGS.run_headless,
+        mitm_config=mitm_config) as env,\
+      Recorder("action_record.pkl") as recorder:
 
     action_specification = env.action_spec()
     vocabulary_size = action_specification["input_token"].num_values if "input_token" in action_specification\
@@ -219,6 +268,10 @@ def main(_):
     prev_frame = time.time()
     episode_return = 0
 
+    #record_file = open("action_record.txt", "w")
+
+    breaks = False
+    #prev_type = action_type.ActionType.LIFT
     while True:
       #if pygame.key.get_pressed()[pygame.K_ESCAPE]:
         #return
@@ -226,7 +279,8 @@ def main(_):
       all_events = pygame.event.get()
       for event in all_events:
         if event.type == pygame.QUIT:
-          return
+          breaks = True
+          break
 
       # Filter event queue for mouse click events.
       #mouse_click_events = [
@@ -239,22 +293,30 @@ def main(_):
       for event in all_events:
         action = _get_action_from_event(event, screen, orientation, vocabulary_size)
         if action==0:
-          return
+          breaks = True
+          break
         if action is None:
           continue
         timestep = env.step(action)
+        recorder.log(action, timestep)
+
         reward = timestep.reward
         instruction = env.task_instructions()
-        logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
+        #logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
         episode_return = _accumulate_reward(timestep, episode_return)
         _render_pygame_frame(surface, screen, orientation, timestep)
+
+      if breaks:
+        break
 
       # Sample the current position of the mouse either way.
       action = _get_action_from_mouse(screen, orientation)
       timestep = env.step(action)
+      recorder.log(action, timestep)
+
       reward = timestep.reward
       instruction = env.task_instructions()
-      logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
+      #logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
       episode_return = _accumulate_reward(timestep, episode_return)
       _render_pygame_frame(surface, screen, orientation, timestep)
 
@@ -264,6 +326,11 @@ def main(_):
       if frame_time < FLAGS.frame_rate:
         time.sleep(FLAGS.frame_rate - frame_time)
       prev_frame = now
+
+  logging.info("\x1b[1;31mCLOSED 1!\x1b[0m")
+  pygame.quit()
+  logging.info("\x1b[1;31mCLOSED 2!\x1b[0m")
+  return
 
 
 if __name__ == '__main__':
