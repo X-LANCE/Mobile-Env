@@ -1,0 +1,47 @@
+# vim: set filetype=conf:
+
+id: "check_reference"
+name: "WikiHow Browsing Task Primitive - Check the Reference"
+description: "A demo task asking to check the reference list."
+
+#include basic.prototext.template
+
+event_sources: [
+    {
+        text_detect: {
+            expect: "References"
+            rect: {
+                x0: 0.0
+                y0: 0.0
+                x1: 0.33
+                y1: 1.0
+            }
+        }
+        id: 1
+    },
+    {
+        log_event: {
+            filters: ["jd:D"]
+            pattern: "\\burl is: https://www\\.wikihow\\.com/<url_title:title>\\?wh_an=1&amp=1#References\\b"
+        }
+        id: 2
+    }
+]
+
+event_slots: {
+    reward_listener: {
+        type: OR
+        id: 3
+        events: [
+            { id: 1 },
+            { id: 2 }
+        ]
+        transformation: ["y = 1"]
+    }
+    episode_end_listener: {
+        events: [ { id: 3 } ]
+        transformation: "y = True"
+    }
+}
+
+command: ["Check the reference list"]

@@ -25,31 +25,46 @@ event_sources: [
       pattern: "\\bmUrl is: https://www\\.wikihow\\.com/<url_title:title>"
     }
     id: 2
+  },
+  {
+    view_hierarchy_event: {
+      view_hierarchy_path: [
+        "android.widget.FrameLayout",
+        "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root",
+        "android.widget.FrameLayout@android:id/content",
+        "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout",
+        "android.webkit.WebView",
+        "android.view.View@mw-mf-viewport",
+        "android.view.View@mw-mf-page-center",
+        "android.view.View@content_wrapper",
+        "android.view.View@content_inner",
+        "android.view.View@section_0",
+        "android.widget.TextView"
+      ]
+      properties: [
+        {
+          property_name: "text"
+          pattern: "How to <title>"
+        }
+      ]
+    }
+    id: 3
   }
 ]
 
 event_slots: {
   reward_listener: {
     type: OR
-    id: 3
+    id: 4
     events: [
-      {
-        event: {
-          events: [ { id: 1 } ]
-          transformation: ["y = 1"]
-        }
-      },
-      {
-        event: {
-          events: [ { id: 2 } ]
-          transformation: ["y = 1"]
-        }
-      }
+      { id: 1},
+      { id: 2},
+      { id: 3}
     ]
-    transformation: ["y = x"]
+    transformation: ["y = 1"]
   }
   episode_end_listener: {
-    events: [ { id: 3 } ]
+    events: [ { id: 4 } ]
     transformation: "y = True"
   }
 }

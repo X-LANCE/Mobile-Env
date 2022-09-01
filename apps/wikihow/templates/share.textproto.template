@@ -1,0 +1,56 @@
+# vim: set filetype=conf:
+
+id: "share_article"
+name: "WikiHow Personal Task Primitive - Share Article"
+description: "A demo task primitive asking to share the article"
+
+#include basic.prototext.template
+
+event_sources: [
+    {
+        text_detect: {
+            expect: "Share article"
+            rect: {
+                x0: 0.5306
+                y0: 0.0420
+                x1: 0.8633
+                y1: 0.1000
+            }
+        }
+        id: 1
+    },
+    {
+        view_hierarchy_event: {
+            view_hierarchy_path: [
+                "android.widget.FrameLayout",
+                "android.widget.FrameLayout",
+                "android.widget.TextView@android:id/title"
+            ]
+            properties: [
+                {
+                    property_name: "text"
+                    pattern: "Share article"
+                }
+            ]
+        }
+        id: 2
+    }
+]
+
+event_slots: {
+    reward_listener: {
+        type: OR
+        id: 3
+        events: [
+            { id: 1 },
+            { id: 2 }
+        ]
+        transformation: "y = 1"
+    }
+    episode_end_listener: {
+        events: [ { id: 3 } ]
+        transformation: "y = True"
+    }
+}
+
+command: "Try to share the article."

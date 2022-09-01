@@ -1,0 +1,30 @@
+# vim: set filetype=conf:
+
+id: "random_article"
+name: "WikiHow Browsing Task Primitive - Access Random Article"
+description: "A demo task primitive asking to access a random article."
+
+#include basic.prototext.template
+
+event_sources: [
+    {
+        log_event: {
+            filters: ["jd:D"]
+            pattern: "\\bWebViewFragment\\.onCreateView - mUrl: https://www\\.wikihow\\.com/Special:Randomizer\\?wh_an=1&amp=1"
+        }
+        id: 1
+    }
+]
+
+event_slots: {
+    reward_listener: {
+        events: [ { id: 1 } ]
+        transformation: "y = 1"
+    }
+    episode_end_listener: {
+        events: [ { id: 1 } ]
+        transformation: "y = 1"
+    }
+}
+
+command: "Pick a random article to read."

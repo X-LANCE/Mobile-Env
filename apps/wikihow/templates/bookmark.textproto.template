@@ -1,0 +1,186 @@
+# vim: set filetype=conf:
+
+id: "bookmark_<lower:title>"
+name: "WikiHow Personal Task Primitive - Bookmark <title>"
+description: "A demo task primitive asking to bookmark a specific article"
+
+#include basic.prototext.template
+
+event_sources: [
+    {
+        text_detect: {
+            expect: "Bookmark"
+            rect: {
+                x0: 0.459
+                y0: 0.040
+                x1: 0.980
+                y1: 0.105
+            }
+        }
+        id: 1
+    },
+    {
+        view_hierarchy_event: {
+            view_hierarchy_path: [
+                "android.widget.FrameLayout",
+                "android.widget.LinearLayout@com.wikihow.wikihowapp:id/content",
+                "android.widget.TextView@com.wikihow.wikihowapp:id/title"
+            ]
+            properties: [
+                {
+                    property_name: "text"
+                    pattern: "Bookmark"
+                }
+            ]
+        }
+        id: 2
+    },
+    {
+        text_detect: {
+            expect: "Remove bookmark"
+            rect: {
+                x0: 0.518
+                y0: 0.040
+                x1: 0.980
+                y1: 0.105
+            }
+        }
+        id: 3
+    },
+    {
+        view_hierarchy_event: {
+            view_hierarchy_path: [
+                "android.widget.FrameLayout",
+                "android.widget.LinearLayout@com.wikihow.wikihowapp:id/content",
+                "android.widget.TextView@com.wikihow.wikihowapp:id/title"
+            ]
+            properties: [
+                {
+                    property_name: "text"
+                    pattern: "Remove bookmark"
+                }
+            ]
+        }
+        id: 4
+    },
+    {
+        text_detect: {
+            expect: "<title>"
+            rect: {
+                x0: 0.19
+                y0: 0.0
+                x1: 1.0
+                y1: 1.0
+            }
+        }
+        id: 5
+    },
+    {
+        log_event: {
+            filters: ["jd:D"]
+            pattern: "\\bImageLoader: https://www\\.wikihow\\.com/images/thumb/\\w/\\w\\w/<url_title:title>[-\\w]*\\.(jpg|png)\\b"
+        }
+        id: 6
+    },
+    {
+        view_hierarchy_event: {
+            view_hierarchy_path: [
+                "android.widget.FrameLayout",
+                "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root",
+                "android.widget.FrameLayout@android:id/content",
+                "android.view.ViewGroup@com.wikihow.wikihowapp:id/wikihow_toolbar",
+                "android.widget.TextView@com.wikihow.wikihowapp:id/wikihow_toolbar_title"
+            ]
+            properties: [
+                {
+                    property_name: "text"
+                    pattern: "Bookmarks"
+                }
+            ]
+        }
+        id: 7
+    },
+    {
+        view_hierarchy_event: {
+            view_hierarchy_path: [
+                "android.widget.FrameLayout",
+                "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root",
+                "android.widget.FrameLayout@android:id/content",
+                "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout",
+                "android.widget.TextView@com.wikihow.wikihowapp:id/options_title"
+            ]
+            properties: [
+                {
+                    property_name: "text"
+                    pattern: "<title>"
+                }
+            ]
+        }
+        id: 8
+    }
+]
+
+event_slots: {
+    reward_listener: {
+        type: OR
+        events: [
+            {
+                event: {
+                    type: OR
+                    id: 9
+                    events: [
+                        { id: 1 },
+                        { id: 2 }
+                    ]
+                    transformation: ["y = 1"]
+                }
+            },
+            {
+                event: {
+                    type: OR
+                    id: 10
+                    events: [
+                        { id: 3 },
+                        { id: 4 }
+                    ]
+                    transformation: ["y = 1"]
+                }
+            },
+            {
+                event: {
+                    type: OR
+                    id: 11
+                    events: [
+                        { id: 5 },
+                        { id: 6 },
+                        {
+                            event: {
+                                type: AND
+                                events: [
+                                    { id: 7 },
+                                    { id: 8 }
+                                ]
+                                transformation: ["y = min(map(len, x))"]
+                            }
+                        }
+                    ]
+                    transformation: ["y = 1 if not isinstance(x, int) else x"]
+                }
+            }
+        ]
+    }
+    episode_end_listener: {
+        type: OR
+        events: [
+            { id: 10 },
+            { id: 11 }
+        ]
+        transformation: "y = True"
+    }
+    instruction_listener: {
+        event: [ { id: 9 } ]
+        transformation: "y = \"After bookmarking the article, go check the bookmark in the bookmark list\""
+    }
+}
+
+command: ["Bookmark the article and check the bookmark."]

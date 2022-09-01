@@ -1,6 +1,9 @@
 window_dump.xml
+window_dump_format.xml
 flows/*.flow
 flows/*.wiki
 !flows/wikihow-20220511-f.flow
 flows/version.folder
 templates.out
+action_record.pkl
+action_record.txt
