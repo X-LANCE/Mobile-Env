@@ -17,4 +17,6 @@ SQ*.html.gz
 wikihow-*.wiki
 wikihow-*.flow
 
+*.info.yaml
+
 pages
