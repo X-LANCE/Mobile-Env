@@ -119,7 +119,7 @@ for docid, itm in database.items():
             author = elm.text_content().strip()
             if author=="Author Info" or author=="wikiHow Staff":
                 continue
-            if author.replace(",", "").replace(" ", "-") not in author_set:
+            if urllib.parse.quote_plus(author.replace(",", "").replace(" ", "-")) not in author_set:
                 continue
             authors.append(author)
 
@@ -129,7 +129,7 @@ for docid, itm in database.items():
             categ = elm.text_content().strip()
             if categ=="Categories":
                 continue
-            if categ.replace(" ", "-") not in category_set:
+            if urllib.parse.quote_plus(categ.replace(" ", "-")) not in category_set:
                 continue
             categs.append(categ)
 

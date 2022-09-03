@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 OUTPUT_DIR = ../templates.out
-INSTANCE_DIR = ../templates.instances
+INSTANCE_DIR = ../templates.autoinstances
 TEMPLATE_DIR = ../templates
 
 ifdef HUMAN

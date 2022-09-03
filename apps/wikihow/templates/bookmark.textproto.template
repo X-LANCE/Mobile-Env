@@ -178,7 +178,7 @@ event_slots: {
         transformation: "y = True"
     }
     instruction_listener: {
-        event: [ { id: 9 } ]
+        events: [ { id: 9 } ]
         transformation: "y = \"After bookmarking the article, go check the bookmark in the bookmark list\""
     }
 }
