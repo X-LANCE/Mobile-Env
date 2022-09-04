@@ -21,10 +21,14 @@ def replace_item(conf_dict: Dict[str, str], match_: Match[str]) -> str:
     if match_.group("modifiers") is not None:
         modifiers_ = match_.group("modifiers").split(",")
         for mdf in modifiers_[-1::-1]:
-            if mdf[-1]=="'":
+            if mdf=="no_quote":
+                return keyword
+            elif mdf[-1]=="'":
                 keyword = ",".join(map(getattr(modifiers, mdf[:-1]), keyword.split(",")))
             else:
                 keyword = getattr(modifiers, mdf)(keyword)
+
+    keyword = keyword.replace("\"", "\\\"").replace("'", "\\'")
     return keyword
 
 def max_id(event_slot: task_pb2.EventSlot) -> int:

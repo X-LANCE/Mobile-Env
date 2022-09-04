@@ -61,7 +61,12 @@ url_title = url_quote . map (\c -> case c of
 to_list :: Modifier
 -- 将逗号分隔的关键词列表转为proto定义中的字符串列表
 to_list x = "["
-          ++ (intercalate ", " $ map (\s -> "\"" ++ "\"") (split ',' x))
+          ++ (intercalate ", " $
+                map (\s -> "\"" ++ s ++ "\"") $
+                map (>>= \ch -> case ch of
+                                  '"' -> "\\\""
+                                  '\'' -> "\\'") $
+                (split ',' x))
           ++ "]"
 
 lower :: Modifier

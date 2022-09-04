@@ -71,4 +71,4 @@ event_slots: {
 }
 
 command: "Search an article to learn <command>."
-vocabulary: <to_list:vocabulary>
+vocabulary: <no_quote,to_list:vocabulary>

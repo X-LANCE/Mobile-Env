@@ -171,7 +171,7 @@ article_title = article_list[rng.integers(len(article_list))]
 name = encode_name(article_title.lower())
 article_step = "article-{:}".format(name)
 task_file += article_step + "\n"
-article_conf = os.path.join(instance_path, article_conf + ".conf")
+article_conf = os.path.join(instance_path, article_step + ".conf")
 if not os.path.exists(article_conf):
     with open(article_conf, "w") as f:
         f.write("title: {:}\n".format(article_title))

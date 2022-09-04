@@ -17,7 +17,9 @@ def to_list(x: str) -> str:
     return "["\
             + ",".join(
                 map(lambda s: "\"{:}\"".format(s),
-                    x.split(",")))\
+                    map(lambda s: s.replace("\"", "\\\"")\
+                                    .replace("'", "\\'"),
+                        x.split(","))))\
             + "]"
 
 lower: Callable[[str], str] = str.lower

@@ -38,7 +38,7 @@ event_sources: [
         "android.view.View@mw-mf-page-center",
         "android.view.View@content_inner",
         "android.view.View@cat_navigation",
-        "android.view.View@section_0",
+        "android.view.View@section_0"
       ]
       properties: [
         {

@@ -10,6 +10,10 @@ modifier = ( "regex_list"
            | "upper"
            | "title"
            | "filter_comma"
+           | "no_quote"
            ) , "'" ;
+(* "'"指该修饰器应应用于列表每个元素上
+   "no_quote"应用作最后的修饰词，表示该串不需要对引号自动转义
+*)
 
 identifier = ( alphabet-symbol | _ ), { alphabet-symbol | _ } ;
