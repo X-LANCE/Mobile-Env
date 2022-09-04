@@ -706,21 +706,21 @@ class TaskManager():
       return True
 
     # Check if step limit or time limit has been reached
-    if self._task.max_num_steps > 0:
-      if self._episode_steps > self._task.max_num_steps:
-        self._log_dict['reset_count_max_duration_reached'] += 1
-        logging.info('Maximum task duration (steps) reached. Ending episode.')
-        logging.info('************* END OF EPISODE *************')
-        return True
-
-    if self._task.max_duration_sec > 0.0:
-      task_duration = datetime.datetime.now() - self._task_start_time
-      max_duration_sec = self._task.max_duration_sec
-      if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
-        self._log_dict['reset_count_max_duration_reached'] += 1
-        logging.info('Maximum task duration (sec) reached. Ending episode.')
-        logging.info('************* END OF EPISODE *************')
-        return True
+    #if self._task.max_num_steps > 0:
+      #if self._episode_steps > self._task.max_num_steps:
+        #self._log_dict['reset_count_max_duration_reached'] += 1
+        #logging.info('Maximum task duration (steps) reached. Ending episode.')
+        #logging.info('************* END OF EPISODE *************')
+        #return True
+#
+    #if self._task.max_duration_sec > 0.0:
+      #task_duration = datetime.datetime.now() - self._task_start_time
+      #max_duration_sec = self._task.max_duration_sec
+      #if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
+        #self._log_dict['reset_count_max_duration_reached'] += 1
+        #logging.info('Maximum task duration (sec) reached. Ending episode.')
+        #logging.info('************* END OF EPISODE *************')
+        #return True
 
     return False
     #  }}} method `check_if_episode_ended` # 
@@ -782,14 +782,14 @@ class TaskManager():
         dumpsys_thread.DumpsysThread.Signal.FETCH_DUMPSYS)
 
     try:
-      v = self._dumpsys_thread.read(block=False) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
+      v = self._dumpsys_thread.read(block=True) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
       if v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_ACTIVITY:
         self._increment_bad_state()
         raise errors.PlayerExitedActivityError()
       elif v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_VIEW_HIERARCHY:
         self._increment_bad_state()
         raise errors.PlayerExitedViewHierarchyError()
-      view_hierarchy = self._dumpsys_thread.read(block=False)
+      view_hierarchy = self._dumpsys_thread.read(block=True)
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
     #  }}} method `_run_dumpsys` # 
