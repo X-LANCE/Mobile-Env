@@ -109,7 +109,7 @@ class DumpsysThread(thread_function.ThreadFunction):
 
     # The reward signals should be checked anyway, I think.
     # However, it's too slow, so I moved it here.
-    self._app_screen_checker.match_events(self._lock)
+    view_hierarchy = self._app_screen_checker.match_events(self._lock)
 
     outcome = self._app_screen_checker.matches_current_app_screen()
 
@@ -131,6 +131,7 @@ class DumpsysThread(thread_function.ThreadFunction):
     if (outcome == AppScreenChecker.Outcome.SUCCESS or
         outcome == AppScreenChecker.Outcome.EMPTY_EXPECTED_ACTIVITY):
       self._write_value(DumpsysThread.Signal.OK)
+      self._write_value(view_hierarchy)
       return
 
     # Player has exited the app. Terminate the episode.

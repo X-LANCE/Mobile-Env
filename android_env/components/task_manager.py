@@ -24,10 +24,11 @@ import queue
 import re
 import threading
 from typing import Any, Optional, Callable, Union, Iterable
-from typing import Dict, List, Set, Pattern
+from typing import Dict, List, Set, Pattern, Tuple
 import functools
 import itertools
 import operator
+import lxml.etree
 
 from absl import logging
 from android_env.components import adb_controller as adb_control
@@ -591,13 +592,24 @@ class TaskManager():
                                        )
     #  }}} method `send_token` # 
 
-  def get_current_reward(self) -> float:
+  def get_current_reward(self, screen: np.ndarray) ->\
+      Tuple[ float
+           , Optional[lxml.etree.Element]
+           ]:
     #  method `get_current_reward` {{{ # 
     """
     Returns total reward accumulated since the last step.
 
     return floating
     """
+
+    # zdy
+    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
+    try:
+      view_hierarchy = self._run_dumpsys()
+    except errors.NotAllowedError:
+      self._latest_values["player_exited"] = True
+      view_hierarchy = None
 
     #with self._lock:
       #reward = self._latest_values['reward']
@@ -615,7 +627,7 @@ class TaskManager():
     reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
     #self._reward_event.clear() # zdy
 
-    return reward
+    return reward, view_hierarchy
     #  }}} method `get_current_reward` # 
 
   def get_current_extras(self) -> Dict[str, Any]:
@@ -759,7 +771,7 @@ class TaskManager():
   #  }}} Deprecated `_check_player_exited` method # 
 
   #def _check_player_exited_impl(self):
-  def _run_dumpsys(self): # zdy
+  def _run_dumpsys(self) -> Optional[lxml.etree.Element]: # zdy
     #  method `_run_dumpsys` {{{ # 
     """Raises an error if the OS is not in an allowed state."""
 
@@ -777,6 +789,7 @@ class TaskManager():
       elif v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_VIEW_HIERARCHY:
         self._increment_bad_state()
         raise errors.PlayerExitedViewHierarchyError()
+      view_hierarchy = self._dumpsys_thread.read(block=False)
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
     #  }}} method `_run_dumpsys` # 
