@@ -94,6 +94,7 @@ class Coordinator():
     self._should_restart = False
     self._latest_observation_time = None
     self._simulator_start_time = None
+    self._touched: bool = False
 
     logging.info('Starting the simulator...')
     self._restart_simulator()
@@ -304,8 +305,8 @@ class Coordinator():
                            ]
                       ]
             , float
-            , Dict[str, Any],
-            , List[str],
+            , Dict[str, Any]
+            , List[str]
             , bool]:
     """Executes the selected action and returns transition info.
 
@@ -335,10 +336,18 @@ class Coordinator():
         self._send_action_to_taskmanager(action)
       elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
         self._send_action_to_simulator(action)
+      vh = self._touched\
+          and action["action_type"].item()==action_type_lib.ActionType.LIFT
+      self._touched = action["action_type"].item()==action_type_lib.ActionType.TOUCH
+    else:
+      vh = False
+      self._touched = False
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
       self._wait_for_next_frame()
+    if vh:
+      time.sleep(1)
 
     # Read necessary transition information and return it to the agent.
     try:
@@ -346,7 +355,7 @@ class Coordinator():
       observation = self._simulator.get_observation()
 
       self._task_manager.snapshot_events()
-      reward, view_hierarchy = self._task_manager.get_current_reward(observation["pixels"]) # zdy
+      reward, view_hierarchy = self._task_manager.get_current_reward(observation["pixels"], vh) # zdy
       observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()

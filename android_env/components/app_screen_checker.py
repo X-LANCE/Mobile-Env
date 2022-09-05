@@ -301,7 +301,7 @@ class AppScreenChecker():
     self._event_listeners += event_listeners
     #  }}} method `add_event_listeners` # 
 
-  def match_events(self, lock) -> Optional[lxml.etree.Element]:
+  def match_events(self, lock):
     #  method `match_events` {{{ # 
     """
     lock - threading.Lock
@@ -309,7 +309,7 @@ class AppScreenChecker():
 
     view_hierarchy = self._adb_controller.get_view_hierarchy()
     if view_hierarchy is None:
-      return None
+      return
 
     for evnt in self._event_listeners:
       # 1. match the path
@@ -330,7 +330,5 @@ class AppScreenChecker():
           values.append(leaf_node.get(prpt))
       with lock:
         evnt.set(values)
-
-    return view_hierarchy
     #  }}} method `match_events` # 
   #  }}} For VH Events Listening # 

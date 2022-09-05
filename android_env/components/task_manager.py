@@ -592,7 +592,7 @@ class TaskManager():
                                        )
     #  }}} method `send_token` # 
 
-  def get_current_reward(self, screen: np.ndarray) ->\
+  def get_current_reward(self, screen: np.ndarray, vh: bool) ->\
       Tuple[ float
            , Optional[lxml.etree.Element]
            ]:
@@ -606,10 +606,9 @@ class TaskManager():
     # zdy
     self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
     try:
-      view_hierarchy = self._run_dumpsys()
+      self._run_dumpsys()
     except errors.NotAllowedError:
       self._latest_values["player_exited"] = True
-      view_hierarchy = None
 
     #with self._lock:
       #reward = self._latest_values['reward']
@@ -626,6 +625,11 @@ class TaskManager():
 
     reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
     #self._reward_event.clear() # zdy
+
+    if vh:
+      view_hierarchy = self._adb_controller.get_view_hierarchy()
+    else:
+      view_hierarchy = None
 
     return reward, view_hierarchy
     #  }}} method `get_current_reward` # 
@@ -771,7 +775,7 @@ class TaskManager():
   #  }}} Deprecated `_check_player_exited` method # 
 
   #def _check_player_exited_impl(self):
-  def _run_dumpsys(self) -> Optional[lxml.etree.Element]: # zdy
+  def _run_dumpsys(self): # zdy
     #  method `_run_dumpsys` {{{ # 
     """Raises an error if the OS is not in an allowed state."""
 
@@ -782,14 +786,13 @@ class TaskManager():
         dumpsys_thread.DumpsysThread.Signal.FETCH_DUMPSYS)
 
     try:
-      v = self._dumpsys_thread.read(block=True) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
+      v = self._dumpsys_thread.read(block=False) # ZDY_COMMENT: TODO: whether block or not and a probable proper timeout value could be tested.
       if v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_ACTIVITY:
         self._increment_bad_state()
         raise errors.PlayerExitedActivityError()
       elif v == dumpsys_thread.DumpsysThread.Signal.USER_EXITED_VIEW_HIERARCHY:
         self._increment_bad_state()
         raise errors.PlayerExitedViewHierarchyError()
-      view_hierarchy = self._dumpsys_thread.read(block=True)
     except queue.Empty:
       pass  # Don't block here, just ignore if we have nothing.
     #  }}} method `_run_dumpsys` # 
