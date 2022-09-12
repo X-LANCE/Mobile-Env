@@ -85,7 +85,7 @@ class AndroidEnv(dm_env.Environment):
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
 
-  def switch_task(index:int):
+  def switch_task(self, index: int) -> dm_env.TimeStep:
     #  method `change_task` {{{ # 
     logging.info('Changing Task to {:d}...'.format(index))
 

@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +26,11 @@ class BaseWrapper(dm_env.Environment):
 
   def __init__(self, env):
     self._env = env
+
+  def switch_task(self, index: int) -> dm_env.TimeStep:
+    self._reset_state()
+    timestep = self._process_timestep(self._env.switch_task(index))
+    return timestep
 
   def reset(self) -> dm_env.TimeStep:
     self._reset_state()
