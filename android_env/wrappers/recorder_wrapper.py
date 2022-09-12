@@ -5,6 +5,8 @@ from typing import Dict
 import dm_env
 import os.path
 
+# autosave at the reset time and episode end.
+
 class RecorderWrapper(base_wrapper.BaseWrapper):
     #  class `RecorderWrapper` {{{ # 
     def __init__(self, env: AndroidEnv, dump_file: str):
@@ -13,9 +15,9 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         self.dump_file: str = os.path.splitext(dump_file)[0]
         self.prev_type: action_type.ActionType = action_type.ActionType.LIFT
 
-        self.trajectories:\
-            List[List[Dict[str, Any]]]\
-                = []
+        #self.trajectories:\
+            #List[List[Dict[str, Any]]]\
+                #= []
         self.current_trajectory:\
             List[Dict[str, Any]]\
                 = []
@@ -40,7 +42,24 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
             self.current_trajectory.append(record)
 
         if timestep.last():
-            self.trajectories.append(self.current_trajectory)
+            #self.trajectories.append(self.current_trajectory)
+            self._save()
             self.current_trajectory = []
+
+        return timestep
         #  }}} function `step` # 
+
+    def _reset_state(self):
+        self._save()
+
+    def close(self):
+        self._save()
+        self._env.close()
+
+    def _save(self):
+        #  function `_save` {{{ # 
+        if len(self.current_trajectory)>0:
+            with open(self.dump_file, "ab") as f:
+                pkl.dump(self.current_trajectory, f)
+        #  }}} function `_save` # 
     #  }}} class `RecorderWrapper` # 
