@@ -254,7 +254,7 @@ class Coordinator():
       # Restart was successful.
       break
 
-  def add_task_manager(task_manager: task_manager_lib.TaskManager):
+  def add_task_manager(self, task_manager: task_manager_lib.TaskManager):
     #  method `add_task_manager` {{{ # 
     """
     Args:
@@ -264,7 +264,7 @@ class Coordinator():
     self._task_manager_list.append(task_manager)
     #  }}} method `add_task_manager` # 
 
-  def switch_task_manager(index: int):
+  def switch_task_manager(self, index: int):
     #  method `change_task_manager` {{{ # 
     self._task_manager_index = index
     self._task_manager = self._task_manager_list[self._task_manager_index]

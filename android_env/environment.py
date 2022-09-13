@@ -19,6 +19,10 @@
 from typing import Any, Dict, List, Union
 from absl import logging
 from android_env.components import coordinator as coordinator_lib
+from android_env.components import task_manager as task_manager_lib
+from android_env.proto import task_pb2
+from google.protobuf import text_format
+import os.path
 import dm_env
 import numpy as np
 
@@ -84,6 +88,25 @@ class AndroidEnv(dm_env.Environment):
 
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
+
+  def add_task(self, task_path: str):
+    #  method `add_task` {{{ # 
+    task = task_pb2.Task()
+    with open(task_path, 'r') as f:
+      text_format.Parse(f.read(), task)
+
+    for st in task.setup_steps:
+      if st.HasField("adb_call") and\
+          st.adb_call.HasField("install_apk"):
+        apk_path = st.adb_call.install_apk.filesystem.path
+        st.adb_call.install_apk.filesystem.path =\
+          os.path.normpath(
+            os.path.join(os.path.dirname(task_path),
+              apk_path))
+
+    task_manager = task_manager_lib.TaskManager(task)
+    self._coordinator.add_task_manager(task_manager)
+    #  }}} method `add_task` # 
 
   def switch_task(self, index: int) -> dm_env.TimeStep:
     #  method `change_task` {{{ # 
