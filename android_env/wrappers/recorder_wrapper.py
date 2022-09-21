@@ -4,6 +4,7 @@ from android_env.components import action_type
 from typing import Dict
 import dm_env
 import os.path
+import lxml.etree
 
 # autosave at the reset time and episode end.
 
@@ -37,7 +38,10 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
                 record["touch_position"] = action["touch_position"]
             record["reward"] = timestep.reward
             record["observation"] = timestep.observation["pixels"]
-            record["view_hierarchy"] = timestep.observation["view_hierarchy"]
+            record["view_hierarchy"] = lxml.etree.tostring(
+                    timestep.observation["view_hierarchy"],
+                    encoding="unicode") if timestep.observation["view_hierarchy"]\
+                            is not None else None
             record["orientation"] = np.argmax(timestep.observation["orientation"])
             self.current_trajectory.append(record)
 
