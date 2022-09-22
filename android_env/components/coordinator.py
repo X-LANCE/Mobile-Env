@@ -327,7 +327,8 @@ class Coordinator():
       self._log_dict['episode_steps'] += 1
 
     # If a restart is neccessary, end the episode.
-    if self._should_restart or self._check_timeout():
+    #if self._should_restart or self._check_timeout():
+    if self._should_restart:
       return None, 0.0, {}, [], True
 
     # If the action is a TOUCH or LIFT, send it to the simulator.
