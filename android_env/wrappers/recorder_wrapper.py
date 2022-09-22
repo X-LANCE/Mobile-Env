@@ -2,9 +2,12 @@ from android_env.wrappers import base_wrapper
 from android_env.environment import AndroidEnv
 from android_env.components import action_type
 from typing import Dict
+from typing import Any
 import dm_env
 import os.path
 import lxml.etree
+import numpy as np
+import pickle as pkl
 
 # autosave at the reset time and episode end.
 
@@ -28,8 +31,9 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         timestep = self._env.step(action)
 
         current_type = action["action_type"].item()
-        if not (current_type==action_type.ActionType.LIFT\
-                and self.prev_type==action_type.ActionType.LIFT):
+        if current_type!=action_type.ActionType.REPEAT and\
+                not (current_type==action_type.ActionType.LIFT\
+                    and self.prev_type==action_type.ActionType.LIFT):
             record = {}
             record["action_type"] = current_type
             if current_type==action_type.ActionType.TEXT:
