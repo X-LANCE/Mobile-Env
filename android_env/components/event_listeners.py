@@ -222,6 +222,8 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
         return self._ever_set
     def reset(self):
         self._ever_set = False
+        self._input_history = []
+        self._last_input = None
     #  }}} abstract class `EventSource` # 
 
 class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):

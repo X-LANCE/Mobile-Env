@@ -113,7 +113,7 @@ class AndroidEnv(dm_env.Environment):
     logging.info('Changing Task to {:d}...'.format(index))
 
     # Change the task and reset state of the environment.
-    self._coordinator.change_task_manager(index)
+    self._coordinator.switch_task_manager(index)
 
     # Execute selected action (None when resetting).
     obs, _, extras, instructions, _ = self._coordinator.execute_action(action=None)

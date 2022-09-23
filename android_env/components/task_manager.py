@@ -433,7 +433,12 @@ class TaskManager():
       }
 
       # clear event sources
-      self.clear_events()
+      for evt in itertools.chain(self._text_events,
+          self._icon_events,
+          self._icon_match_events,
+          self._view_hierarchy_events,
+          self._log_events):
+        evt.reset()
 
       # reset event slots
       self._score_event.reset()
@@ -495,7 +500,7 @@ class TaskManager():
     """
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
-    self._adb_controller.input_text(self._vocabulary[token_id] + "\" \"")
+    self._adb_controller.input_text("\"" + self._vocabulary[token_id] + " \"")
     #  }}} method `send_token` # 
 
   def get_current_reward(self, screen: np.ndarray) -> float:
