@@ -8,4 +8,5 @@ action_record.pkl
 action_record.txt
 
 templates.out
+templates.out.bak*
 templates.autoinstances

@@ -56,7 +56,7 @@ event_sources: [
 event_slots: {
     reward_listener: {
 		type: OR
-		id: 7
+		id: 4
 		events: [
 			{ id: 1 },
 			{ id: 2 },
@@ -65,7 +65,7 @@ event_slots: {
 		transformation: ["y = 1"]
 	}
     episode_end_listener: {
-        events: [ { id: 8 } ]
+        events: [ { id: 4 } ]
         transformation: "y = True"
     }
 }
