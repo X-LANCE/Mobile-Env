@@ -32,8 +32,9 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
 
         current_type = action["action_type"].item()
         if current_type!=action_type.ActionType.REPEAT and\
-                not (current_type==action_type.ActionType.LIFT\
-                    and self.prev_type==action_type.ActionType.LIFT):
+                    not (current_type==action_type.ActionType.LIFT\
+                        and self.prev_type==action_type.ActionType.LIFT) or\
+                timestep.reward>0:
             record = {}
             record["action_type"] = current_type
             if current_type==action_type.ActionType.TEXT:
@@ -57,6 +58,18 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         return timestep
         #  }}} function `step` # 
 
+    def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+        if timestep.first():
+            record = {}
+            record["observation"] = timestep.observation["pixels"]
+            record["view_hierarchy"] = lxml.etree.tostring(
+                    timestep.observation["view_hierarchy"],
+                    encoding="unicode") if timestep.observation["view_hierarchy"]\
+                            is not None else None
+            record["orientation"] = np.argmax(timestep.observation["orientation"])
+            self.current_trajectory.append(record)
+        return timestep
+
     def _reset_state(self):
         self._save()
 
@@ -66,7 +79,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
 
     def _save(self):
         #  function `_save` {{{ # 
-        if len(self.current_trajectory)>0:
+        if len(self.current_trajectory)>1:
             with open(self.dump_file, "ab") as f:
                 pkl.dump(self.current_trajectory, f)
         #  }}} function `_save` # 

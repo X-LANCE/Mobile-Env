@@ -626,6 +626,7 @@ class TaskManager():
     reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
     #self._reward_event.clear() # zdy
 
+    #if vh or reward>0:
     if vh:
       view_hierarchy = self._adb_controller.get_view_hierarchy()
     else:
