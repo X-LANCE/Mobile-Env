@@ -49,6 +49,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
                             is not None else None
             record["orientation"] = np.argmax(timestep.observation["orientation"])
             self.current_trajectory.append(record)
+        self.prev_type = current_type
 
         if timestep.last():
             #self.trajectories.append(self.current_trajectory)
