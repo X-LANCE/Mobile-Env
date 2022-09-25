@@ -81,7 +81,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
     def _save(self):
         #  function `_save` {{{ # 
         if len(self.current_trajectory)>1:
-            with open(self.dump_file, "ab") as f:
+            with open(self.dump_file + ".pkl", "ab") as f:
                 pkl.dump(self.current_trajectory, f)
         #  }}} function `_save` # 
     #  }}} class `RecorderWrapper` # 
