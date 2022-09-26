@@ -394,8 +394,8 @@ class Replayer:
 
 addons = [
         Replayer(15090,
-            "../../../small-web-crawler/dumps",
-            "../../../small-web-crawler/templates",
-            "../../../small-web-crawler/indices-t/indices",
-            "../../../small-web-crawler/indices-t/docs/doc_meta.csv")
+            "/mnt/xlancefs/home/dyz32/wikihow/dumps",
+            "/mnt/xlancefs/home/dyz32/wikihow/templates",
+            "/mnt/xlancefs/home/dyz32/wikihow/indices-t/indices",
+            "/mnt/xlancefs/home/dyz32/wikihow/indices-t/docs/doc_meta.csv")
     ]
