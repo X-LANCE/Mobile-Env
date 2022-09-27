@@ -1,21 +1,7 @@
 from mitmproxy import http
 from mitmproxy import ctx
-import os.path
-import functools
-import classify_url
-import load_response
-import datetime
+#import datetime
 import locale
-import gzip
-import lxml.html
-import lxml.cssselect
-from pyserini.search.lucene import LuceneSearcher
-import csv
-import urllib.parse
-from typing import List
-from typing import Mapping
-from mitmproxy.coretypes.multidict import MultiDict
-import random
 import os
 
 class Replayer:
