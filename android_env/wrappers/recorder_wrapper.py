@@ -62,6 +62,8 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
     def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
         if timestep.first():
             record = {}
+            record["task_id"] = self._env.task_id
+            record["task"] = self._env.task_name
             record["observation"] = timestep.observation["pixels"]
             record["view_hierarchy"] = lxml.etree.tostring(
                     timestep.observation["view_hierarchy"],

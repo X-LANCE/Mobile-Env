@@ -1,7 +1,7 @@
 from mitmproxy import http
 from mitmproxy import ctx
 #import datetime
-import locale
+#import locale
 import os
 
 class Replayer:
@@ -11,7 +11,7 @@ class Replayer:
         self.data_server: str = data_server
         self.data_port: int = data_port
 
-        locale.setlocale(locale.LC_TIME, "en_US.utf8")
+        #locale.setlocale(locale.LC_TIME, "en_US.utf8")
         #self.dateformat: str = "%a, %d %b %Y %H:%M:%S GMT"
 
     def request(self, flow: http.HTTPFlow):
@@ -22,5 +22,5 @@ class Replayer:
 
 addons = [
         Replayer(os.environ["WIKIHOW_SERVER"],
-            data_port=os.environ["WIKIHOW_PORT"])
+            data_port=int(os.environ["WIKIHOW_PORT"]))
     ]
