@@ -54,7 +54,6 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         if timestep.last():
             #self.trajectories.append(self.current_trajectory)
             self._save()
-            self.current_trajectory = []
 
         return timestep
         #  }}} function `step` # 
@@ -85,5 +84,6 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         if len(self.current_trajectory)>1:
             with open(self.dump_file + ".pkl", "ab") as f:
                 pkl.dump(self.current_trajectory, f)
+        self.current_trajectory = []
         #  }}} function `_save` # 
     #  }}} class `RecorderWrapper` # 
