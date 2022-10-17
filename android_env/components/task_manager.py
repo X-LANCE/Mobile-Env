@@ -490,6 +490,8 @@ class TaskManager():
 
   def setup_flag(self) -> bool:
     return self._setup_flag
+  def clear_setup_flag(self):
+    self._setup_flag = False
   #  }}} Episode Management # 
 
   #  Interaction Methods {{{ # 

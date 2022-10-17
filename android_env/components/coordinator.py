@@ -239,6 +239,8 @@ class Coordinator():
         continue
 
       # Start the task.
+      for t_mng in self._task_manager_list:
+        t_mng.clear_setup_flag()
       try:
         self._task_manager.setup_task(
             adb_controller=self._adb_controller,
