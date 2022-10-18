@@ -355,8 +355,8 @@ class Coordinator():
       self._latest_observation_time = time.time()
       observation = self._simulator.get_observation()
 
-      self._task_manager.snapshot_events()
-      reward, view_hierarchy = self._task_manager.get_current_reward(observation["pixels"], vh) # zdy
+      self._task_manager.snapshot_events(observation["pixels"])
+      reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
       observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()

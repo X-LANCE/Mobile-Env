@@ -592,7 +592,7 @@ class TaskManager():
                                        )
     #  }}} method `send_token` # 
 
-  def get_current_reward(self, screen: np.ndarray, vh: bool) ->\
+  def get_current_reward(self, vh: bool) ->\
       Tuple[ float
            , Optional[lxml.etree.Element]
            ]:
@@ -600,15 +600,10 @@ class TaskManager():
     """
     Returns total reward accumulated since the last step.
 
+    vh - bool
+
     return floating
     """
-
-    # zdy
-    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
-    try:
-      self._run_dumpsys()
-    except errors.NotAllowedError:
-      self._latest_values["player_exited"] = True
 
     #with self._lock:
       #reward = self._latest_values['reward']
