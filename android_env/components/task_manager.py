@@ -98,6 +98,7 @@ class TaskManager():
     # zdy
     #  Event Infrastructures {{{ # 
     self._events_with_id: Dict[int, event_listeners.Event] = {}
+    self._events_in_source: Dict[int, List[event_listener.Event]] = {}
     self._events_in_need: Dict[int, List[event_listeners.Event]] = {}
 
     # Event Sources
@@ -111,6 +112,7 @@ class TaskManager():
     for evt_s in task.event_sources:
       self._parse_event_source(evt_s)
 
+    # event slots
     self._score_event: event_listeners.EventSlot[Any, Any, float] =\
       self._parse_event_listeners(task.event_slots.score_listener, wrap=float)\
         if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
@@ -179,6 +181,7 @@ class TaskManager():
 
     del self._events_with_id
     del self._events_in_need
+    del self._events_in_source
     #  }}} Event Infrastructures # 
 
     # Initialize internal state
@@ -316,7 +319,7 @@ class TaskManager():
       + the wrapped type
       and returning the wrapped type
 
-    return event_listeners.Event
+    return event_listeners.EventSlot
     """
 
     transformation = event_definition.transformation if len(event_definition.transformation)>0\
@@ -326,48 +329,54 @@ class TaskManager():
       return event_listeners.EmptyEvent()
 
     #  Combined Events {{{ # 
+    late_source_ids = []
+
+    # handle sub-events
+    sub_events = []
+    for i, s_evt_dfnt in enumerate(event_definition.events):
+      if s_evt_dfnt.HasField("id"):
+        if s_evt_dfnt.id in self._events_with_id:
+          sub_event = self._events_with_id[s_evt_dfnt.id]
+        else:
+          sub_event = None
+          late_source_ids.append((i, s_evt_dfnt.id))
+      elif s_evt_dfnt.HasField("event"):
+        sub_event = self._parse_event_listeners(s_evt_dfnt.event)
+      sub_events.append(sub_event)
+
+    # create event object
     if event_definition.type==task_pb2.EventSlot.Type.SINGLE:
-      sub_event_definition = event_definition.events[0]
-      if sub_event_definition.HasField("id"):
-        sub_event = self._events_with_id[sub_event_definition.id]
-      elif sub_event_definition.HasField("event"):
-        sub_event = self._parse_event_listeners(sub_event_definition.event,
-            wrap=wrap, update=update)
-
-      event = event_listeners.DefaultEvent([sub_event],
+      event = event_listeners.DefaultEvent([sub_events[0]],
           transformation=transformation, wrap=wrap, update=update)
-
+      if len(late_source_ids)>0:
+        late_source_ids = [late_source_ids[0]]
     elif event_definition.type==task_pb2.EventSlot.Type.OR:
-      sub_events = []
-      for s_evt_dfnt in event_definition.events:
-        if s_evt_dfnt.HasField("id"):
-          sub_event = self._events_with_id[s_evt_dfnt.id]
-        elif s_evt_dfnt.HasField("event"):
-          sub_event = self._parse_event_listeners(s_evt_dfnt.event)
-        sub_events.append(sub_event)
-
       event = event_listeners.Or(sub_events, transformation, wrap, update)
-
     elif event_definition.type==task_pb2.EventSlot.Type.AND:
-      sub_events = []
-      for s_evt_dfnt in event_definition.events:
-        if s_evt_dfnt.HasField("id"):
-          sub_event = self._events_with_id[s_evt_dfnt.id]
-        elif s_evt_dfnt.HasField("event"):
-          sub_event = self._parse_event_listeners(s_evt_dfnt.event)
-        sub_events.append(sub_event)
-
       event = event_listeners.And(sub_events, transformation, wrap)
+
+    # handle late sources
+    if len(late_source_ids)>0:
+      for i, id_ in late_source_ids:
+        if id_ not in self._events_in_source:
+          self._events_in_source[id_] = []
+        self._events_in_source[id_].append((i, event))
     #  }}} Combined Events # 
 
     #  Handle the prerequisites {{{ # 
     if event_definition.id!=0:
       event_id = event_definition.id
       self._events_with_id[event_id] = event
+
       if event_id in self._events_in_need:
         for evt in self._events_in_need[event_id]:
           evt.add_prerequisites(event)
         del self._events_in_need[event_id]
+
+      if event_id in self._events_in_source:
+        for i, evt in self._events_in_source[event_id]:
+          evt.replace_sources(i, event)
+        del self._events_in_source[event_id]
     if len(event_definition.prerequisite)>0:
       for evt_id in event_definition.prerequisite:
         if evt_id in self._events_with_id:
@@ -505,22 +514,13 @@ class TaskManager():
     self._adb_controller.input_text("\"" + self._vocabulary[token_id] + " \"")
     #  }}} method `send_token` # 
 
-  def get_current_reward(self, screen: np.ndarray) -> float:
+  def get_current_reward(self) -> float:
     #  method `get_current_reward` {{{ # 
     """
     Returns total reward accumulated since the last step.
 
-    screen - array of uint8 with shape (height, width, 3)
-
     return floating
     """
-
-    # zdy
-    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
-    try:
-      self._run_dumpsys()
-    except errors.NotAllowedError:
-      self._latest_values["player_exited"] = True
 
     #with self._lock:
       #reward = self._latest_values['reward']
@@ -636,8 +636,20 @@ class TaskManager():
     return False
     #  }}} method `check_if_episode_ended` # 
 
-  def snapshot_events(self):
+  def snapshot_events(self, screen: np.ndarray):
     #  method `snapshot_events` {{{ # 
+    """
+    Args:
+      screen: array of uint8 with shape (height, width, 3)
+    """
+
+    # zdy
+    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
+    try:
+      self._run_dumpsys()
+    except errors.NotAllowedError:
+      self._latest_values["player_exited"] = True
+
     with self._lock:
       for evt in itertools.chain(self._text_events,
           self._icon_events,

@@ -264,6 +264,10 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         self._ever_set: bool = False
         self._prerequisites: List[Event] = []
         #  }}} method `__init__` # 
+    def replace_sources(self, index: int, source: Event):
+        #  method `append_sources` {{{ # 
+        self._sources[index] = source
+        #  }}} method `append_sources` # 
 
     def _transform(self, x: Union[V, List[V]]) -> T:
         #  method `_transformation` {{{ # 
@@ -285,7 +289,6 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
             exec(cmmd, globals(), local_env)
         return local_env["y"]
         #  }}} method `_transformation` # 
-
 
     def add_prerequisites(self, *prerequisites: Iterable[Event]):
         #  method `add_prerequisites` {{{ # 
@@ -334,8 +337,10 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     def reset(self):
         #  method `reset` {{{ # 
         self._ever_set = False
-        for evt in self._prerequisites:
+        for evt in self._sources:
             evt.reset()
+        #for evt in self._prerequisites:
+            #evt.reset()
         #  }}} method `reset` # 
     #  }}} abstract class `EventSlot` # 
 

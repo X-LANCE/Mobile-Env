@@ -333,8 +333,8 @@ class Coordinator():
       self._latest_observation_time = time.time()
       observation = self._simulator.get_observation()
 
-      self._task_manager.snapshot_events()
-      reward = self._task_manager.get_current_reward(observation["pixels"]) # zdy
+      self._task_manager.snapshot_events(observation["pixels"])
+      reward = self._task_manager.get_current_reward() # zdy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
