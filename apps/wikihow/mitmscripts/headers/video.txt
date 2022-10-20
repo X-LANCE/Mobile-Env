@@ -1,8 +1,0 @@
-accept: */*
-accept-encoding: identity;q=1, *;q=0
-accept-language: en-US,en;q=0.9
-range: bytes=0-
-sec-fetch-dest: video
-sec-fetch-mode: no-cors
-sec-fetch-site: same-origin
-x-requested-with: com.wikihow.wikihowapp
