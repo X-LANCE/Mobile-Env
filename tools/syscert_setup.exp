@@ -17,12 +17,14 @@ if {$argc >= 3} {
 }
 
 set env(LD_LIBRARY_PATH) "$emulator_path/lib64:$emulator_path/lib64/qt/lib:$emulator_path/lib64/gles_swiftshader"
+set adb $emulator_path/../platform-tools/adb
+
 spawn $emulator_path/emulator -writable-system -no-snapshot -no-skin -no-window -no-audio -verbose -avd $avd_name -ports 33375,5555
 set emulator_process $spawn_id
 set timeout 300
 
-proc wait_for_adb {} {
-    while {[catch {exec adb get-state} results]} {
+proc wait_for_adb {adb} {
+    while {[catch {exec $adb get-state} results]} {
         puts "\x1b\[5;31m$results\x1b\[0m"
         sleep 1
     }
@@ -33,7 +35,7 @@ proc wait_for_adb {} {
     }
 }
 
-proc wait_for_launch {emulator_process} {
+proc wait_for_launch {emulator_process adb} {
     expect {
         timeout {
             puts "\x1b\[5;31mTIMEOUT!\x1b\[0m"
@@ -44,7 +46,7 @@ proc wait_for_launch {emulator_process} {
             sleep 1
         }
     }
-    wait_for_adb
+    wait_for_adb $adb
 }
 
 proc execute_step args {
@@ -53,32 +55,32 @@ proc execute_step args {
     sleep 1
 }
 
-wait_for_launch $emulator_process
-execute_step adb root
-wait_for_adb
-execute_step adb shell avbctl disable-verification
-execute_step adb reboot
+wait_for_launch $emulator_process $adb
+execute_step $adb root
+wait_for_adb $adb
+execute_step $adb shell avbctl disable-verification
+execute_step $adb reboot
 
-wait_for_launch $emulator_process
-execute_step adb root
-wait_for_adb
-catch {exec adb remount} results
+wait_for_launch $emulator_process $adb
+execute_step $adb root
+wait_for_adb $adb
+catch {exec $adb remount} results
 puts "\x1b\[32mSTEP: \x1b\[0m$results"
 sleep 1
-execute_step adb reboot
+execute_step $adb reboot
 
 set certificate_hash [exec openssl x509 -noout -subject_hash_old -in $certificate_path]
 puts "\x1b\[32mHASH: \x1b\[0m$certificate_hash"
 
-wait_for_launch $emulator_process
-execute_step adb root
-wait_for_adb
-execute_step adb remount
-execute_step adb push $certificate_path "/system/etc/security/cacerts/$certificate_hash.0"
-execute_step adb shell chmod 664 "/system/etc/security/cacerts/$certificate_hash.0"
-execute_step adb reboot
+wait_for_launch $emulator_process $adb
+execute_step $adb root
+wait_for_adb $adb
+execute_step $adb remount
+execute_step $adb push $certificate_path "/system/etc/security/cacerts/$certificate_hash.0"
+execute_step $adb shell chmod 664 "/system/etc/security/cacerts/$certificate_hash.0"
+execute_step $adb reboot
 
-wait_for_launch $emulator_process
+wait_for_launch $emulator_process $adb
 puts "\x1b\[32mSysCert Configured Successfully!\x1b\[0m"
 #interact
 exit
