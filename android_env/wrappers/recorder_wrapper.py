@@ -42,6 +42,9 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
             elif current_type==action_type.ActionType.TOUCH:
                 record["touch_position"] = action["touch_position"]
             record["reward"] = timestep.reward
+            instruction = self._env.task_instructions()
+            if len(instruction)>0:
+                record["instruction"] = instruction
             record["observation"] = timestep.observation["pixels"]
             record["view_hierarchy"] = lxml.etree.tostring(
                     timestep.observation["view_hierarchy"],
