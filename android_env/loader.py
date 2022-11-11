@@ -41,7 +41,8 @@ def load(task_path: str,
   """Loads an AndroidEnv instance.
 
   Args:
-    task_path: Path to the task textproto file.
+    task_path: Path to the task textproto file or the directory of task
+      textproto file set
     avd_name: Name of the AVD (Android Virtual Device).
     android_avd_home: Path to the AVD (Android Virtual Device).
     android_sdk_root: Root directory of the SDK.
@@ -88,9 +89,23 @@ def load(task_path: str,
       writable_system=False)
 
   # Prepare task.
-  task = task_pb2.Task()
-  with open(task_path, 'r') as proto_file:
-    text_format.Parse(proto_file.read(), task)
+  task_list = []
+  if os.path.isdir(task_path):
+    task_paths = list( sorted( filter( lambda f: f.endswith(".textproto")
+                                     , os.listdir( task_path
+                                                 )
+                                     )
+                             )
+                     )
+    task_directory = task_path
+  else:
+    task_paths = [task_path]
+    task_directory = os.path.dirname(task_path)
+  for t_p in task_paths:
+    task = task_pb2.Task()
+    with open(t_p, 'r') as proto_file:
+      text_format.Parse(proto_file.read(), task)
+    task_list.append(t_p)
 
   adb_root = False
   frida_server = None
@@ -107,23 +122,28 @@ def load(task_path: str,
       adb_controller_args["frida_script"] = mitm_config.get("frida-script",
           "frida-script.js")
     elif mitm_config["method"]=="packpatch":
-      for st in task.setup_steps:
-        if st.HasField("adb_call") and\
-            st.adb_call.HasField("install_apk"):
-          apk_path = st.adb_call.install_apk.filesystem.path
-          main_name, extension = os.path.splitext(apk_path)
-          st.adb_call.install_apk.filesystem.path =\
-              "{:}-{:}{:}".format(main_name,
-                mitm_config.get("patch-suffix", "patched"),
-                extension)
+      for t in task_list:
+        for st in t.setup_steps:
+          if st.HasField("adb_call") and\
+              st.adb_call.HasField("install_apk"):
+            apk_path = st.adb_call.install_apk.filesystem.path
+            main_name, extension = os.path.splitext(apk_path)
+            st.adb_call.install_apk.filesystem.path =\
+                "{:}-{:}{:}".format(main_name,
+                  mitm_config.get("patch-suffix", "patched"),
+                  extension)
     #elif mitm_config["method"]=="syscert":
       #adb_root = True
-  for st in task.setup_steps:
-    if st.HasField("adb_call") and\
-        st.adb_call.HasField("install_apk"):
-      apk_path = st.adb_call.install_apk.filesystem.path
-      st.adb_call.install_apk.filesystem.path =\
-          os.path.normpath(os.path.join(os.path.dirname(task_path), apk_path))
+
+  # transform the paths in task definitions
+  for t in task_list:
+    for st in t.setup_steps:
+      if st.HasField("adb_call") and\
+          st.adb_call.HasField("install_apk"):
+        apk_path = st.adb_call.install_apk.filesystem.path
+        if not os.path.isabs(apk_path):
+          st.adb_call.install_apk.filesystem.path =\
+              os.path.normpath(os.path.join(task_directory, apk_path))
 
   # Create simulator.
   #print("ZDY: BEFORE Simulator Initialization")
@@ -134,8 +154,8 @@ def load(task_path: str,
       frida_server=frida_server)
   #print("ZDY: AFTER Simulator Initialization")
 
-  task_manager = task_manager_lib.TaskManager(task)
-  coordinator = coordinator_lib.Coordinator(simulator, [task_manager])
+  task_managers = list(map(task_manager_lib.TaskManager, task_list))
+  coordinator = coordinator_lib.Coordinator(simulator, task_managers)
 
   # Load environment.
   return environment.AndroidEnv(coordinator=coordinator)
