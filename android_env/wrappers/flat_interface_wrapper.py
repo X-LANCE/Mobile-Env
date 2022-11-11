@@ -95,9 +95,9 @@ class FlatInterfaceWrapper(base_wrapper.BaseWrapper):
     else:
       return timestep
 
-  def reset(self) -> dm_env.TimeStep:
-    timestep = self._env.reset()
-    return self._process_timestep(timestep)
+  #def reset(self) -> dm_env.TimeStep:
+    #timestep = self._env.reset()
+    #return self._process_timestep(timestep)
 
   def step(self, action: int) -> dm_env.TimeStep:
     timestep = self._env.step(self._process_action(action))

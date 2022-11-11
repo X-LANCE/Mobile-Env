@@ -90,9 +90,9 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
       return np.expand_dims(resized_array, axis=-1)
     return resized_array
 
-  def reset(self) -> dm_env.TimeStep:
-    timestep = self._env.reset()
-    return self._process_timestep(timestep)
+#def reset(self) -> dm_env.TimeStep:
+    #timestep = self._env.reset()
+    #return self._process_timestep(timestep)
 
   def step(self, action) -> dm_env.TimeStep:
     timestep = self._env.step(action)

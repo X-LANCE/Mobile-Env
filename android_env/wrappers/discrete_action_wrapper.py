@@ -39,29 +39,35 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
                noise: float = 0.1):
     #  method `__init__` {{{ # 
     """
-    env - android_env.AndroidEnv
-    action_grid - Sequence of int as (height, width)
-    redundant_actions - bool
-    keep_repeat - bool
-    noise - floating
+    Args:
+        env: android_env.AndroidEnv
+        action_grid: Sequence of int as (height, width)
+        redundant_actions: bool
+          - if True, then the action space will be ((G+V)*A,) where G is grid
+            size, V is vocabulary size and A is the number of action types;
+            action type ids are assigned to actions TOUCH, LIFT, REPEAT, TEXT
+            by sequence where REPEAT is optional and is controlled by
+            `keep_repeat` and TEXT is optional and is determined by the
+            vocabulary size of the internal `env`
+          - if False, the action space will be flatten to cat(TO, L, R, TE);
+            the length of the TOUCH segment is G; LIFT and REPEAT occupy 1 slot
+            respectively; TEXT segment is V-long. REPEAT and TEXT are also
+            optional and the condition is as well as the case that
+            `redundant_actions`==True
+        keep_repeat: bool
+        noise: floating
     """
 
     super().__init__(env)
-    self._parent_action_spec: Dict[str, specs.Array] = self._env.action_spec()
-    self._assert_base_env()
 
     self._action_grid: Tuple[int, int] = tuple(action_grid)  # [height, width]
     self._grid_size: np.int64 = np.prod(self._action_grid)
 
-    self._num_action_types: int = self._parent_action_spec['action_type'].num_values
-    if not keep_repeat:
-      self._num_action_types -= 1
-    self._vocabulary_size: int = self._parent_action_spec['input_token'].num_values\
-            if "input_token" in self._parent_action_spec else 0
-
     self._redundant_actions: bool = redundant_actions
     self._keep_repeat = keep_repeat
     self._noise: float = noise
+
+    self._reset_state()
     #  }}} method `__init__` # 
 
   def _assert_base_env(self):
@@ -197,3 +203,13 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
                 num_values=self.num_actions,
                 name='action_id')
     }
+
+  def _reset_state(self):
+    self._parent_action_spec: Dict[str, specs.Array] = self._env.action_spec()
+    self._assert_base_env()
+
+    self._num_action_types: int = self._parent_action_spec['action_type'].num_values
+    if not self_keep_repeat:
+      self._num_action_types -= 1
+    self._vocabulary_size: int = self._parent_action_spec['input_token'].num_values\
+            if "input_token" in self._parent_action_spec else 0

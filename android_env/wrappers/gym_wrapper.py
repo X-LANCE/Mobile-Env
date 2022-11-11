@@ -80,6 +80,10 @@ class GymInterfaceWrapper(base_wrapper.BaseWrapper, gym.Env):
     else:
       raise ValueError('Only supported render mode is rgb_array.')
 
+  def switch_task(self, index: int) -> np.ndarray:
+    timestep = self._env.switch_task(index)
+    return timestep.observation
+
   def reset(self) -> np.ndarray:
     timestep = self._env.reset()
     return timestep.observation
