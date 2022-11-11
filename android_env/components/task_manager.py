@@ -511,7 +511,12 @@ class TaskManager():
     """
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
-    self._adb_controller.input_text("\"" + self._vocabulary[token_id] + " \"")
+    self._adb_controller.input_text( "\""\
+                                   + self._vocabulary[token_id]\
+                                      .replace("\\", "\\\\")\
+                                      .replace("\"", "\\\"")\
+                                   + " \""
+                                   )
     #  }}} method `send_token` # 
 
   def get_current_reward(self) -> float:

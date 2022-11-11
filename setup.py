@@ -116,7 +116,7 @@ setup(
         'pexpect>=4.8.0',
         'portpicker>=1.2.0',
         'protobuf>=2.6',
-        'pygame',
+        #'pygame',
         'lxml'
     ],
     extras_require={
