@@ -24,7 +24,7 @@ import queue
 import re
 import threading
 from typing import Any, Optional, Callable, Union
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Pattern
 import functools
 import itertools
 import operator
@@ -53,18 +53,34 @@ import numpy as np
 class TaskManager():
   """Handles all events and information related to the task."""
 
-  def __init__(
-      self,
-      task: task_pb2.Task,
-      max_bad_states: int = 3,
-      dumpsys_check_frequency: int = 150,
-      max_failed_current_activity: int = 10,
-  ):
+  non_pritable_char_mapping = { "\b": "KEYCODE_DEL"
+                              , "\x1b": "KEYCODE_ESCAPE"
+                              , "\n": "KEYCODE_ENTER"
+                              , "\r": "KEYCODE_ENTER"
+                              , "\t": "KEYCODE_TAB"
+                              }
+
+  def __init__( self
+              , task: task_pb2.Task
+              , start_token_mark: str = ""
+              , non_start_token_mark: str = "##"
+              , special_token_pattern: str = r"\[\w+\]"
+              , fix_vocabulary_to: Optional[Iterable[str]] = None
+              , max_bad_states: int = 3
+              , dumpsys_check_frequency: int = 150
+              , max_failed_current_activity: int = 10
+              ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
 
     Args:
       task: A task proto defining the RL task.
+      start_token_mark: str as the mark for the start subwords such as "Ġ"
+        (\\u0120) for GPT subword
+      non_start_token_mark: str as the mark for the non-start subwords such as
+        "##" for BERT subword
+      special_token_pattern: str as the pattern of the special non-printable
+        tokens such as "[CLS]" for BERT tokens
       max_bad_states: How many bad states in a row are allowed before a restart
         of the simulator is triggered.
       dumpsys_check_frequency: Frequency, in steps, at which to check
@@ -72,22 +88,32 @@ class TaskManager():
       max_failed_current_activity: The maximum number of tries for extracting
         the current activity before forcing the episode to restart.
     """
-    self._task = task
-    self._max_bad_states = max_bad_states
-    self._dumpsys_check_frequency = dumpsys_check_frequency
-    self._max_failed_current_activity = max_failed_current_activity
+    self._task: task_pb2.Task = task
 
-    self._lock = threading.Lock()
-    self._extras_max_buffer_size = 100
-    self._adb_controller = None
-    self._emulator_stub = None
-    self._image_format = None
-    self._setup_step_interpreter = None
+    self._start_token_mark: str = start_token_mark
+    self._non_start_token_mark: str = non_start_token_mark
+    self._non_start_mark_first: bool = True\
+                                     if self._non_start_token_mark.startswith(self._start_token_mark)\
+                                     else False
+    self._special_token_pattern: Pattern[str] = re.compile(special_token_pattern)
 
-    self._vocabulary: List[str] = list(self._task.vocabulary)
+    self._max_bad_states: int = max_bad_states
+    self._dumpsys_check_frequency: int = dumpsys_check_frequency
+    self._max_failed_current_activity: int = max_failed_current_activity
+
+    self._lock: threading.Lock = threading.Lock()
+    self._extras_max_buffer_size: int = 100
+    self._adb_controller: Optional[adb_control.AdbController] = None
+    #self._emulator_stub: Optional[emula = None
+    #self._image_format = None
+    self._setup_step_interpreter:\
+        Optional[setup_step_interpreter.SetupStepInterpreter] = None
+
+    self._vocabulary: List[str] = list(fix_vocabulary_to) if fix_vocabulary_to is not None\
+                                                          else list(self._task.vocabulary)
 
     # Logging settings
-    self._log_dict = {
+    self._log_dict: Dict[str, int] = {
         'reset_count_step_timeout': 0,
         'reset_count_player_exited': 0,
         'reset_count_episode_end': 0,
@@ -510,13 +536,44 @@ class TaskManager():
     token_id - int
     """
 
+    token = self._vocabulary[token_id]
+
+    if self._special_token_pattern.match(token):
+      return
+
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
-    self._adb_controller.input_text( "\""\
-                                   + self._vocabulary[token_id]\
-                                      .replace("\\", "\\\\")\
-                                      .replace("\"", "\\\"")\
-                                   + " \""
-                                   )
+
+    if self._non_start_mark_first:
+      is_non_start_token = token.startswith(self._non_start_token_mark)
+      is_start_token = not is_non_start_token and token.startswith(self._start_token_mark)
+    else:
+      is_start_token = token.startswith(self._start_token_mark)
+      is_non_start_token = not is_start_token and token.startswith(self._non_start_token_mark)
+
+    if is_start_token:
+      self._adb_controller.input_key("KEYCODE_DEL")
+      token = token[len(self._start_token_mark):]
+    elif is_non_start_token:
+      token = token[len(self._non_start_token_mark):]
+
+    if not token.isascii():
+      return
+
+    for n_prtb, gr in itertools.groupby( token
+                                       , key=( lambda ch:
+                                                 ch in non_pritable_char_mapping
+                                             )
+                                       ):
+      if n_prtb:
+        for ch in gr:
+          self._adb_controller.input_key(TaskManager.non_pritable_char_mapping[ch])
+      else:
+        self._adb_controller.input_text( "\""\
+                                       + "".join(gr)\
+                                          .replace("\\", "\\\\")\
+                                          .replace("\"", "\\\"")\
+                                       + " \""
+                                       )
     #  }}} method `send_token` # 
 
   def get_current_reward(self) -> float:

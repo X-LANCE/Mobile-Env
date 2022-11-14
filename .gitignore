@@ -6,6 +6,7 @@ android_env.egg-info
 *_pb2_grpc.py
 dist
 tags
+tags-opts
 
 apps/*.tar*
 *.apk

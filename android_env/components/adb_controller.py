@@ -720,7 +720,14 @@ class AdbController():
     Returns:
       The output of running such command as a string, None if it fails.
     """
-    accepted_key_codes = ['KEYCODE_HOME', 'KEYCODE_BACK', 'KEYCODE_ENTER']
+
+    accepted_key_codes = [ 'KEYCODE_HOME'
+                         , 'KEYCODE_BACK'
+                         , 'KEYCODE_ENTER' # '\n', '\r'
+                         , "KEYCODE_DEL" # '\b'
+                         , "KEYCODE_ESCAPE" # '\e'
+                         , "KEYCODE_TAB" # '\t'
+                         ]
     assert key_code in accepted_key_codes, ('Rejected keycode: %r' % key_code)
 
     return self._execute_command(['shell', 'input', 'keyevent', key_code],
