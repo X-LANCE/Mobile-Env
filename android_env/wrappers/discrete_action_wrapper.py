@@ -67,7 +67,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     self._keep_repeat = keep_repeat
     self._noise: float = noise
 
-    self._reset_state()
+    self._post_switch_task()
     #  }}} method `__init__` # 
 
   def _assert_base_env(self):
@@ -204,7 +204,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
                 name='action_id')
     }
 
-  def _reset_state(self):
+  def _post_switch_task(self):
     self._parent_action_spec: Dict[str, specs.Array] = self._env.action_spec()
     self._assert_base_env()
 

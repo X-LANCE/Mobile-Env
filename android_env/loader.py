@@ -29,21 +29,28 @@ from google.protobuf import text_format
 
 from typing import Optional
 from typing import Dict
+import functools
 
-def load(task_path: str,
-         avd_name: str,
-         android_avd_home: str = '~/.android/avd',
-         android_sdk_root: str = '~/Android/Sdk',
-         emulator_path: str = '~/Android/Sdk/emulator/emulator',
-         adb_path: str = '~/Android/Sdk/platform-tools/adb',
-         run_headless: bool = False,
-         mitm_config: Optional[Dict[str, str]] = None) -> environment.AndroidEnv:
+def load( task_path: str
+        , avd_name: str
+        , android_avd_home: str = '~/.android/avd'
+        , android_sdk_root: str = '~/Android/Sdk'
+        , emulator_path: str = '~/Android/Sdk/emulator/emulator'
+        , adb_path: str = '~/Android/Sdk/platform-tools/adb'
+        , run_headless: bool = False
+        , mitm_config: Optional[Dict[str, str]] = None
+        , start_token_mark: str = ""
+        , non_start_token_mark: str = "##"
+        , special_token_pattern: str = r"\[\w+\]"
+        , unify_vocabulary: Optional[str] = None
+        ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
   Args:
     task_path: Path to the task textproto file or the directory of task
       textproto file set
     avd_name: Name of the AVD (Android Virtual Device).
+
     android_avd_home: Path to the AVD (Android Virtual Device).
     android_sdk_root: Root directory of the SDK.
     emulator_path: Path to the emulator binary.
@@ -71,6 +78,16 @@ def load(task_path: str,
               installed is replaced to "$package-$suff.apk", default to
               "patched"
         }
+
+    start_token_mark: str as the mark for the start subwords such as "Ġ"
+      (\\u0120) for GPT subword
+    non_start_token_mark: str as the mark for the non-start subwords such as
+      "##" for BERT subword
+    special_token_pattern: str as the pattern of the special non-printable
+      tokens such as "[CLS]" for BERT tokens
+    unify_vocabulary: str or none as a file name to the vocabulary file in
+      which each line constitutes a token.
+
   Returns:
     env: An AndroidEnv instance.
   """
@@ -154,7 +171,21 @@ def load(task_path: str,
       frida_server=frida_server)
   #print("ZDY: AFTER Simulator Initialization")
 
-  task_managers = list(map(task_manager_lib.TaskManager, task_list))
+  if unify_vocabulary is not None:
+    with open(unify_vocabulary) as f:
+      vocabulary = list(map(str.strip, f))
+  else:
+    vocabulary = None
+
+  task_managers = list( map( functools.partial( task_manager_lib.TaskManager
+                                              , start_token_mark=start_token_mark
+                                              , non_start_token_mark=non_start_token_mark
+                                              , special_token_pattern=special_token_pattern
+                                              , fix_vocabulary_to=vocabulary
+                                              )
+                           , task_list
+                           )
+                      )
   coordinator = coordinator_lib.Coordinator(simulator, task_managers)
 
   # Load environment.

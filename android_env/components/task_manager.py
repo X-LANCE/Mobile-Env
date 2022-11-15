@@ -75,12 +75,16 @@ class TaskManager():
 
     Args:
       task: A task proto defining the RL task.
+
       start_token_mark: str as the mark for the start subwords such as "Ġ"
         (\\u0120) for GPT subword
       non_start_token_mark: str as the mark for the non-start subwords such as
         "##" for BERT subword
       special_token_pattern: str as the pattern of the special non-printable
         tokens such as "[CLS]" for BERT tokens
+      fix_vocabulary_to: iterable of str or none as the another assigned
+        vocabulary rather than the small one in the `task`
+
       max_bad_states: How many bad states in a row are allowed before a restart
         of the simulator is triggered.
       dumpsys_check_frequency: Frequency, in steps, at which to check

@@ -29,7 +29,9 @@ class BaseWrapper(dm_env.Environment):
 
   def switch_task(self, index: int) -> dm_env.TimeStep:
     self._reset_state()
-    timestep = self._process_timestep(self._env.switch_task(index))
+    timestep = self._env.switch_task(index)
+    self._post_switch_task()
+    timestep = self._process_timestep(timestep)
     return timestep
 
   def reset(self) -> dm_env.TimeStep:
@@ -40,6 +42,9 @@ class BaseWrapper(dm_env.Environment):
   def step(self, action: Any) -> dm_env.TimeStep:
     action = self._process_action(action)
     return self._process_timestep(self._env.step(action))
+
+  def _post_switch_task(self):
+    pass
 
   def _reset_state(self):
     pass
