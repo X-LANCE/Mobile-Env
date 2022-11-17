@@ -68,6 +68,12 @@ class AndroidEnv(dm_env.Environment):
     return self._coordinator.vocabulary()
 
   @property
+  def nb_tasks(self) -> str:
+    return self._coordinator.nb_tasks
+  @property
+  def task_index(self) -> str:
+    return self._coordinator.task_index
+  @property
   def task_id(self) -> str:
     return self._coordinator.task_id
   @property
@@ -99,10 +105,11 @@ class AndroidEnv(dm_env.Environment):
       if st.HasField("adb_call") and\
           st.adb_call.HasField("install_apk"):
         apk_path = st.adb_call.install_apk.filesystem.path
-        st.adb_call.install_apk.filesystem.path =\
-          os.path.normpath(
-            os.path.join(os.path.dirname(task_path),
-              apk_path))
+        if not os.path.isabs(apk_path):
+          st.adb_call.install_apk.filesystem.path =\
+            os.path.normpath(
+              os.path.join(os.path.dirname(task_path),
+                apk_path))
 
     task_manager = task_manager_lib.TaskManager(task)
     self._coordinator.add_task_manager(task_manager)

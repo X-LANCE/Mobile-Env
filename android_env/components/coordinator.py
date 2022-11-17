@@ -126,6 +126,12 @@ class Coordinator():
     return self._task_manager.vocabulary()
 
   @property
+  def nb_tasks(self) -> int:
+    return len(self._task_manager_list)
+  @property
+  def task_index(self) -> int:
+    return self._task_manager_index
+  @property
   def task_id(self) -> str:
     return self._task_manager.task().id
   @property
