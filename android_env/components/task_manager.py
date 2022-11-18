@@ -23,7 +23,7 @@ import json
 import queue
 import re
 import threading
-from typing import Any, Optional, Callable, Union
+from typing import Any, Optional, Callable, Union, Iterable
 from typing import Dict, List, Set, Pattern
 import functools
 import itertools
