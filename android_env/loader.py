@@ -122,7 +122,7 @@ def load( task_path: str
     task = task_pb2.Task()
     with open(t_p, 'r') as proto_file:
       text_format.Parse(proto_file.read(), task)
-    task_list.append(t_p)
+    task_list.append(task)
 
   adb_root = False
   frida_server = None

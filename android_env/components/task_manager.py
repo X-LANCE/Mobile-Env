@@ -565,7 +565,7 @@ class TaskManager():
 
     for n_prtb, gr in itertools.groupby( token
                                        , key=( lambda ch:
-                                                 ch in non_pritable_char_mapping
+                                                 ch in TaskManager.non_pritable_char_mapping
                                              )
                                        ):
       if n_prtb:

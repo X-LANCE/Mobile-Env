@@ -209,7 +209,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     self._assert_base_env()
 
     self._num_action_types: int = self._parent_action_spec['action_type'].num_values
-    if not self_keep_repeat:
+    if not self._keep_repeat:
       self._num_action_types -= 1
     self._vocabulary_size: int = self._parent_action_spec['input_token'].num_values\
             if "input_token" in self._parent_action_spec else 0
