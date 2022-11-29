@@ -108,11 +108,13 @@ def load( task_path: str
   # Prepare task.
   task_list = []
   if os.path.isdir(task_path):
-    task_paths = list( sorted( filter( lambda f: f.endswith(".textproto")
-                                     , os.listdir( task_path
-                                                 )
-                                     )
-                             )
+    task_paths = list( map( functools.partial(os.path.join, task_path)
+                          , sorted(
+                              filter( lambda f: f.endswith(".textproto")
+                                    , os.listdir(task_path)
+                                    )
+                              )
+                          )
                      )
     task_directory = task_path
   else:
