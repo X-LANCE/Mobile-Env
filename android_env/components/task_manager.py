@@ -229,7 +229,7 @@ class TaskManager():
         #'episode_end': False,
     }
 
-    logging.info('Task config: %s', self._task)
+    #logging.info('Task config: %s', self._task)
     #  }}} method `__init__` # 
 
   # zdy
