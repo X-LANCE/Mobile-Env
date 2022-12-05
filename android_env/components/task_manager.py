@@ -555,13 +555,14 @@ class TaskManager():
       is_non_start_token = not is_start_token and token.startswith(self._non_start_token_mark)
 
     if is_start_token:
-      self._adb_controller.input_key("KEYCODE_DEL")
       token = token[len(self._start_token_mark):]
     elif is_non_start_token:
       token = token[len(self._non_start_token_mark):]
 
     if not token.isascii():
       return
+    if is_start_token:
+      self._adb_controller.input_key("KEYCODE_DEL")
 
     for n_prtb, gr in itertools.groupby( token
                                        , key=( lambda ch:
