@@ -1,10 +1,10 @@
 import random
 import torch
 
-from absl import logging
+#from absl import logging
 
-def naive_text_detector(screen, bboxes):
-    #  function `naive_text_detector` {{{ # 
+def text_detector(screen, bboxes):
+    #  function `text_detector` {{{ # 
     """
     screen - tensor of float32 with shape (3, height, width)
     bboxes - list of tensor of float32 with shape (1, 4)
@@ -16,11 +16,11 @@ def naive_text_detector(screen, bboxes):
     event_index = random.randrange(len(bboxes)) if decides<=0.2 else None
     #if decides<=0.2:
         #logging.info("\x1b[32;1;43mText Detected!\x1b[0m")
-    return [["Instruction!"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
-    #  }}} function `naive_text_detector` # 
+    return [["Event String"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
+    #  }}} function `text_detector` # 
 
-def naive_text_recognizer(screen, bboxes):
-    #  function `naive_text_recognizer` {{{ # 
+def text_recognizer(screen, bboxes):
+    #  function `text_recognizer` {{{ # 
     """
     screen - tensor of float32 with shape (3, height, width)
     bboxes - list of tensor of float32 with shape (1, 4)
@@ -33,10 +33,10 @@ def naive_text_recognizer(screen, bboxes):
     #if decides<=0.2:
         #logging.info("Text Reward!")
     return ["Event String" if i==event_index else "Test String" for i, _ in enumerate(bboxes)]
-    #  }}} function `naive_text_recognizer` # 
+    #  }}} function `text_recognizer` # 
 
-def naive_icon_detector(screen, bboxes):
-    #  function `naive_icon_detector` {{{ # 
+def icon_detector(screen, bboxes):
+    #  function `icon_detector` {{{ # 
     """
     screen - tensor of float32 with shape (3, height, width)
     bboxes - list of tensor of float32 with shape (1, 4) with length nb_bboxes
@@ -52,10 +52,10 @@ def naive_icon_detector(screen, bboxes):
         #logging.info("Icon Reward!")
     return torch.stack(bboxes),\
             [["Event String"] if i==event_index else ["Test String"] for i, _ in enumerate(bboxes)]
-    #  }}} function `naive_icon_detector` # 
+    #  }}} function `icon_detector` # 
 
-def naive_icon_recognizer(screen, bboxes):
-    #  function `naive_icon_recognizer` {{{ # 
+def icon_recognizer(screen, bboxes):
+    #  function `icon_recognizer` {{{ # 
     """
     screen - tensor of float32 with shape (3, height, width)
     bboxes - list of tensor of float32 with shape (1, 4)
@@ -66,15 +66,15 @@ def naive_icon_recognizer(screen, bboxes):
     decides = random.random()
     event_index = random.randrange(len(bboxes)) if decides<=0.1 else None
     return ["Event String" if i==event_index else "Test String" for i, _ in enumerate(bboxes)]
-    #  }}} function `naive_icon_recognizer` # 
+    #  }}} function `icon_recognizer` # 
 
-def naive_icon_matcher(screen, targets, bboxes):
-    #  function `naive_icon_matcher` {{{ # 
+def icon_matcher(screen, targets, bboxes):
+    #  function `icon_matcher` {{{ # 
     """
     screen - tensor of float32 with shape (3, height, width)
     targets - list of tensor of float32 with shape (3, height', width') with
       length nb_bboxes
-    bboxes - tensor of float32 with shape(nb_bboxes, nb_candidates, 4)
+    bboxes - tensor of float32 with shape (nb_bboxes, nb_candidates, 4)
 
     return list of [[list of bool with length nb_candidates]] with length
       nb_bboxes
@@ -82,5 +82,5 @@ def naive_icon_matcher(screen, targets, bboxes):
 
     decides = random.random()
     event_index = random.randrange(len(bboxes)) if decides<=0.1 else None
-    return [i==event_index for i, _ in enumerate(bboxes)]
-    #  }}} function `naive_icon_matcher` # 
+    return [[i==event_index] + [False for _ in bb] for i, bb in enumerate(bboxes)]
+    #  }}} function `icon_matcher` # 

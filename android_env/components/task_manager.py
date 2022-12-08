@@ -41,8 +41,9 @@ from android_env.components import logcat_thread
 
 # zdy
 from android_env.components.tools import naive_functions
-from android_env.proto import emulator_controller_pb2
-from android_env.proto import emulator_controller_pb2_grpc
+from android_env.components.tools.types import TextModel, IconModel
+#from android_env.proto import emulator_controller_pb2
+#from android_env.proto import emulator_controller_pb2_grpc
 from android_env.components import screen_analyzer_thread
 
 from android_env.components import setup_step_interpreter
@@ -69,6 +70,8 @@ class TaskManager():
               , max_bad_states: int = 3
               , dumpsys_check_frequency: int = 150
               , max_failed_current_activity: int = 10
+              , text_model: TextModel = naive_functions
+              , icon_model: IconModel = naive_functions
               ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
@@ -91,6 +94,9 @@ class TaskManager():
         current_activity and view hierarchy
       max_failed_current_activity: The maximum number of tries for extracting
         the current activity before forcing the episode to restart.
+
+      text_model: TextModel
+      icon_model: IconModel
     """
     self._task: task_pb2.Task = task
 
@@ -128,7 +134,7 @@ class TaskManager():
     # zdy
     #  Event Infrastructures {{{ # 
     self._events_with_id: Dict[int, event_listeners.Event] = {}
-    self._events_in_source: Dict[int, List[event_listener.Event]] = {}
+    self._events_in_source: Dict[int, List[event_listeners.Event]] = {}
     self._events_in_need: Dict[int, List[event_listeners.Event]] = {}
 
     # Event Sources
@@ -184,7 +190,7 @@ class TaskManager():
       try:
         extra = dict(json.loads(extra))
       except ValueError:
-        logging.error('JSON string could not be parsed: %s', extra1)
+        logging.error('JSON string could not be parsed: %s', extra)
         extra = {}
       return extra
       #  }}} function `_parse_json` # 
@@ -213,6 +219,9 @@ class TaskManager():
     del self._events_in_need
     del self._events_in_source
     #  }}} Event Infrastructures # 
+
+    self._text_model: TextModel = text_model
+    self._icon_model: IconModel = icon_model
 
     # Initialize internal state
     self._task_start_time = None
@@ -775,7 +784,7 @@ class TaskManager():
   def _run_screen_analyzer(self, screen: np.ndarray):
     #  method `_run_screen_analyzer` {{{ # 
     """
-    screen - array of uint8 with shape (height, width, 3)
+    screen - array of uint8 with shape (3, height, width)
     """
 
     if not hasattr(self, "_screen_analyzer_thread"):
@@ -833,11 +842,16 @@ class TaskManager():
     #  method `_start_screen_analyzer_thread` {{{ # 
     # ZDY_COMMENT: TODO: instantiate models according to requirements
 
-    text_detector = naive_functions.naive_text_detector
-    text_recognizer = naive_functions.naive_text_recognizer
-    icon_detector = naive_functions.naive_icon_detector
-    icon_recognizer = naive_functions.naive_icon_recognizer
-    icon_matcher = naive_functions.naive_icon_matcher
+    #text_detector = naive_functions.naive_text_detector
+    #text_recognizer = naive_functions.naive_text_recognizer
+    #icon_detector = naive_functions.naive_icon_detector
+    #icon_recognizer = naive_functions.naive_icon_recognizer
+    #icon_matcher = naive_functions.naive_icon_matcher
+    text_detector = self._text_model.text_detector
+    text_recognizer = self._text_model.text_recognizer
+    icon_detector = self._icon_model.icon_detector
+    icon_recognizer = self._icon_model.icon_recognizer
+    icon_matcher = self._icon_model.icon_matcher
 
     self._screen_analyzer_thread: screen_analyzer_thread.ScreenAnalyzerThread =\
         screen_analyzer_thread.ScreenAnalyzerThread(

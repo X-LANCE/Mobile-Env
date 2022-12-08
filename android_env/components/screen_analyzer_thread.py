@@ -352,6 +352,9 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
         if not isinstance(screen, np.ndarray):
             self._write_value(ScreenAnalyzerThread.Signal.DID_NOT_CHECK)
             return
+        screen = np.clip(screen, 0, 255).astype(np.float32)/255.
+        screen = torch.from_numpy(screen)
+
         #self._main_loop_counter += 1
         #if self._check_frequency<=0 or\
                 #self._main_loop_counter < self._check_frequency:
