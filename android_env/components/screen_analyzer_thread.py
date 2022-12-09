@@ -302,6 +302,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 ])[None, :])
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
+            image_tensor = image_tensor.to(dtype=torch.float32)/255.
             target_images.append(image_tensor)
         if len(bboxes)>0:
             candidate_bboxes, _ = self._icon_detector(screen, bboxes)
@@ -331,6 +332,7 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                 ])[None, :])
 
             image_tensor = tvio.read_image(lstn.path, tvio.ImageReadMode.RGB)
+            image_tensor = image_tensor.to(dtype=torch.float32)/255.
             target_images.append(image_tensor)
         if len(bboxes)>0:
             bboxes = torch.cat(bboxes)[:, None, :]

@@ -24,6 +24,8 @@ from android_env.components import coordinator as coordinator_lib
 from android_env.components import task_manager as task_manager_lib
 from android_env.components.simulators.emulator import emulator_simulator
 from android_env.proto import task_pb2
+from android_env.components.tools.types import TextModel, IconModel
+from android_env.components.tools import naive_functions
 
 from google.protobuf import text_format
 
@@ -43,6 +45,8 @@ def load( task_path: str
         , non_start_token_mark: str = "##"
         , special_token_pattern: str = r"\[\w+\]"
         , unify_vocabulary: Optional[str] = None
+        , text_model: TextModel = naive_functions
+        , icon_model: IconModel = naive_functions
         ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
@@ -184,6 +188,8 @@ def load( task_path: str
                                               , non_start_token_mark=non_start_token_mark
                                               , special_token_pattern=special_token_pattern
                                               , fix_vocabulary_to=vocabulary
+                                              , text_model=text_model
+                                              , icon_model=icon_model
                                               )
                            , task_list
                            )

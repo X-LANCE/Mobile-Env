@@ -3,7 +3,7 @@ import torch
 from typing import List, Tuple
 
 class TextModel(abc.ABC):
-    def text_detector( self,
+    def text_detector( self
                      , screen: torch.Tensor
                      , bboxes: List[torch.Tensor]
                      ) -> List[List[str]]:
