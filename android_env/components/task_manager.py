@@ -59,6 +59,7 @@ class TaskManager():
                               , "\n": "KEYCODE_ENTER"
                               , "\r": "KEYCODE_ENTER"
                               , "\t": "KEYCODE_TAB"
+                              , "`": "KEYCODE_GRAVE"
                               }
 
   def __init__( self
