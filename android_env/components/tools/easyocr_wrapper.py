@@ -3,6 +3,8 @@ from android_env.components.tools.types import TextModel
 
 from typing import Union, Optional
 from typing import List
+import threading
+
 import torch
 import numpy as np
 
@@ -55,6 +57,7 @@ class EasyOCRWrapper(TextModel):
                               , model_storage_directory=model_storage_directory
                               , download_enabled=download_enabled
                               )
+        self._lock: threading.Lock = threading.Lock()
         #  }}} method __init__ # 
 
     def _convert_screen(screen: torch.Tensor) -> np.ndarray:
@@ -88,7 +91,8 @@ class EasyOCRWrapper(TextModel):
         """
 
         screen = self._convert_screen(screen) # (H, W, 3)
-        results = self._reader.readtext(screen) # get all results
+        with self._lock:
+            results = self._reader.readtext(screen) # get all results
 
         # check the bboxes
         target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
@@ -127,7 +131,8 @@ class EasyOCRWrapper(TextModel):
         """
 
         screen = self._convert_screen(screen) # (H, W, 3)
-        results = self._reader.readtext(screen)
+        with self._lock:
+            results = self._reader.readtext(screen)
 
         # check the bboxes
         target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
