@@ -23,7 +23,7 @@ import json
 import queue
 import re
 import threading
-from typing import Any, Optional, Callable, Union, Iterable
+from typing import Any, Optional, Callable, Union, Iterable, Tuple
 from typing import Dict, List, Set, Pattern
 import functools
 import itertools
@@ -50,6 +50,7 @@ from android_env.components import setup_step_interpreter
 from android_env.proto import task_pb2
 from android_env.components import event_listeners # zdy
 import numpy as np
+import lxml.etree
 
 class TaskManager():
   """Handles all events and information related to the task."""
@@ -592,12 +593,14 @@ class TaskManager():
     self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
-  def get_current_reward(self) -> float:
+  def get_current_reward(self) -> Tuple[float, str]:
     #  method `get_current_reward` {{{ # 
     """
     Returns total reward accumulated since the last step.
 
-    return floating
+    Returns:
+        float: reward
+        str: view hierarchy serialization
     """
 
     #with self._lock:
@@ -616,7 +619,12 @@ class TaskManager():
     reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
     #self._reward_event.clear() # zdy
 
-    return reward
+    view_hierarchy = self._adb_controller.get_view_hierarchy()
+    view_hierarchy = lxml.etree.tostring(view_hierarchy, encoding="unicode")\
+                        if view_hierarchy is not None\
+                        else ""
+
+    return reward, view_hierarchy
     #  }}} method `get_current_reward` # 
 
   def get_current_extras(self) -> Dict[str, Any]:
@@ -702,14 +710,14 @@ class TaskManager():
         logging.info('************* END OF EPISODE *************')
         return True
 
-    if self._task.max_duration_sec > 0.0:
-      task_duration = datetime.datetime.now() - self._task_start_time
-      max_duration_sec = self._task.max_duration_sec
-      if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
-        self._log_dict['reset_count_max_duration_reached'] += 1
-        logging.info('Maximum task duration (sec) reached. Ending episode.')
-        logging.info('************* END OF EPISODE *************')
-        return True
+    #if self._task.max_duration_sec > 0.0:
+      #task_duration = datetime.datetime.now() - self._task_start_time
+      #max_duration_sec = self._task.max_duration_sec
+      #if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
+        #self._log_dict['reset_count_max_duration_reached'] += 1
+        #logging.info('Maximum task duration (sec) reached. Ending episode.')
+        #logging.info('************* END OF EPISODE *************')
+        #return True
 
     return False
     #  }}} method `check_if_episode_ended` # 

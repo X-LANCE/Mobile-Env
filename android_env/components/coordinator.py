@@ -19,7 +19,7 @@
 import copy
 import socket
 import time
-from typing import Any, Optional, Iterable
+from typing import Any, Optional, Iterable, Union
 from typing import Dict, Tuple, List
 
 from absl import logging
@@ -293,14 +293,19 @@ class Coordinator():
     #  }}} method `change_task_manager` # 
   #  }}} Reset Interfaces # 
 
-  def execute_action(
-      self,
-      action: Optional[Dict[str, np.ndarray]],
-  ) -> Tuple[Optional[Dict[str, np.ndarray]],
-          float,
-          Dict[str, Any],
-          List[str],
-          bool]:
+  def execute_action( self
+                    , action: Optional[Dict[str, np.ndarray]]
+                    ) -> Tuple[ Optional[ Dict[ str
+                                              , Union[ np.ndarray
+                                                     , str
+                                                     ]
+                                              ]
+                                        ]
+                              , float
+                              , Dict[str, Any]
+                              , List[str]
+                              , bool
+                              ]:
     """Executes the selected action and returns transition info.
 
     Args:
@@ -320,7 +325,8 @@ class Coordinator():
       self._log_dict['episode_steps'] += 1
 
     # If a restart is neccessary, end the episode.
-    if self._should_restart or self._check_timeout():
+    #if self._should_restart or self._check_timeout():
+    if self._should_restart:
       return None, 0.0, {}, [], True
 
     # If the action is a TOUCH or LIFT, send it to the simulator.
@@ -340,7 +346,8 @@ class Coordinator():
       observation = self._simulator.get_observation()
 
       self._task_manager.snapshot_events(observation["pixels"])
-      reward = self._task_manager.get_current_reward() # zdy
+      reward, view_hierarchy = self._task_manager.get_current_reward() # zdy
+      observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
