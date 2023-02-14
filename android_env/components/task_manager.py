@@ -51,6 +51,7 @@ from android_env.components import setup_step_interpreter
 from android_env.proto import task_pb2
 from android_env.components import event_listeners # zdy
 import numpy as np
+import lxml.etree
 
 class TaskManager():
   """Handles all events and information related to the task."""
@@ -601,9 +602,12 @@ class TaskManager():
     """
     Returns total reward accumulated since the last step.
 
-    vh - bool
+    Args:
+        vh (bool): if vh is in need
 
-    return floating
+    Returns:
+        float: reward
+        lxml.etree.Element: view hierarchy
     """
 
     #with self._lock:

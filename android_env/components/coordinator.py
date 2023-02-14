@@ -295,19 +295,19 @@ class Coordinator():
     #  }}} method `change_task_manager` # 
   #  }}} Reset Interfaces # 
 
-  def execute_action(
-      self,
-      action: Optional[Dict[str, np.ndarray]],
-  ) -> Tuple[ Optional[Dict[ str
-                           , Union[ np.ndarray
-                                  , lxml.etree.Element
-                                  ]
-                           ]
-                      ]
-            , float
-            , Dict[str, Any]
-            , List[str]
-            , bool]:
+  def execute_action( self
+                    , action: Optional[Dict[str, np.ndarray]]
+                    ) -> Tuple[ Optional[ Dict[ str
+                                              , Union[ np.ndarray
+                                                     , lxml.etree.Element
+                                                     ]
+                                              ]
+                                        ]
+                              , float
+                              , Dict[str, Any]
+                              , List[str]
+                              , bool
+                              ]:
     """Executes the selected action and returns transition info.
 
     Args:
