@@ -68,7 +68,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
             self.action_spec()['action_type'].dtype)
         actions.append(lift_action)
       else:
-        actions = [action] * (self._num_frames + 1)
+        actions = [action]
 
     return actions
 
