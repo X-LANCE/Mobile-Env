@@ -1,7 +1,7 @@
 import android_env
 from android_env.wrappers import base_wrapper
 
-from typing import Dict, List
+from typing import Dict, List, Pattern
 from typing import Any
 from numbers import Number
 import dm_env
@@ -11,6 +11,8 @@ from android_env.components import action_type
 import enum
 from transformers import PreTrainedTokenizer
 import numpy as np
+#import lxml.etree
+import re
 
 class VhIoWrapper(base_wrapper.BaseWrapper):
     """
@@ -41,6 +43,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         RIGHT = 2
         DOWN = 3
     #  }}} Enum Types for VH Actions # 
+
+    bounds_pattern: Pattern[str] = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
     def __init__( self
                 , env: android_env.AndroidEnv
@@ -227,6 +231,25 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
             if step_type.last():
                 break
+
+        self._bbox_list: List[List[int]] = []
+
+        for n in observation["view_hierarchy"].iterdescendants():
+            n.set( "clickable"
+                 , str(  n.get("clickable")=="true"\
+                      or n.getparent().get("clickable")=="true"
+                      ).lower()
+                 )
+            if n.get("bounds")=="[0,0][0,0]":
+                continue
+            if len(list(n))==0:
+                bounds_match = VhIoWrapper.bounds_pattern.match(n.get("bounds"))
+                self._bbox_list.append( list( map( int
+                                                 , bounds_match.groups()
+                                                 )
+                                            )
+                                      )
+
         return dm_env.TimeStep( step_type=step_type
                               , reward=total_reward
                               , discount=discount
