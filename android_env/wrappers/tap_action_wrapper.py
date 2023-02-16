@@ -74,8 +74,8 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
 
   def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
     """Takes a step in the environment."""
-    self._env_steps += self._num_frames + 1
     actions = self._process_action(action)
+    self._env_steps += len(actions)
     total_reward = 0
     for idx in range(len(actions)):
       step_type, reward, discount, observation = self._env.step(actions[idx])
