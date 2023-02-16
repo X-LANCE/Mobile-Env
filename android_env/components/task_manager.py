@@ -593,14 +593,17 @@ class TaskManager():
     self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
-  def get_current_reward(self) -> Tuple[float, str]:
+  def get_current_reward(self) -> Tuple[ float
+                                       , Optional[lxml.etree.Element]
+                                       ]:
     #  method `get_current_reward` {{{ # 
     """
     Returns total reward accumulated since the last step.
 
     Returns:
         float: reward
-        str: view hierarchy serialization
+        #str: view hierarchy serialization
+        Optional[lxml.etree.Element]: view hierarchy
     """
 
     #with self._lock:
@@ -620,9 +623,9 @@ class TaskManager():
     #self._reward_event.clear() # zdy
 
     view_hierarchy = self._adb_controller.get_view_hierarchy()
-    view_hierarchy = lxml.etree.tostring(view_hierarchy, encoding="unicode")\
-                        if view_hierarchy is not None\
-                        else ""
+    #view_hierarchy = lxml.etree.tostring(view_hierarchy, encoding="unicode")\
+        #if view_hierarchy is not None\
+        #else ""
 
     return reward, view_hierarchy
     #  }}} method `get_current_reward` # 

@@ -117,13 +117,17 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
     height: Height of the device screen in pixels.
     width: Width of the device screen in pixels.
   Returns:
-    pixels: Spec for the RGB screenshot of the device. Has shape (H, W, 3)
-    timedelta: Spec for time delta since the last observation (in microseconds).
-    orientation: Spec for the latest orientation in a one-hot representation:
-        [1, 0, 0, 0]: PORTRAIT  (0 degrees)
-        [0, 1, 0, 0]: LANDSCAPE (90 degrees clockwise)
-        [0, 0, 1, 0]: PORTRAIT  (180 degrees) ("upside down")
-        [0, 0, 0, 1]: LANDSCAPE (270 degrees clockwise)
+    Dict[str, specs.Array]: dict like
+      {
+        "pixels": Spec for the RGB screenshot of the device. Has shape (H, W, 3)
+        "timedelta": Spec for time delta since the last observation (in microseconds).
+        "orientation": Spec for the latest orientation in a one-hot representation:
+          - [1, 0, 0, 0]: PORTRAIT  (0 degrees)
+          - [0, 1, 0, 0]: LANDSCAPE (90 degrees clockwise)
+          - [0, 0, 1, 0]: PORTRAIT  (180 degrees) ("upside down")
+          - [0, 0, 0, 1]: LANDSCAPE (270 degrees clockwise)
+        "view_hierarchy": specs.Array for the view hierarchy observation
+      }
   """
 
   return { 'pixels': specs.Array( shape=(height, width, 3)
@@ -132,7 +136,7 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
                                 )
          , 'timedelta': specs.Array(shape=(), dtype=np.int64, name='timedelta')
          , 'orientation': specs.Array(shape=np.array([4]), dtype=np.uint8, name='orientation')
-         , 'view_hierarchy': specs.StringArray(shape=(), name="view_hierarchy")
+         , 'view_hierarchy': specs.Array(shape=(), dtype=np.object_, name="view_hierarchy")
          }
 
 
