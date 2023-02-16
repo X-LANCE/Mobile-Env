@@ -126,17 +126,14 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
         [0, 0, 0, 1]: LANDSCAPE (270 degrees clockwise)
   """
 
-  return {
-      'pixels':
-          specs.Array(
-              shape=(height, width, 3),
-              dtype=np.uint8,
-              name='pixels'),
-      'timedelta':
-          specs.Array(shape=(), dtype=np.int64, name='timedelta'),
-      'orientation':
-          specs.Array(shape=np.array([4]), dtype=np.uint8, name='orientation'),
-  }
+  return { 'pixels': specs.Array( shape=(height, width, 3)
+                                , dtype=np.uint8
+                                , name='pixels'
+                                )
+         , 'timedelta': specs.Array(shape=(), dtype=np.int64, name='timedelta')
+         , 'orientation': specs.Array(shape=np.array([4]), dtype=np.uint8, name='orientation')
+         , 'view_hierarchy': specs.StringArray(shape=(), name="view_hierarchy")
+         }
 
 
 def base_task_extras_spec(task: task_pb2.Task) -> Dict[str, dm_env.specs.Array]:
