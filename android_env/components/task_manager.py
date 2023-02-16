@@ -607,7 +607,7 @@ class TaskManager():
 
     Returns:
         float: reward
-        lxml.etree.Element: view hierarchy
+        Optional[lxml.etree.Element]: view hierarchy
     """
 
     #with self._lock:

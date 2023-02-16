@@ -31,6 +31,7 @@ from android_env.components import task_manager as task_manager_lib
 from android_env.components.simulators import base_simulator
 import dm_env
 import numpy as np
+import lxml.etree
 
 
 class Coordinator():
@@ -299,7 +300,7 @@ class Coordinator():
                     , action: Optional[Dict[str, np.ndarray]]
                     ) -> Tuple[ Optional[ Dict[ str
                                               , Union[ np.ndarray
-                                                     , lxml.etree.Element
+                                                     , Optional[lxml.etree.Element]
                                                      ]
                                               ]
                                         ]
