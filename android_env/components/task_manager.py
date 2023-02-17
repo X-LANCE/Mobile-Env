@@ -571,7 +571,7 @@ class TaskManager():
 
     if not token.isascii():
       return
-    if is_start_token:
+    if is_non_start_token:
       self._adb_controller.input_key("KEYCODE_DEL")
 
     for n_prtb, gr in itertools.groupby( token
@@ -587,8 +587,9 @@ class TaskManager():
                                        + "".join(gr)\
                                           .replace("\\", "\\\\")\
                                           .replace("\"", "\\\"")\
-                                       + " \""
+                                       + "\""
                                        )
+    self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
   def get_current_reward(self) -> float:
