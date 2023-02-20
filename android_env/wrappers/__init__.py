@@ -22,6 +22,7 @@ from android_env.wrappers import gym_wrapper
 from android_env.wrappers import image_rescale_wrapper
 from android_env.wrappers import last_action_wrapper
 from android_env.wrappers import recorder_wrapper
+from android_env.wrappers import vh_io_wrapper
 
 DiscreteActionWrapper = discrete_action_wrapper.DiscreteActionWrapper
 FlatInterfaceWrapper = flat_interface_wrapper.FlatInterfaceWrapper
@@ -30,3 +31,4 @@ GymInterfaceWrapper = gym_wrapper.GymInterfaceWrapper
 ImageRescaleWrapper = image_rescale_wrapper.ImageRescaleWrapper
 LastActionWrapper = last_action_wrapper.LastActionWrapper
 RecorderWrapper = recorder_wrapper.RecorderWrapper
+VhIoWrapper = vh_io_wrapper.VhIoWrapper
