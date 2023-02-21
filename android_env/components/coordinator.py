@@ -342,14 +342,13 @@ class Coordinator():
           and action["action_type"].item()==action_type_lib.ActionType.LIFT
       self._touched = action["action_type"].item()==action_type_lib.ActionType.TOUCH
     else:
-      vh = False
+      vh = True
       self._touched = False
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
       self._wait_for_next_frame()
-    if vh:
-      time.sleep(1)
+    #time.sleep(1)
 
     # Read necessary transition information and return it to the agent.
     try:
