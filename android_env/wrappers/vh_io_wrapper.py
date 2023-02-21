@@ -269,15 +269,17 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
         if action["action_type"]==VhIoWrapper.ActionType.INPUT:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
-        timestep: dm_env.TimeStep = self._env.step( { "action_type": np.array( action_type.ActionType.LIFT
-                                                                             , dtype=np.int32
-                                                                             )
-                                                    , "touch_position": np.array( [0., 0.]
-                                                                                , dtype=np.float32
-                                                                                )
-                                                    }
-                                                  )
+        timestep = self._env.step( { "action_type": np.array( action_type.ActionType.LIFT
+                                                            , dtype=np.int32
+                                                            )
+                                   , "touch_position": np.array( [0., 0.]
+                                                               , dtype=np.float32
+                                                               )
+                                   }
+                                 )
         instructions += self._env.task_instructions()
+        if timestep.reward>0.:
+            total_reward += timestep.reward
 
         timestep: dm_env.TimeStep = self._process_timestep(timestep)
 
