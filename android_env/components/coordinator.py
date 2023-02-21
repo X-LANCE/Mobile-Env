@@ -336,10 +336,14 @@ class Coordinator():
         self._send_action_to_taskmanager(action)
       elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
         self._send_action_to_simulator(action)
+      vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
+    else:
+      vh: bool = True
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
       self._wait_for_next_frame()
+    #time.sleep(1)
 
     # Read necessary transition information and return it to the agent.
     try:
@@ -347,7 +351,7 @@ class Coordinator():
       observation = self._simulator.get_observation()
 
       self._task_manager.snapshot_events(observation["pixels"])
-      reward, view_hierarchy = self._task_manager.get_current_reward() # zdy
+      reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
       observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()

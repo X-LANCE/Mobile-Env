@@ -1,8 +1,8 @@
-import android_env
+from android_env.environment import AndroidEnv
 from android_env.wrappers import base_wrapper
 
 from typing import Dict, List, Pattern
-from typing import Any
+from typing import Union
 from numbers import Number
 import dm_env
 from dm_env import specs
@@ -13,6 +13,8 @@ from transformers import PreTrainedTokenizer
 import numpy as np
 #import lxml.etree
 import re
+
+#import logging
 
 class VhIoWrapper(base_wrapper.BaseWrapper):
     """
@@ -47,15 +49,15 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
     bounds_pattern: Pattern[str] = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
     def __init__( self
-                , env: android_env.AndroidEnv
+                , env: AndroidEnv
                 , tokenizer: PreTrainedTokenizer
-                , nb_click_frames: int = 5
-                , nb_scroll_frmaes: int = 15
+                , nb_click_frames: int = 3
+                , nb_scroll_frmaes: int = 10
                 ):
         #  method __init__ {{{ # 
         """
         Args:
-            env (android_env.AndroidEnv): the environment to be wrapped
+            env (AndroidEnv): the environment to be wrapped
             tokenizer (PreTrainedTokenizer): tokenizer to tokenize the input
               text into the tokens from the vocabulary of the environment
             nb_click_frames (int): the duration the TOUCH action will last for
@@ -64,9 +66,11 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
               the SCROLL iteraction
         """
 
-        super(VhIoWrapper, self).__init__()
+        super(VhIoWrapper, self).__init__(env)
 
         self._bbox_list: List[List[int]] = [] # bboxes are saved as [x0, y0, x1, y1]
+        self._instructions: List[str] = []
+
         self._tokenizer: PreTrainedTokenizer = tokenizer
         self._nb_click_frames: int = nb_click_frames
         self._nb_scroll_frames: int = nb_scroll_frmaes
@@ -177,7 +181,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                                                       , dtype=np.float32
                                                       )
                           }
-            actions += [touch_action] * self._nb_frames
+            actions += [touch_action] * self._nb_click_frames
             actions.append(lift_action)
 
         if action["action_type"]==VhIoWrapper.ActionType.CLICK:
@@ -205,36 +209,11 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             return actions
         #  }}} method _process_action # 
 
-    def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
-        #  method step {{{ # 
-        """
-        Args:
-            action (Dict[str, np.ndarray): vh-element-wise action
-
-        Returns:
-            dm_env.TimeStep
-        """
-
-        actions: List[Dict[str, np.ndarray]] = self._process_action(action)
-        self._env_steps += len(actions)
-
-        total_reward = 0.
-        for act in actions:
-            step_type: dm_env.StepType
-            reward: float
-            discount: float
-            observation: Dict[str, Any]
-            step_type, reward, discount, observation = self._env.step(act)
-
-            if reward>0.:
-                total_reward += reward
-
-            if step_type.last():
-                break
-
+    def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+        #  method _process_timestep {{{ # 
         self._bbox_list: List[List[int]] = []
 
-        for n in observation["view_hierarchy"].iterdescendants():
+        for n in timestep.observation["view_hierarchy"].iterdescendants():
             n.set( "clickable"
                  , str(  n.get("clickable")=="true"\
                       or n.getparent().get("clickable")=="true"
@@ -250,12 +229,71 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                                             )
                                       )
 
-        return dm_env.TimeStep( step_type=step_type
+        return timestep
+        #  }}} method _process_timestep # 
+
+    def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
+        #  method step {{{ # 
+        """
+        Args:
+            action (Dict[str, np.ndarray): vh-element-wise action
+
+        Returns:
+            dm_env.TimeStep
+        """
+
+        actions: List[Dict[str, np.ndarray]] = self._process_action(action)
+        self._env_steps += len(actions)
+
+        total_reward = 0.
+        instructions: List[str] = []
+        for act in actions:
+            #step_type: dm_env.StepType
+            #reward: float
+            #discount: float
+            #observation: Dict[str, Any]
+            #step_type, reward, discount, observation = self._env.step(act)
+            timestep: dm_env.TimeStep = self._env.step(act)
+            instructions += self._env.task_instructions()
+
+            if timestep.reward>0.:
+                total_reward += timestep.reward
+
+            if timestep.last():
+                self._instructions = instructions
+                return dm_env.TimeStep( step_type=timestep.step_type
+                                      , reward=total_reward
+                                      , discount=timestep.discount
+                                      , observation=timestep.observation
+                                      )
+
+        if action["action_type"]==VhIoWrapper.ActionType.INPUT:
+            self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
+        timestep: dm_env.TimeStep = self._env.step( { "action_type": np.array( action_type.ActionType.LIFT
+                                                                             , dtype=np.int32
+                                                                             )
+                                                    , "touch_position": np.array( [0., 0.]
+                                                                                , dtype=np.float32
+                                                                                )
+                                                    }
+                                                  )
+        instructions += self._env.task_instructions()
+
+        timestep: dm_env.TimeStep = self._process_timestep(timestep)
+
+        self._instructions = instructions
+        return dm_env.TimeStep( step_type=timestep.step_type
                               , reward=total_reward
-                              , discount=discount
-                              , observation=observation
+                              , discount=timestep.discount
+                              , observation=timestep.observation
                               )
         #  }}} method step # 
+
+    def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:
+        if latest_only:
+            return self._instructions[-1] if len(self._instructions)>0 else ""
+        else:
+            return self._instructions.copy()
 
     def android_logs(self) -> Dict[str, Number]:
         """
