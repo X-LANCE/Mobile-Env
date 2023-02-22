@@ -199,7 +199,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                               )
             return actions
         if action["action_type"]==VhIoWrapper.ActionType.SCROLL:
-            for pst in self._direction_trajectories[action["direction"]]:
+            for pst in self._direction_trajectories[action["direction"].item()]:
                 actions.append( { "action_type": np.array( action_type.ActionType.TOUCH
                                                          , dtype=np.int32
                                                          )
