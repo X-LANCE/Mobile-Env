@@ -26,6 +26,7 @@ from android_env.components.simulators.emulator import emulator_simulator
 from android_env.proto import task_pb2
 from android_env.components.tools.types import TextModel, IconModel
 from android_env.components.tools import naive_functions
+from android_env.utils import fix_path
 
 from google.protobuf import text_format
 
@@ -47,6 +48,7 @@ def load( task_path: str
         , unify_vocabulary: Optional[str] = None
         , text_model: TextModel = naive_functions
         , icon_model: IconModel = naive_functions
+        , with_view_hierarchy: bool = False
         ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
@@ -91,6 +93,8 @@ def load( task_path: str
       tokens such as "[CLS]" for BERT tokens
     unify_vocabulary: str or none as a file name to the vocabulary file in
       which each line constitutes a token.
+    with_view_hierarchy (bool): if the view hierarchy should be included in the
+      observation
 
   Returns:
     env: An AndroidEnv instance.
@@ -160,13 +164,14 @@ def load( task_path: str
 
   # transform the paths in task definitions
   for t in task_list:
-    for st in t.setup_steps:
-      if st.HasField("adb_call") and\
-          st.adb_call.HasField("install_apk"):
-        apk_path = st.adb_call.install_apk.filesystem.path
-        if not os.path.isabs(apk_path):
-          st.adb_call.install_apk.filesystem.path =\
-              os.path.normpath(os.path.join(task_directory, apk_path))
+    #for st in t.setup_steps:
+      #if st.HasField("adb_call") and\
+          #st.adb_call.HasField("install_apk"):
+        #apk_path = st.adb_call.install_apk.filesystem.path
+        #if not os.path.isabs(apk_path):
+          #st.adb_call.install_apk.filesystem.path =\
+              #os.path.normpath(os.path.join(task_directory, apk_path))
+    fix_path(t, task_directory)
 
   # Create simulator.
   #print("ZDY: BEFORE Simulator Initialization")
@@ -194,7 +199,9 @@ def load( task_path: str
                            , task_list
                            )
                       )
-  coordinator = coordinator_lib.Coordinator(simulator, task_managers)
+  coordinator = coordinator_lib.Coordinator( simulator, task_managers
+                                           , with_view_hierarchy=with_view_hierarchy
+                                           )
 
   # Load environment.
   return environment.AndroidEnv(coordinator=coordinator)

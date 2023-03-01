@@ -36,14 +36,14 @@ import lxml.etree
 class Coordinator():
   """Handles interaction between internal components of AndroidEnv."""
 
-  def __init__(
-      self,
-      simulator: base_simulator.BaseSimulator,
-      task_managers: Iterable[task_manager_lib.TaskManager],
-      step_timeout_sec: int = 10,
-      max_steps_per_sec: float = 15.0,
-      periodic_restart_time_min: float = 0.0,
-      force_simulator_launch: bool = True,
+  def __init__( self
+              , simulator: base_simulator.BaseSimulator
+              , task_managers: Iterable[task_manager_lib.TaskManager]
+              , step_timeout_sec: int = 10
+              , max_steps_per_sec: float = 15.0
+              , periodic_restart_time_min: float = 0.0
+              , force_simulator_launch: bool = True
+              , with_view_hierarchy: bool = False
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
@@ -63,6 +63,8 @@ class Coordinator():
         episode once the time has been reached.
       force_simulator_launch: Forces the simulator to relaunch even if it is
         already launched.
+      with_view_hierarchy (bool): if the view hierarchy should be included in
+        the observation
     """
 
     self._simulator: base_simulator.BaseSimulator = simulator
@@ -74,6 +76,7 @@ class Coordinator():
     self._max_steps_per_sec = max_steps_per_sec
     self._periodic_restart_time_min = periodic_restart_time_min
     self._force_simulator_launch = force_simulator_launch
+    self._with_view_hierarchy: bool = with_view_hierarchy
 
     # Logging settings.
     self._log_dict = {
@@ -339,6 +342,7 @@ class Coordinator():
       vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
     else:
       vh: bool = True
+    vh = vh and self._with_view_hierarchy
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
@@ -352,7 +356,8 @@ class Coordinator():
 
       self._task_manager.snapshot_events(observation["pixels"])
       reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
-      observation["view_hierarchy"] = view_hierarchy
+      if self._with_view_hierarchy:
+        observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
