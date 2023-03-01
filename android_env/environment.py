@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Union
 from absl import logging
 from android_env.components import coordinator as coordinator_lib
 from android_env.components import task_manager as task_manager_lib
+from android_env.utils import fix_path
 from android_env.proto import task_pb2
 from google.protobuf import text_format
 import os.path
@@ -101,15 +102,16 @@ class AndroidEnv(dm_env.Environment):
     with open(task_path, 'r') as f:
       text_format.Parse(f.read(), task)
 
-    for st in task.setup_steps:
-      if st.HasField("adb_call") and\
-          st.adb_call.HasField("install_apk"):
-        apk_path = st.adb_call.install_apk.filesystem.path
-        if not os.path.isabs(apk_path):
-          st.adb_call.install_apk.filesystem.path =\
-            os.path.normpath(
-              os.path.join(os.path.dirname(task_path),
-                apk_path))
+    fix_path(task, os.path.dirname(task_path))
+    #for st in task.setup_steps:
+      #if st.HasField("adb_call") and\
+          #st.adb_call.HasField("install_apk"):
+        #apk_path = st.adb_call.install_apk.filesystem.path
+        #if not os.path.isabs(apk_path):
+          #st.adb_call.install_apk.filesystem.path =\
+              #os.path.normpath(
+              #os.path.join(os.path.dirname(task_path),
+                #apk_path))
 
     task_manager = task_manager_lib.TaskManager(task)
     self._coordinator.add_task_manager(task_manager)

@@ -37,14 +37,13 @@ import lxml.etree
 class Coordinator():
   """Handles interaction between internal components of AndroidEnv."""
 
-  def __init__(
-      self,
-      simulator: base_simulator.BaseSimulator,
-      task_managers: Iterable[task_manager_lib.TaskManager],
-      step_timeout_sec: int = 10,
-      max_steps_per_sec: float = 15.0,
-      periodic_restart_time_min: float = 0.0,
-      force_simulator_launch: bool = True,
+  def __init__( self
+              , simulator: base_simulator.BaseSimulator
+              , task_managers: Iterable[task_manager_lib.TaskManager]
+              , step_timeout_sec: int = 10
+              , max_steps_per_sec: float = 15.0
+              , periodic_restart_time_min: float = 0.0
+              , force_simulator_launch: bool = True
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
@@ -357,7 +356,6 @@ class Coordinator():
 
       self._task_manager.snapshot_events(observation["pixels"])
       reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
-      observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended()
