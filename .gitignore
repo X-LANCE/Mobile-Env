@@ -4,6 +4,8 @@ build
 android_env.egg-info
 *_pb2.py
 *_pb2_grpc.py
+*_pb2.py.bak
+*_pb2_grpc.py.bak
 dist
 tags
 tags-opts
@@ -20,5 +22,9 @@ gradlew.bat
 
 apps/searchwikihow/window_dump.xml
 
-!tools/*.apk
+tools/*.apk
 tools/frida-server-14.2.2-android-x86_64
+tools/frida-script.js
+tools/frida-server-14.2.2-android-x86_64.xz
+tools-backup/
+backup-configs/
