@@ -112,15 +112,18 @@ setup(
         'dm_env',
         'grpcio',
         'mock',
-        'numpy<1.20',
+        'numpy',
         'pexpect>=4.8.0',
         'portpicker>=1.2.0',
         'protobuf>=2.6',
-        #'pygame',
-        'lxml'
+        'lxml',
+        'torch',
+        'torchvision'
     ],
     extras_require={
-        'acme': ['dm-acme'],
+        #'acme': ['dm-acme'],
+        'easyocr'
+        'pygame',
         'gym': ['gym'],
         'testing': testing_requirements,
     },

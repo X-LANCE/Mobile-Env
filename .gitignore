@@ -8,6 +8,7 @@ dist
 tags
 tags-opts
 
+apps
 apps/*.tar*
 *.apk
 *.png
