@@ -39,9 +39,9 @@ def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
     return task
 
 def _fix(setup: task_pb2.SetupStep, task_directory: str):
-    if st.HasField("adb_call")\
-            and st.adb_call.HasField("install_apk"):
-        apk_path = st.adb_call.install_apk.filesystem.path
+    if setup.HasField("adb_call")\
+            and setup.adb_call.HasField("install_apk"):
+        apk_path = setup.adb_call.install_apk.filesystem.path
         if not os.path.isabs(apk_path):
-            st.adb_call.install_apk.filesystem.path =\
+            setup.adb_call.install_apk.filesystem.path =\
                     os.path.normpath(os.path.join(task_directory, apk_path))
