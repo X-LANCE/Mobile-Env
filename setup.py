@@ -39,8 +39,8 @@ from setuptools import setup
 from setuptools.command.build_ext import build_ext
 from setuptools.command.build_py import build_py
 
-description = """AndroidEnv
-Read the README at https://github.com/deepmind/android_env for more information.
+description = """Mobile-Env
+Read the README at https://github.com/X-LANCE/Mobile-Env for more information.
 """
 
 _ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -65,7 +65,7 @@ testing_requirements = [
 class _GenerateProtoFiles(cmd.Command):
   """Command to generate protobuf bindings for AndroidEnv protos."""
 
-  descriptions = 'Generates Python protobuf bindings for AndroidEnv protos.'
+  descriptions = 'Generates Python protobuf bindings for Mobile-Env protos.'
   user_options = []
 
   def initialize_options(self):
@@ -111,14 +111,14 @@ class _BuildPy(build_py):
     build_py.run(self)
 
 setup(
-    name='android_env',
+    name='mobile-env',
     version='1.1.0',
-    description='AndroidEnv environment and library for training agents.',
+    description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
-    author='DeepMind',
+    author='Danyang Zhang @X-Lance',
     license='Apache License, Version 2.0',
-    keywords='Android OS reinforcement-learning',
-    url='https://github.com/deepmind/android_env',
+    keywords='InfoUI interaction',
+    url='https://github.com/X-LANCE/Mobile-Env',
     packages=find_packages(exclude=['examples']),
     setup_requires=[
         'grpcio-tools',

@@ -1,162 +1,117 @@
+<!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```bibtex', '```', 'bib', 'NonText'): -->
 
-# AndroidEnv - The Android Learning Environment
+# Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction
 
-<img align="right" src="docs/images/device_control.gif" width="160" height="240">
+Mobile-Env is a novel interaction platform for training and evaluation of the
+interaction of information user interface (InfoUI). The information user
+interface is referred to as the UI comprising rich text contents interleaved
+with other types of media and structured spatially with different styles, which
+is fairly different from the environments in the existing control topics like
+embodied robots, video game playing, text-based game playing, *etc*. A demo
+video for Mobile-Env is available at <https://youtu.be/gKV6KZYwxGY>.
 
-[AndroidEnv](https://github.com/deepmind/android_env) is a Python library that
-exposes an [Android](https://www.android.com/) device as a Reinforcement
-Learning (RL) environment. The library provides a flexible platform for defining
-custom tasks on top of the Android Operating System, including any Android
-application. Agents interact with the device through a universal action
-interface - the touchscreen - by sending localized touch and lift events to the
-system. The library processes these events and returns pixel observations and
-rewards as provided by specific [task definitions](docs/tasks_guide.md). For
-example, rewards might be given for events such as successfully scrolling down a
-page, sending an email, or achieving some score in a game, depending on the
-research purpose and how the user configures the task.
+Mobile-Env is developed based on
+[AndroidEnv](https://github.com/deepmind/android_env). The agent can take the
+screenshot and the view hierarchy (disabled defaultly for the long latency) as
+the observation and take a touch or type a token as the action to interact with
+the Android apps. Several task events like rewards, step instructions, or the
+episode end will be informed during interaction at some crucial steps. A
+so-called crucial step may be opening a target page, srolling to a correct
+area, *etc*. and is depending on the specific task definition. <!-- TODO: task
+definition guide -->
 
-[![tests](https://github.com/deepmind/android_env/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/deepmind/android_env/actions/workflows/tests.yml)
-[![PyPI version](https://badge.fury.io/py/android-env.svg)](https://badge.fury.io/py/android-env)
-[![Downloads](https://pepy.tech/badge/android-env)](https://pepy.tech/project/android-env)
+<!-- TODO: Chinese docs -->
 
 ## Index
 
-*   [Environment details](docs/environment.md)
-*   [Running AndroidEnv](docs/instructions.md)
-*   [Setting up a virtual Android device](docs/emulator_guide.md)
-*   [Defining a task in AndroidEnv](docs/tasks_guide.md)
-*   [Example tasks available for download](docs/example_tasks.md)
+<!-- TODO: the subsection of documents -->
 
-## Environment features
+* Training and Evaluating Agents on Mobile-Env
+* Extending a New App or a New Task Based on Mobile-Env
+* Solution for Dynamic Information Apps
+* Other Assistant Tools
 
-There are a number of aspects that make AndroidEnv a challenging yet suitable
-environment for Reinforcement Learning research:
+## Environment Features
 
-*   Allowing agents to interact with a system used daily by billions of users
-    around the world, AndroidEnv offers a platform for RL agents to navigate,
-    learn tasks and have direct impact in **real-world contexts**. The
-    environment wraps a simulated Android device, which runs independently from
-    the environment, completely unaltered, and works in exactly the same way as
-    the devices that humans use, exposing exactly the same features and
-    services.
+Mobile-Env is a flexible, adaptable, and easily-extendable platform for InfoUI
+interaction with the following features:
 
-*   The platform offers a virtually infinite **range of possible tasks**, all
-    sharing a common action interface. The library facilitates the design of
-    Reinforcement Learning tasks for any existing or custom built Android
-    application. For example, it exposes the broad world of Android games,
-    ranging from card games, puzzle games, time reactive games, all requiring a
-    diverse set of action combinations and interaction types.
-
-*   The environment runs on top of a **real-time simulation** of an Android
-    device. In other words, the environment dynamics does not wait for the agent
-    to deliberate, and the speed of the simulation cannot be increased.
-
-*   The observation is a collection of **RGB values** corresponding to the
-    displayed pixels on the screen. The exact screen resolution depends on the
-    simulated device, but in general it will be considered relatively large in
-    an RL context. However, users have the option of downsampling each
-    observation.
-
-*   The learning environment has an interesting, **complex action space** unique
-    to the touchscreen interface of Android.
-
-    *   The raw, **hybrid action space** consists of a continuous tuple
-        signifying the action location, and a discrete signal determining
-        whether the agent wants to touch the screen or lift its virtual finger.
-    *   Raw actions are highly **composable**: the Android UI and most
-        applications were designed so that they could be intuitively navigated
-        via common
-        [touchscreen gestures](https://developer.android.com/training/gestures/detector)
-        such as tapping, scrolling, swiping, pinching, drag & drop etc. This is
-        still the case in AndroidEnv: to trigger meaningful changes in the
-        environment, the agent often has to perform carefully timed and
-        positioned sequences of raw actions. For example, in order to navigate
-        to the next image in a photo gallery, the agent would have to perform a
-        *swipe*, touching the screen multiple times, gradually shifting the
-        actions' positions to the right. Thus, in most contexts raw actions do
-        not trigger changes in the state of the environment unless correctly
-        chained together to make up a human gesture.
-    *   The action interface is **closely related to the observation space**, as
-        meaningful touch and lift events are often either co-localized or
-        strongly correlated to the location or movement of salient objects in
-        the observation. For example, the position of a button on the screen
-        aligns with the location of the actions that trigger the button press.
-    *   The library provides tools for flexibly **altering the action
-        interface** if needed for particular studies, such as discretization or
-        hard-coding gesture skills. Still, we believe that the real challenge
-        remains in devising agents that are capable of dealing with a large
-        suite of diverse tasks, through acting and learning in the complex
-        unifying action interface.
+* Screenshots and view hierarchies are provided as the observations and the
+  touch and token typing are provided as the actions, which are common and
+  adaptable to various apps. Environment wrappers are also supported to
+  customize the observation and action spaces if it is in need.
+* A new task can be enabled by a task definition file so that extending a new
+  task is easy.
+* Multiple sources are enabled to parse the task events from the operating
+  system: screen text, screen icon, view hierarchy, and the system log, which
+  makes Mobile-Env capable to adapt to most real-world apps without dedicated
+  development. (Screen text and screen icon will be enabled with an external
+  OCR tool and icon recognition tool. Currently, a wrapper of
+  [EasyOCR](https://github.com/JaidedAI/EasyOCR) is integrated in the platform
+  and can be enabled directly. An intergrated icon model will be embedded soon
+  as well.)
+* A brand-new tree-based event management system is designed to handle the
+  logics of the task events. The details should be referred to the paper and
+  the task definition guide. <!-- TODO: the paper link, the task definition
+  guide -->
 
 # Getting started
 
 ### Installation
 
-The easiest way to get AndroidEnv is with pip:
+<!-- TODO: pypi source -->
 
-```shell
-$ python3 -m pip install android-env
+Clone the repository and build locally.
+
+```sh
+git clone https://github.com/deepmind/android_env/
+cd android_env
+pip install .
 ```
 
-Please note that `/examples` are not included in this package.
+### Load and Run
 
-Alternatively, you can clone the repository from git's `main` branch:
+Before loading the Mobile-Env environment, you will need to set up an Android
+Emulator device. Then you can load the environment with some existing task
+configs and start your experiments. A detailed guiding is provided in Training
+and Evaluating Agents on Mobile-Env. <!-- TODO --> Several examples with a
+random agent or a human agent is also provided under `examples`.
 
-```shell
-$ git clone https://github.com/deepmind/android_env/
-$ cd android_env
-$ python3 setup.py install
-```
+### Extend a new task
 
-Update: the environment now runs on Windows, but please keep in mind that this
-option is not well-maintained or widely supported, as Unix-based systems are the
-primary target platforms of this project.
+You may want to extend a new task for your experiments. First you need to
+prepare an install package for your target app. Then you need to prepare a task
+definition file written in the text format of ProtoBuf. The detail can be
+sought in Extending a New App or a New Task Based on Mobile-Env. <!-- TODO -->
+If your app relies on the dynamic Internet contents, a solution is provided in
+Solution for Dynamic Information Apps. <!-- TODO -->
 
-### Create a simulator
+### Other Assistant Tools
 
-Before running the environment, you will need access to an emulated Android
-device. For instructions on creating a virtual Android device, see the
-[Emulator guide](docs/emulator_guide.md).
-
-### Define a task
-
-Then, you will want to define what the agent's *task* is. At this point, the
-agent will be able to communicate with the emulated device, but it will not yet
-have an objective, or access to signals such as rewards or RL episode ends.
-Learn [how to define an RL task](docs/tasks_guide.md) of your own, or use one of
-the [existing task definitions](docs/example_tasks.md) for training.
-
-### Load and run
-
-To find out how to run and train agents on AndroidEnv, see these
-[detailed instructions](docs/instructions.md). Here you can also find example
-scripts demonstrating how to run a random agent, an
-[acme](https://github.com/deepmind/acme) agent, or a human agent on AndroidEnv.
+We also developed an annotation tool for the human demonstrations, and a suite
+of template tool to auto-generate task definitions according to templates and
+to combine multiple task definitions to form a multi-step task.
 
 ## About
 
-This library is developed and maintained by [DeepMind](http://deepmind.com). \
-You can find the [technical report](https://arxiv.org/abs/2105.13231) on Arxiv,
-as well as an introductory
-[blog post](https://deepmind.com/research/publications/androidenv) on DeepMind's
-website.
+This library is developed and maintained by SJTU X-Lance. <!-- TODO: homepage
+of lab --> The corresponding paper is under review of ACL Demo 2023.
 
-If you use AndroidEnv in your research, you can cite the paper using the
+If you use Mobile-Env in your research, you can cite the project using the
 following BibTeX:
 
-```
-@article{ToyamaEtAl2021AndroidEnv,
-  title     = {{AndroidEnv}: A Reinforcement Learning Platform for Android},
-  author    = {Daniel Toyama and Philippe Hamel and Anita Gergely and
-               Gheorghe Comanici and Amelia Glaese and Zafarali Ahmed and Tyler
-               Jackson and Shibl Mourad and Doina Precup},
-  year      = {2021},
-  eprint    = {2105.13231},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
-  volume    = {abs/2105.13231},
-  url       = {http://arxiv.org/abs/2105.13231},
+```bibtex
+@article{DanyangZhang2023_MobileEnv,
+  title     = {{Mobile-Env}: A Universal Platform for Training and Evaluation of Mobile Interaction},
+  author    = {Danyang Zhang and
+               Lu Chen and
+               Kai Yu},
+  year      = {2023},
+  %eprint    = {2105.13231},
+  %archivePrefix = {arXiv},
+  %primaryClass = {cs.LG},
+  %volume    = {abs/2105.13231},
+  url       = {https://github.com/X-LANCE/Mobile-Env},
 }
 ```
-
-Disclaimer: This is not an official Google product.
