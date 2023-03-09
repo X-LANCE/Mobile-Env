@@ -91,12 +91,14 @@ Solution for Dynamic Information Apps. <!-- TODO -->
 
 We also developed an annotation tool for the human demonstrations, and a suite
 of template tool to auto-generate task definitions according to templates and
-to combine multiple task definitions to form a multi-step task.
+to combine multiple task definitions to form a multi-step task. The details are
+referred to Other Assistant Tools. <!-- TODO -->
 
 ## About
 
-This library is developed and maintained by SJTU X-Lance. <!-- TODO: homepage
-of lab --> The corresponding paper is under review of ACL Demo 2023.
+This library is developed and maintained by [SJTU
+X-Lance](https://x-lance.sjtu.edu.cn/en). The corresponding paper is under
+review of ACL Demo 2023. <!-- TODO: paper link -->
 
 If you use Mobile-Env in your research, you can cite the project using the
 following BibTeX:
