@@ -92,6 +92,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
             record = {}
             record["task_id"] = self._env.task_id
             record["task"] = self._env.task_name
+            record["command"] = self._env.command()
             record["observation"] = timestep.observation["pixels"]
             record["view_hierarchy"] = lxml.etree.tostring(
                     timestep.observation["view_hierarchy"],
