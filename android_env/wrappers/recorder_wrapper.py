@@ -9,6 +9,8 @@ import lxml.etree
 import numpy as np
 import pickle as pkl
 
+#from absl import logging
+
 # autosave at the reset time and episode end.
 
 def is_real_action(action: action_type.ActionType) -> bool:
@@ -79,6 +81,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
 
         if timestep.last():
             #self.trajectories.append(self.current_trajectory)
+            #print("\x1b[31mLAST!\x1b[0m")
             self._save()
 
         return timestep
@@ -104,15 +107,17 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         return timestep
 
     def _reset_state(self):
+        #print("\x1b[31mRESET!\x1b[0m")
         self._save()
 
     def close(self):
+        #print("\x1b[31mCLOSE!\x1b[0m")
         self._save()
         self._env.close()
 
     def _save(self):
         #  function `_save` {{{ # 
-        if len(self._buffer)>0:
+        if len(self._buffer)>0 and self.is_valid:
             self.current_trajectory.append(self._buffer)
         if len(self.current_trajectory)>1:
             with open(self.dump_file + ".{:d}.pkl".format(self._index), "ab") as f:
@@ -120,6 +125,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
 
         self.current_trajectory = []
         self._buffer = {}
+        self.is_valid = False
         self._index += 1
         #  }}} function `_save` # 
     #  }}} class `RecorderWrapper` # 
