@@ -134,12 +134,13 @@ setup(
         'protobuf>=2.6',
         'lxml',
         'torch',
-        'torchvision'
+        'torchvision',
+        'transformers'
     ],
     extras_require={
         #'acme': ['dm-acme'],
-        'easyocr',
-        'pygame',
+        'easyocr': ['easyocr'],
+        'pygame': ['pygame'],
         'gym': ['gym'],
         'testing': testing_requirements,
     },
