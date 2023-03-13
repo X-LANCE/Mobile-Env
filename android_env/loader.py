@@ -109,6 +109,11 @@ def load( task_path: str
       tokens such as "[CLS]" for BERT tokens
     unify_vocabulary: str or none as a file name to the vocabulary file in
       which each line constitutes a token.
+
+    text_model (TextModel): text model to conduct text recognition on the
+      screen
+    icon_model (IconModel): icon model to conduct icon recognition on the
+      screen
     with_view_hierarchy (bool): if the view hierarchy should be included in the
       observation
 

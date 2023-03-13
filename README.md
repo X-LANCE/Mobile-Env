@@ -27,9 +27,9 @@ definition guide -->
 
 <!-- TODO: the subsection of documents -->
 
-* Training and Evaluating Agents on Mobile-Env
+* [Training and Evaluating Agents on Mobile-Env](docs/env-usage.md)
 * Extending a New App or a New Task Based on Mobile-Env
-* Solution for Dynamic Information Apps
+* [Solution for Dynamic Information Apps](docs/dynamic-app.md)
 * [Other Assistant Tools](docs/other_tools.md)
 
 ## Environment Features
@@ -72,11 +72,12 @@ pip install .
 
 ### Load and Run
 
-Before loading the Mobile-Env environment, you will need to set up an Android
-Emulator device. Then you can load the environment with some existing task
-configs and start your experiments. A detailed guiding is provided in Training
-and Evaluating Agents on Mobile-Env. <!-- TODO --> Several examples with a
-random agent or a human agent is also provided under `examples`.
+Before loading the Mobile-Env environment, you will need to set up an [Android
+Emulator](https://developer.android.com/about?hl=zh-cn) device. Then you can
+load the environment with some existing task configs and start your
+experiments. A detailed guiding is provided in Training and Evaluating Agents
+on Mobile-Env. <!-- TODO --> Several examples with a random agent or a human
+agent is also provided under `examples`.
 
 ### Extend a New Task
 
