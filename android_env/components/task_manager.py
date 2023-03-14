@@ -706,7 +706,7 @@ class TaskManager():
     return instructions
     #  }}} function `get_current_instructions` # 
 
-  def check_if_episode_ended(self) -> bool:
+  def check_if_episode_ended(self, with_view_hierarchy: bool) -> bool:
     #  method `check_if_episode_ended` {{{ # 
     """Determines whether the episode should be terminated and reset."""
 
@@ -735,14 +735,14 @@ class TaskManager():
         logging.info('************* END OF EPISODE *************')
         return True
 
-    #if self._task.max_duration_sec > 0.0:
-      #task_duration = datetime.datetime.now() - self._task_start_time
-      #max_duration_sec = self._task.max_duration_sec
-      #if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
-        #self._log_dict['reset_count_max_duration_reached'] += 1
-        #logging.info('Maximum task duration (sec) reached. Ending episode.')
-        #logging.info('************* END OF EPISODE *************')
-        #return True
+    if not with_view_hierarchy and self._task.max_duration_sec > 0.0:
+      task_duration = datetime.datetime.now() - self._task_start_time
+      max_duration_sec = self._task.max_duration_sec
+      if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
+        self._log_dict['reset_count_max_duration_reached'] += 1
+        logging.info('Maximum task duration (sec) reached. Ending episode.')
+        logging.info('************* END OF EPISODE *************')
+        return True
 
     return False
     #  }}} method `check_if_episode_ended` # 
