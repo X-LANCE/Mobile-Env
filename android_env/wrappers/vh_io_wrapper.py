@@ -241,11 +241,13 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 continue
             if len(list(n))==0:
                 bounds_match = VhIoWrapper.bounds_pattern.match(n.get("bounds"))
-                self._bbox_list.append( list( map( int
-                                                 , bounds_match.groups()
-                                                 )
-                                            )
+                bbox: List[int] = list( map( int
+                                           , bounds_match.groups()
+                                           )
                                       )
+                if bbox[0]==bbox[2] or bbox[1]==bbox[3]:
+                    continue
+                self._bbox_list.append(bbox)
 
         return timestep
         #  }}} method _process_timestep # 
