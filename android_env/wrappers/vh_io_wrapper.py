@@ -317,6 +317,9 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         else:
             return self._instructions.copy()
 
+    def _reset_state(self):
+        self._instructions = []
+
     def android_logs(self) -> Dict[str, Number]:
         """
         Returns a dictionary of metrics logged by the environment.
