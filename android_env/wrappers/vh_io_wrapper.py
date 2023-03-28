@@ -45,6 +45,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 | INPUT Int -- eid
                         String -- text
                 | SCROLL Direction
+                | GOBACK
                 | NOTHING
     data Direction = UP | DOWN | LEFT | RIGHT
     ```
@@ -56,6 +57,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         CLICK = 1
         INPUT = 2
         SCROLL = 3
+        GOBACK = 4
 
     class ScrollDirection(enum.IntEnum):
         LEFT = 0
@@ -146,7 +148,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         Args:
             action (Dict[str, np.ndarray]): dict like
               {
-                "action_type": NOTHING
+                "action_type": NOTHING | GOBACK
               } or
               {
                 "action_type": CLICK
@@ -177,6 +179,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
         if action["action_type"]==VhIoWrapper.ActionType.NOTHING:
             return [{"action_type": np.array(action_type.ActionType.REPEAT, dtype=np.int32)}]
+        if action["action_type"]==VhIoWrapper.ActionType.GOBACK:
+            return []
 
         actions: List[Dict[str, np.ndarray]] = []
 
@@ -289,6 +293,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
         if action["action_type"]==VhIoWrapper.ActionType.INPUT:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
+        elif action["action_type"]==VhIoWrapper.ActionType.GOBACK:
+            self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_BACK")
         timestep = self._env.step( { "action_type": np.array( action_type.ActionType.LIFT
                                                             , dtype=np.int32
                                                             )
