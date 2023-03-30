@@ -660,7 +660,8 @@ class TaskManager():
       # zdy
     extras = self._extra_event.get()[0] if self._extra_event.is_set() else {}
     #self._extra_event.clear()
-    extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
+    #extras = {k: list(map(ast.literal_eval, vals)) for k, vals in extras.items()}
+    extras = extras.copy()
 
     if self._json_extra_event.is_set():
       json_extras = self._json_extra_event.get()[0]
