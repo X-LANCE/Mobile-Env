@@ -561,6 +561,10 @@ class TaskManager():
   #  }}} Episode Management # 
 
   #  Interaction Methods {{{ # 
+  def receive_response(self, response: str):
+    # TODO
+    pass
+
   def send_token(self, token_id: int):
     #  method `send_token` {{{ # 
     """

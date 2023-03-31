@@ -348,8 +348,14 @@ class Coordinator():
     if self._should_restart or self._check_timeout():
       return None, 0.0, {}, [], True
 
-    # If the action is a TOUCH or LIFT, send it to the simulator.
     if action is not None:
+
+      if "response" in action\
+          and action["response"] is not None\
+          and action["response"] != "":
+        # TODO: send to the task manager
+        pass
+
       if action["action_type"].item() == action_type_lib.ActionType.TEXT:
         self._send_action_to_taskmanager(action)
       elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:

@@ -902,3 +902,23 @@ class LogEvent(EventSource[str, str]):
         return False, None
         #  }}} method `_verify` # 
     #  }}} class `LogEvent` # 
+
+class ResponseEvent(EventSource[str, str]):
+    #  class ResponseEvent {{{ # 
+    def __init__( self
+                , pattern: str
+                , repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE
+                ):
+        #  method __init__ {{{ # 
+        self._pattern: Pattern[str] = re.compile(pattern)
+        #  }}} method __init__ # 
+
+    def _verify(self, response: str) -> Tuple[bool, Optional[List[str]]]:
+        #  method _verify {{{ # 
+        match_ = self._pattern.search(response)
+        if match_ is not None:
+            logging.info("\x1b[5;31mResponse Event\x1b[0m")
+            return True, match_.groups()
+        return False, None
+        #  }}} method _verify # 
+    #  }}} class ResponseEvent # 
