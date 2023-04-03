@@ -28,7 +28,7 @@ definition](docs/task-definition.md).
 * [Training and Evaluating Agents on Mobile-Env](docs/env-usage.md)
 * [Extending a New App or a New Task Based on Mobile-Env](docs/task-definition.md)
 * [Solution for Dynamic Information Apps](docs/dynamic-app.md)
-* [Other Assistant Tools](docs/other_tools.md)
+* [Other Assistant Tools](docs/other-tools.md)
 
 ## Environment Features
 
@@ -92,7 +92,7 @@ Apps](docs/dynamic-app.md).
 We also developed an annotation tool for the human demonstrations, and a suite
 of template tool to auto-generate task definitions according to templates and
 to combine multiple task definitions to form a multi-step task. The details are
-referred to [Other Assistant Tools](docs/other_tools.md).
+referred to [Other Assistant Tools](docs/other-tools.md).
 
 ## About
 
