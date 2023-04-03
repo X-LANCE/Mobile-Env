@@ -353,7 +353,7 @@ class Coordinator():
       if "response" in action\
           and action["response"] is not None\
           and action["response"] != "":
-        # TODO: send to the task manager
+        self._task_manager.receive_response(action["response"])
         pass
 
       if action["action_type"].item() == action_type_lib.ActionType.TEXT:

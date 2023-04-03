@@ -162,6 +162,7 @@ class TaskManager():
     self._view_hierarchy_events: List[event_listeners.ViewHierarchyEvent] = []
     self._log_events: List[event_listeners.LogEvent] = []
     self._log_filters: Set[str] = set()
+    self._response_events: List[event_listeners.ResponseEvent] = []
 
     for evt_s in task.event_sources:
       self._parse_event_source(evt_s)
@@ -345,6 +346,11 @@ class TaskManager():
       event = event_listeners.LogEvent(event_source.log_event.filters, event_source.log_event.pattern,
           repeatability=event_source.repeatability)
       self._log_events.append(event)
+    elif event_source.HasField("response_event"):
+      event = event_listeners.ResponseEvent( event_source.response_event.pattern
+                                           , repeatability=event_source.repeatability
+                                           )
+      self._response_events.append(event)
     #  }}} Other Events # 
 
     #  Handle the id {{{ # 
@@ -499,12 +505,7 @@ class TaskManager():
       }
 
       # clear event sources
-      for evt in itertools.chain(self._text_events,
-          self._icon_events,
-          self._icon_match_events,
-          self._view_hierarchy_events,
-          self._log_events):
-        evt.reset()
+      self.clear_events()
 
       # reset event slots
       self._score_event.reset()
@@ -528,6 +529,7 @@ class TaskManager():
     logging.info("#Icon Match Events: {:d}".format(len(self._icon_match_events)))
     logging.info("#VH Events: {:d}".format(len(self._view_hierarchy_events)))
     logging.info("#Log Events: {:d}".format(len(self._log_events)))
+    logging.info("#Response Events: {:d}".format(len(self._response_events)))
 
     self._adb_controller: adb_control.AdbController = adb_controller
     #self._emulator_stub = emulator_stub
@@ -562,8 +564,9 @@ class TaskManager():
 
   #  Interaction Methods {{{ # 
   def receive_response(self, response: str):
-    # TODO
-    pass
+    for l in response.splitlines():
+      for evt in self._response_events:
+        evt.set(l)
 
   def send_token(self, token_id: int):
     #  method `send_token` {{{ # 
@@ -767,22 +770,26 @@ class TaskManager():
       self._latest_values["player_exited"] = True
 
     with self._lock:
-      for evt in itertools.chain(self._text_events,
-          self._icon_events,
-          self._icon_match_events,
-          self._view_hierarchy_events,
-          self._log_events):
+      for evt in itertools.chain( self._text_events
+                                , self._icon_events
+                                , self._icon_match_events
+                                , self._view_hierarchy_events
+                                , self._log_events
+                                , self._response_events
+                                ):
         evt.snapshot()
     #  }}} method `snapshot_events` # 
 
   def clear_events(self):
     #  method `clear_events` {{{ # 
     #with self._lock:
-    for evt in itertools.chain(self._text_events,
-        self._icon_events,
-        self._icon_match_events,
-        self._view_hierarchy_events,
-        self._log_events):
+    for evt in itertools.chain( self._text_events
+                              , self._icon_events
+                              , self._icon_match_events
+                              , self._view_hierarchy_events
+                              , self._log_events
+                              , self._response_events
+                              ):
       evt.clear()
     #  }}} method `clear_events` # 
 
