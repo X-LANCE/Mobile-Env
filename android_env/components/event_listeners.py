@@ -158,7 +158,7 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
 
         super(EventSource, self).__init__()
 
-        self._repeatability: Repeatability = repeatability
+        self._repeatability: EventSource.Repeatability = repeatability
         self._last_input: I = None # the last input, both activating and not activating
         self._input_history: List[I] = [] # history list of the activating inputs
 
@@ -735,7 +735,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
     class PureProperty(Property[Any]):
         #  class `PureProperty` {{{ # 
         def __init__(self, name: str):
-            super(PureProperty, self).__init__(name)
+            super(ViewHierarchyEvent.PureProperty, self).__init__(name)
 
         def match(self, value: Any) -> bool:
             return True
@@ -755,7 +755,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
             value - something
             """
 
-            super(ScalarProperty, self).__init__(name)
+            super(ViewHierarchyEvent.ScalarProperty, self).__init__(name)
             self._comparator: Callable[[P, P], bool] = comparator
             self._value: P = value
             #  }}} method `__init__` # 
@@ -822,7 +822,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
         super(ViewHierarchyEvent, self).__init__(repeatability)
 
         self._vh_path: List[str] = list(vh_path)
-        self._vh_properties: List[Property] = list(vh_properties)
+        self._vh_properties: List[ViewHierarchyEvent.Property] = list(vh_properties)
         self._property_names: List[str] = list(map(lambda prpt: prpt.name, vh_properties))
         #  }}} method `__init__` # 
 
