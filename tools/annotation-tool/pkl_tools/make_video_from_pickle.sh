@@ -1,4 +1,4 @@
-# vim: set filetype=dockerfile:
+#!/bin/bash
 # Copyright 2023 SJTU X-Lance Lab
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,13 @@
 
 # Created by Danyang Zhang @X-Lance.
 
-FROM my/android-env-web:0.6
+cmd_path="$(dirname $_)"
+pkl_path=$1
+video_path=$2
 
-WORKDIR /root
+frame_dirs=$(python "$cmd_path"/visualize_pickle.py "$pkl_path" "$video_path")
 
-RUN mkdir -p /data/dump /data/task_path
-VOLUME /data/dump /data/task_path
-EXPOSE 5000
-COPY ./launch.sh ./
-ENTRYPOINT ["./launch.sh"]
-CMD ["127.0.0.1", "8081", "Annotator Anonym", "www.wikihow.com"]
+for f in $frame_dirs; do
+	pattern=${f/\%/\%\%}
+	ffmpeg -y -framerate 2 -i "$pattern"/%d.jpg "$f".mp4
+done
