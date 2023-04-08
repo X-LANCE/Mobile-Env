@@ -33,10 +33,10 @@ image_tag2 := my/android-env-web:2.0m1.1a.h1.0
 
 docker1:
 	#mkdir $(docker_dir)/android_env
-	rsync -ruvth --progress --exclude=__pycache__ ../android_env/android_env ../android_env/setup.py $(docker_dir)/android_env/
-	rsync -ruvth --progress ../android_env/tools/syscert_setup.exp $(docker_dir)/
+	rsync -ruvth --progress --exclude=__pycache__ ../../android_env ../../setup.py $(docker_dir)/android_env/
+	rsync -ruvth --progress ../syscert_setup.exp $(docker_dir)/
 	rsync -ruvth --progress --exclude=__pycache__ --exclude="*.pkl" --exclude=tags backend/ $(docker_dir)/backend/
-	rsync -ruvth --progress ../android_env/apps/wikihow/mitmscripts/replay_url2_local.py $(docker_dir)/mitmscripts/
+	#rsync -ruvth --progress ../android_env/apps/wikihow/mitmscripts/replay_url2_local.py $(docker_dir)/mitmscripts/
 	docker build --tag $(image_tag1) --file $(docker_dir)/Dockerfile1 $(docker_dir)/
 
 docker2:
