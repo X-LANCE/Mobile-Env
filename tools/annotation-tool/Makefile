@@ -28,8 +28,8 @@ docker_dir := build-docker
 #image_tag := my/android-env-web:0.8 # manual setup
 #image_tag := my/android-env-web:0.9 # ready image 2
 
-image_tag1 := my/android-env-web:0.5
-image_tag2 := my/android-env-web:2.0m1.1a.h1.0
+image_tag1 := my/mobile-env-web:0.5
+image_tag2 := my/mobile-env-web:2.0m1.1a.h1.0
 
 docker1:
 	#mkdir $(docker_dir)/android_env

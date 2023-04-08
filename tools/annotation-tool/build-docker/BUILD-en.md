@@ -10,7 +10,7 @@ make docker1
 2. Modify and commit for a new image.
 
 ```sh
-docker run -it --device /dev/kvm my/android-env-web:0.5 /bin/bash
+docker run -it --device /dev/kvm my/mobile-env-web:0.5 /bin/bash
 ```
 
 Excecuate in the container:
@@ -24,7 +24,7 @@ exit
 Then commit the modified container:
 
 ```sh
-docker commit <container-id> my/android-env-web:0.6
+docker commit <container-id> my/mobile-env-web:0.6
 ```
 
 3. Build docker2.
