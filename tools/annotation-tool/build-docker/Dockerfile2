@@ -1,0 +1,11 @@
+# vim: set filetype=dockerfile:
+FROM my/android-env-web:0.6
+
+WORKDIR /root
+
+RUN mkdir -p /data/dump /data/task_path
+VOLUME /data/dump /data/task_path
+EXPOSE 5000
+COPY ./launch.sh ./
+ENTRYPOINT ["./launch.sh"]
+CMD ["127.0.0.1", "8081", "Annotator Anonym", "www.wikihow.com"]

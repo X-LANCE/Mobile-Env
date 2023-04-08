@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+
+set android_home /root/Android/Sdk
+set timeout 300
+spawn $android_home/cmdline-tools/bin/sdkmanager --sdk_root=$android_home --package_file=android-package.list
+expect {
+    (y/N) {
+        send "y\r"
+        exp_continue
+    }
+    timeout exp_continue
+}

@@ -1,0 +1,50 @@
+# vim: set filetype=dockerfile:
+FROM python:3.8
+
+WORKDIR /root
+
+# install JRE and expect
+RUN apt update -y &&\
+    apt install -y openjdk-17-jre expect
+
+ENV ANDROID_HOME="/root/Android/Sdk"
+ENV AVD_NAME="Pixel_2_API_30_ga_x64"
+
+# install android emulator
+COPY ./commandlinetools-linux-8512546_latest.zip ./android-package.list ./install_sdk.exp ./
+RUN mkdir -p $ANDROID_HOME &&\
+    unzip commandlinetools-linux-8512546_latest.zip -d $ANDROID_HOME &&\
+    ./install_sdk.exp &&\
+    echo 'export PATH='$ANDROID_HOME'/cmdline-tools/bin:$PATH' >>/root/.bashrc &&\
+    echo 'export PATH='$ANDROID_HOME'/emulator:$PATH' >>/root/.bashrc &&\
+    echo 'export PATH='$ANDROID_HOME'/platform-tools:$PATH' >>/root/.bashrc
+
+    #cd $ANDROID_HOME/cmdline-tools &&\
+    #bin/sdkmanager --sdk_root=$ANDROID_HOME --channel=0 --package_file=/android-package.list &&\
+
+# configure python environment
+COPY ./android-env-web-small.txt ./
+COPY ./android_env/ ./android_env/
+COPY ./backend/ ./backend/
+COPY ./mitmscripts/ ./mitmscripts/
+RUN pip install --upgrade pip && \
+    pip install -r android-env-web-small.txt &&\
+    pip install --upgrade protobuf &&\
+    cd android_env && pip install .
+
+# configure avd
+COPY ./syscert_setup.exp ./setup_image.sh ./
+#RUN mkdir -p ~/.android/avd
+#VOLUME ~/.android/avd
+#RUN $ANDROID_HOME/cmdline-tools/bin/avdmanager create avd -n $AVD_NAME -c 8G -k "system-images;android-30;google_apis;x86_64" -d pixel_2 &&\
+    #cd ~/.android/avd/$AVD_NAME.avd/ &&\
+    #sed -i.bak -e 's#^\(image\.sysdir\.1[[:space:]]*=[[:space:]]*\)Sdk/#\1#g' config.ini &&\
+    #cd / && ./syscert_setup.exp $ANDROID_HOME/emulator $AVD_NAME
+#ADD ./Pixel_2_API_30_ga_x64.tar.xz /root/.android/avd/
+
+#RUN mkdir -p /data/dump /data/task_path
+#VOLUME /data/dump /data/task_path
+#EXPOSE 5000
+#COPY ./launch.sh ./
+#ENTRYPOINT ["./launch.sh"]
+#CMD ["127.0.0.1", "8081", "Annotator Anonym"]
