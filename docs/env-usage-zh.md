@@ -6,7 +6,7 @@
 
 ### 创建安卓虚拟机
 
-使用Mobile-Env需要使用一台运行于[Android Emulator](https://developer.android.com/about?hl=zh-cn)上的安卓虚拟机。虚拟机可以通过[Android Studio](https://developer.android.com/studio)创建，也可以通过[安卓命令行工具](https://developer.android.com/studio)创建。
+使用Mobile-Env需要使用一台运行于[Android Emulator](https://developer.android.com/about)上的安卓虚拟机。虚拟机可以通过[Android Studio](https://developer.android.com/studio)创建，也可以通过[安卓命令行工具](https://developer.android.com/studio)创建。
 
 ##### 通过Android Studio创建安卓虚拟机
 
@@ -32,7 +32,7 @@
 
 在虚拟机列表中可以查看已创建的虚拟机，也可以选择在文件管理器中打开虚拟机的目录。虚拟机通常存于`~/.android/avd`下。
 
-更多的创建、配置选项可以参考Android Studio提供的[创建虚拟机的文档](https://developer.android.com/studio/run/managing-avds?hl=zh-cn)。
+更多的创建、配置选项可以参考Android Studio提供的[创建虚拟机的文档](https://developer.android.com/studio/run/managing-avds)。
 
 ##### 通过命令行工具创建安卓虚拟机
 
@@ -45,13 +45,13 @@ export ANDROID_HOME="$HOME/Android/Sdk"
 unzip commandlinetools-linux-8512546_latest.zip -d $ANDROID_HOME
 ```
 
-然后运行[`sdkmanager`](https://developer.android.com/studio/command-line/sdkmanager?hl=zh-cn)安装模拟器、镜像、相关工具。
+然后运行[`sdkmanager`](https://developer.android.com/studio/command-line/sdkmanager)安装模拟器、镜像、相关工具。
 
 ```sh
 $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=$android_home "emulator" "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64"
 ```
 
-之后需要利用[`avdmanager`](https://developer.android.com/studio/command-line/avdmanager?hl=zh-cn)创建虚拟机。
+之后需要利用[`avdmanager`](https://developer.android.com/studio/command-line/avdmanager)创建虚拟机。
 
 ```sh
 AVD_NAME="Pixel_2_Test"
@@ -109,7 +109,7 @@ env = android_env.load( task_path
 其中各参数的意义：
 
 * `task_path` - `str`，要使用的`textproto`任务定义文件的路径，或提供一个目录，目录下面可以包含多个`textproto`文件，以一次性加载多个任务，从而多任务地训练智能体；加载多个任务时，各任务会根据文件名按字符串顺序排序。
-* `avd_name` - `str`，创建的虚拟机的名称。
+* `avd_name` - `str`，要使用的虚拟机的名称。
 * `android_avd_home``android_sdk_root``emulator_path``adb_path` - `str`，若干安卓工具的路径，示例中即为函数定义的默认参数。
 * `run_headless` - 是否要在无图形窗口的情况下运行，`True`为无图像窗口，`False`为带图形窗口，默认为`False`。
 * `mitm_config` - 指定中间人代理的配置。若需要中间人代理回放流量，则要提供一个词典参数，其中包含三个通用字段：
@@ -125,10 +125,10 @@ env = android_env.load( task_path
     - `frida-script` - 宿主系统上用来替换手机应用的证书验证器的frida脚本的路径，默认为`frida-script.js`
     `packpatch`方案同样带有一个可配置的参数：
     - `patch-suffix` - 该参数定义一个后缀`$suffix`，若任务定义文件中指定的安装包文件名为`$package.apk`，则平台会认为修改过的软件包文件名为`$package-$suffix.apk`，并寻找该文件名；该参数默认值为`patched`
-* `start_token_mark` - 指定词表中起始词元（token）的前缀；起始词元输入时会通过空格与之前的文本隔开，默认为空串`""`。
-* `non_start_token_mark` - 指定词表中非起始词元的前缀；非起始词元输入时会直接接在之前的文本后面，默认为BERT系列词表的前缀`##`。
-* `special_token_pattern` - 指定词表中特殊词元的模式，默认为`r"\[\w+\]"`，识别BERT系列词表中`[CLS]`等特殊词元。
-* `unify_vocabulary` - 若指定一个文件名，则会将之视为词表文件，每行为一个词元，读取该文件得到所有加载的任务统一的词表。若不指定，则会采用每个任务定义中的小词表，各任务的小词表可能不同；默认为`None`，即不指定。
+* `start_token_mark` - `str`，指定词表中起始词元（token）的前缀；起始词元输入时会通过空格与之前的文本隔开，默认为空串`""`。
+* `non_start_token_mark` - `str`，指定词表中非起始词元的前缀；非起始词元输入时会直接接在之前的文本后面，默认为BERT系列词表的前缀`##`。
+* `special_token_pattern` - `str`，指定词表中特殊词元的模式，默认为`r"\[\w+\]"`，识别BERT系列词表中`[CLS]`等特殊词元。
+* `unify_vocabulary` - `Optional[str]`，若指定一个文件名，则会将之视为词表文件，每行为一个词元，读取该文件得到所有加载的任务统一的词表。若不指定，则会采用每个任务定义中的小词表，各任务的小词表可能不同；默认为`None`，即不指定。
 * `text_model` - 指定文本模型用于识别屏幕文本以支持从中检测回报、交互结束、步骤指令等任务事件；默认值不挂载任何有效模型。
 * `icon_model` - 指定图表模型用来识别屏幕图标以支持从中检测回报、交互结束、步骤指令等任务事件；默认值不挂载任何有效模型。
 * `with_view_hierarchy` - 是否在返回的观测中加入视图框架（View Hierarchy）项；由于通过ADB获取视图框架时延较长，因此该选项默认不开启

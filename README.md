@@ -19,18 +19,19 @@ the Android apps. Several task events like rewards, step instructions, or the
 episode end will be informed during interaction at some crucial steps. A
 so-called crucial step may be opening a target page, srolling to a correct
 area, *etc*. and is depending on the specific [task
-definition](docs/task-definition.md).
+definition](docs/task-definition-en.md).
 
-* [Documents in Chinese](README-zh.md)
+* [Documents in Chinese (中文文档)](README-zh.md)
 
 ## Index
 
-* [Training and Evaluating Agents on Mobile-Env](docs/env-usage.md)
-* [Extending a New App or a New Task Based on Mobile-Env](docs/task-definition.md)
-* [Solution for Dynamic Information Apps](docs/dynamic-app.md)
-* [Other Assistant Tools](docs/other-tools.md)
+* [Training and Evaluating Agents on Mobile-Env](docs/env-usage-en.md)
+* [Extending a New App or a New Task Based on
+  Mobile-Env](docs/task-definition-en.md)
+* [Solution for Dynamic Information Apps](docs/dynamic-app-en.md)
+* [Other Assistant Tools](docs/other-tools-en.md)
 
-## Environment Features
+## Platform Features
 
 Mobile-Env is a flexible, adaptable, and easily-extendable platform for InfoUI
 interaction with the following features:
@@ -51,7 +52,7 @@ interaction with the following features:
   as well.)
 * A brand-new tree-based event management system is designed to handle the
   logics of the task events. The details should be referred to the paper and
-  the [task definition guide](docs/task-definition.md). <!-- TODO: the paper
+  the [task definition guide](docs/task-definition-en.md). <!-- TODO: the paper
   link -->
 
 # Getting Started
@@ -74,7 +75,7 @@ Before loading the Mobile-Env environment, you will need to set up an [Android
 Emulator](https://developer.android.com/about?hl=zh-cn) device. Then you can
 load the environment with some existing task configs and start your
 experiments. A detailed guiding is provided in [Training and Evaluating Agents
-on Mobile-Env](docs/env-usage.md). Several examples with a random agent or a
+on Mobile-Env](docs/env-usage-en.md). Several examples with a random agent or a
 human agent is also provided under `examples`.
 
 ### Extend a New Task
@@ -83,16 +84,16 @@ You may want to extend a new task for your experiments. First you need to
 prepare an install package for your target app. Then you need to prepare a task
 definition file written in the text format of ProtoBuf. The detail can be
 sought in [Extending a New App or a New Task Based on
-Mobile-Env](docs/task-definition.md). If your app relies on the dynamic
+Mobile-Env](docs/task-definition-en.md). If your app relies on the dynamic
 Internet contents, a solution is provided in [Solution for Dynamic Information
-Apps](docs/dynamic-app.md).
+Apps](docs/dynamic-app-en.md).
 
 ### Other Assistant Tools
 
 We also developed an annotation tool for the human demonstrations, and a suite
 of template tool to auto-generate task definitions according to templates and
 to combine multiple task definitions to form a multi-step task. The details are
-referred to [Other Assistant Tools](docs/other-tools.md).
+referred to [Other Assistant Tools](docs/other-tools-en.md).
 
 ## About
 

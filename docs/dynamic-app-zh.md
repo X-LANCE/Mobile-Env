@@ -9,7 +9,8 @@
 
 1. [Install System CA Certificate on Android Emulator](https://docs.mitmproxy.org/stable/howto-install-system-trusted-ca-android/)
 2. [Intercepting HTTP(S) Traffic of Android Applications](https://kpj.github.io/misc/InterceptingHTTPTraffic.html)
-3. [Disable Certificate Verification on Android with Frida](https://www.gabriel.urdhr.fr/2021/03/17/frida-disable-certificate-check-on-android/)
+3. [Defeating Android Certificate Pinning with Frida](https://httptoolkit.com/blog/frida-certificate-pinning/)
+4. [Disable Certificate Verification on Android with Frida](https://www.gabriel.urdhr.fr/2021/03/17/frida-disable-certificate-check-on-android/)
 
 #### syscert方案：将代理证书注入操作系统内置证书库
 
