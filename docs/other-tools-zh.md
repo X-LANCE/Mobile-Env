@@ -176,7 +176,7 @@ access_author-Bob
   * `lower` - 转为小写
   * `upper` - 转为大写
 
-修饰符的具体定义、文档与实现参见[`modifiers.lhs`](tools/templates.toolkits/modifiers-zh.lhs)、[`modifiers.py`](tools/templates.toolkits/modifiers.py)。
+修饰符的具体定义、文档与实现参见[`modifiers.lhs`](../tools/templates.toolkits/modifiers-zh.lhs)、[`modifiers.py`](../tools/templates.toolkits/modifiers.py)。
 
 ##### 使用模板工具实例化任务定义
 
