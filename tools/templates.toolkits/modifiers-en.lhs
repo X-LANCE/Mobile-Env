@@ -39,16 +39,16 @@ Created by Danyang Zhang @X-Lance.
 > 
 > type Modifier = String -> String
 
-###### 定义几个工具函数
+###### Define Several Tool Functions
 
-该函数用于转义输入中的引号和反斜线，从而输出可以直接用在textproto中的字符串里。一般情况下，解析器会在最后自动执行该操作，该自动操作可以通过内置修饰符`no_quote`取消。
+This function is used to escape the quotation marks and backslashes in the input, so that the transormed input can be directly inserted into the textproto strings. The parser will invoke this operation automatically by default unless it is canceled by the built-in modifier `no_quote`.
 
 > escape :: String -> String
 > escape x = x >>= \ch -> case ch of
 >                           '"' -> "\\\""
 >                           '\\' -> "\\\\"
 
-这系列函数用于在特定位置切分字符串。
+This group of functions will split the string at some specific positions.
 
 > splitBy' :: (Char -> Bool) -> String -> ([String], [String])
 > splitBy :: (Char -> Bool) -> String -> [String]
@@ -61,11 +61,11 @@ Created by Danyang Zhang @X-Lance.
 > splitBy p s = fst $ splitBy' p s
 > split c = splitBy (== c)
 
-###### 列表操作
+###### List Operations
 
-该系列函数用于将输入的列表转为不同的形式用在目标文件中。
+This category of functions are used to convert the list in the input to different formats.
 
-`to_list`用于将逗号分隔的关键词列表转为proto定义中的字符串列表，列表每项用`"`引住，各项间以", "分隔，总体以`[]`括住。各项中的引号等会自动转义，因此该修饰符应用后应通过`no_quote`取消自动的转义操作。
+`to_list` transforms the comma-separated keywords list into the string list in the proto definition. Each list item will be quoted by `"` and separated by ", ". The whole list will be bracked by `[]`。The quotation marks in the items will be escaped automatically, thus, `no_quote` should be applied after this modifier to cancel the built-in escaping.
 
 > to_list :: Modifier
 > to_list x = "["
@@ -75,16 +75,16 @@ Created by Danyang Zhang @X-Lance.
 >                 (split ',' x))
 >           ++ "]"
 
-`regex_list`将逗号隔开的关键词表转为可在正则表达式中使用的“或”连接的形式。该修饰符不会对每项中的正则保留符转义。
+`regex_list` transforms the comma-separated keywords list into the "or"-connected format which can be used in the regex. Note that this modifier will not escape the reserved symbols of the regex.
 
 > regex_list :: Modifier
 > regex_list x = "("
 >              ++ intercalate "|" (split ',' x)
 >              ++ ")"
 
-###### 正则操作
+###### Regex Operations
 
-`regex_esc`会将输入中的正则特殊字符转义。
+`regex_esc` escapes the special regex characters in the input.
 
 > regex_esc :: Modifier
 > regex_esc x = x >>= \c -> if c `elem` metaCharacters
@@ -93,43 +93,43 @@ Created by Danyang Zhang @X-Lance.
 >   where
 >     metaCharacters = ".^$*+?{}\\[]|()"
 
-###### 网址文本操作
+###### URL Text Operations
 
 > url_path :: Modifier
 > url_query :: Modifier
 > url_title :: Modifier
 
-`url_path`按HTTP链接网址的路径段的规则编码输入字符串。
+`url_path` encodes the input string according to the rule of the path segment of HTTP URL.
 
 > url_path = U.encString False U.ok_path
 
-`url_query`按HTTP链接网址中的请求段的规则编码输入字符串。
+`url_query` encodes the input string according to the rule of the query segment of HTTP URL.
 
 > url_query = U.encString True U.ok_param
 
-`url_title`只做一件事：将所有空格替换为`-`。这通常用于在路径段编码文章题目、作者名等。
+The only thing `url_title` does is to replace all the white spaces with `-`. This operation is always adopted in the path segments to encode the article titles, the author names, *etc*.
 
 > url_title = map (\c -> case c of
 >                         ' ' -> '-'
 >                         o -> o)
 
-###### 一般文本操作
+###### Commen Text Operations
 
-这两个函数顾名思义，用于输入文本的大小写转换。
+These two functions are used for case conversion of the input text just as their names.
 
 > lower :: Modifier
 > upper :: Modifier
 > lower = map toLower
 > upper = map toUpper
 
-###### 其他操作
+###### Other Operations
 
-`filter_comma`会删除输入中的所有`,`
+`filter_comma` will delete all the `,` in the input.
 
 > filter_comma :: Modifier
 > filter_comma = filter (/= ',')
 
-`remove_howto`会移除输入文本开头的"How to "，识别时不区分大小写。
+`remove_howto` removes the leading "How to " in the input text. The matching is case-insensitive.
 
 > remove_howto :: Modifier
 > remove_howto x@(h0:h1:h2:h3:h4:h5:h6:t) = if map toLower [h0, h1, h2, h3, h4, h5, h6] == "how to "
