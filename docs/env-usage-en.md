@@ -248,7 +248,7 @@ def text_recognizer( screen: torch.Tensor
 </details>
 <!-- }}} Text Interface Declaration -->
 
-All the bounding boxes are supposed to be given in the form of `[x0, y0, x1,
+All the bounding boxes (bbox) are supposed to be given in the form of `[x0, y0, x1,
 y1]`. The icon model is supposed to implement three interfaces:
 
 <!-- Icon Interface Declaration {{{ -->
@@ -317,3 +317,87 @@ def icon_matcher( screen: torch.Tensor
 ```
 </details>
 <!-- }}} Icon Interface Declaration -->
+
+### Interact with the Environment
+
+After loading the environment, you can create an agent to interact with the
+environment.
+
+```python
+step: dm_env.TimeStep = env.switch_task(0) # switch to task 0
+task_description: str = "\n".join(env.command()) # fetch the task description
+instruction: str = "\n".join(env.task_instructions()) # fetch the current step instruction
+
+reward: float = step.reward # record the current reward
+while not step.last():
+    # the agent makes decision
+    action: Dict[str, np.ndarray] = agent(task_description, step.observation, instruction)
+    # execute the action and obtain the new observation
+    step = env.step(action)
+    # update the step instruction
+    if len(env.task_instructions())>0:
+        instruction = "\n".join(env.task_instructions())
+    reward += step.reward
+```
+
+`dm_env.TimeStep` is defined in [dm_env](https://github.com/deepmind/dm_env).
+Commonly, there are 2 properties you will always access:
+
+1. `reward`, a floating number, records the current reward.
+2. `observation`, records the current observation.
+
+`dm_env.TimeStep` is equipped with three methods returning a boolean as well:
+`first`, `mid`, and `last`. These methods tell the what state in the episode
+the agent is.
+
+`observation` is a `dict` object containing four items:
+
++ `pixels` - The shape is `(H, W, 3)` (height, width, channels). The data type
+  (dtype) is `np.uint8` (8-bit unsigned integer). This item stores the RGB
+  representation of the screen.
++ `timedelta` - An scalar array of a 64-bit float as the seconds after the last
+  `step`.
++ `orientation` - A 4-dim one-hot vector with dtype as 8-bit unsigned interger.
+  This item records the orientation of the screen. The positions of the 1 as 0,
+  1, 2, and 3 represent that the screen is rotated from the upright clockwise
+  by 0, 90, 180, and 270 degrees respectively.
++ `view_hierarchy` - This item will be included if the `with_view_hierarchy`
+  option is enabled while loading the environment. The value is an
+  [`lxml.etree.Element`](https://lxml.de/apidoc/lxml.etree.html#lxml.etree._Element)
+  object representing the VH of the current screen. The platform will request
+  for the VH only at the initial step and the `LIFT` step owing to the long
+      latency. In the other cases, this item will return `None`.
+
+Here the first three items are returned as NumPy arrays.
+
+Mobile-Env accepts a `dict` object as the action containing three item:
+
++ `action_type` - A NumPy scalar array. The dtype is integer. It is
+  corresponding to 4 action types:
+  - 0（`android_env.components.action_type.ActionType.TOUCH`） - The touch
+    action.
+  - 1（`android_env.components.action_type.ActionType.LIFT`） - The (finger)
+    lifting action.
+  - 2（`android_env.components.action_type.ActionType.REPEAT`） - "Repeat"
+    action, *i.e.* doing nothing. This action will keep the previous touching
+    or lifting status and inputing no tokens meanwhile.
+  - 3（`android_env.components.action_type.ActionType.TEXT`） - The token input
+    action. This action will type a token from the vocabulary. If the
+    `unify_vocabulary` parameter is specified while loading the environment,
+    then the large vocabulary specified by this parameter is adopted. Otherwise
+    the small vocabulary defined by the `vocabulary` field in the definition
+    file of the current task will be used.
++ `touch_position` - A NumPy array with the dtype as floating number and length
+  as 2. This argument represents the coordinates of the touch position `(x,
+  y)`.  The coordinate values should be normalized to `[0, 1]`. This argument
+  is required only for the `TOUCH` actions.
++ `input_token` - A NumPy scalar array, The dtype is integer. It is used to
+  indicate the index of the token in the vocabulary. The index starts from 0.
+  This argument is in need only for the `TEXT` actions
+
+`env.observation_spec` and `env.action_spec` can be invoked to obtain a
+declaration of the observation space and the action space. Meanwhile, two
+examples using a random policy and a human agent respectively are offered under
+`examples` for reference.
+
+<!-- TODO: generate the code docs using tools like oxygen and push it to the platforms like readdocs -->
