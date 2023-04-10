@@ -29,7 +29,7 @@
 adb shell am stack list
 ```
 
-该命令会列出虚拟机上正在运行的活动，列出的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`。其中包名就是Java包的名称，活动名是`android.app.Activity`的子类的类名。此外，对在谷歌应用商店中上架的应用，也可以查看应用商店网页版网址中id字段的值，如<https://play.google.com/store/apps/details?id=com.wikihow.wikihowapp>中的`com.wikihow.wikihowapp`。
+该命令会列出虚拟机上正在运行的活动，列出的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`。其中包名就是Java包的名称，活动名是`android.app.Activity`的子类的类名。此外，对在谷歌应用商店中上架的应用，也可以查看应用商店网页版网址中`id`字段的值，如<https://play.google.com/store/apps/details?id=com.wikihow.wikihowapp>中的`com.wikihow.wikihowapp`。
 
 ### 准备应用数据
 

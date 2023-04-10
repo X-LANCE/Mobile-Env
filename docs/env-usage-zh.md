@@ -10,7 +10,7 @@
 
 ##### 通过Android Studio创建安卓虚拟机
 
-下载安装Android Studio后，启动之。首先要安装标准开发工具包（Standard Development Kit，SDK）。打开SDK Manager，依次进入Appearance & Behavior > System Settings > Android SDK，在这里可以检查工具包的安装位置（Android SDK Location），通常可能为`~/Android/Sdk`。从下面的列表中可以选择要安装的工具包版本。推荐安装Android 11 (API Level 30)版本，这是由于测试中发现，在amd64架构的宿主设备上，Android 11版本的模拟器和镜像对大量针对arm设备构建的软件包兼容能力最好。
+下载安装Android Studio后，启动之。首先要安装标准开发工具包（Standard Development Kit，SDK）。打开SDK Manager，依次进入Appearance & Behavior > System Settings > Android SDK，在这里可以检查工具包的安装位置（Android SDK Location），通常可能为`~/Android/Sdk`。从下面的列表中可以选择要安装的工具包版本。推荐安装Android 11 (API Level 30)版本，这是由于测试中发现，在`amd64`架构的宿主设备上，Android 11版本的模拟器和镜像对大量针对`arm`设备构建的软件包兼容能力最好。
 
 ![安卓开发工具包管理器](images/android-sdk-manager.png)
 
