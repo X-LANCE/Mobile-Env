@@ -303,7 +303,7 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 7. `max_duration_sec` - 浮点数，若经过该值指定的秒后，任务过程仍未结束，则平台会强制重启任务过程，留空或设置非正值可以禁用该功能
 8. `max_num_steps` - 整数，与`max_duration_sec`类似，但按照智能体的交互次数来计数，留空或设置非正值可以禁用该功能
 9. `event_sources` - 定义任务事件源
-10. `event_slots` - 定义任务事件槽
+10. `event_slots` - 定义任务事件槽上的虚拟事件树
 11. `extra_spec` - 为与AndroidEnv兼容保留，定义任务额外信息的格式
 12. `command` - 字符串数组，定义提供给智能体的任务总括说明
 13. `vocabulary` - 字符串数组，提供与任务有关的小词表，可用于减小任务难度，或方便标注人类演示

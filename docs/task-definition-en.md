@@ -349,9 +349,152 @@ To instantiate a `Task` message, the following parameters need to be specified:
    name and the characteristics of the screen which is used by the platform to
    determine whether the agent has quitted the task app mistakingly during the
    interaction. If it is, the platform will restart the episode in time.
+7. `max_duration_sec` - A floating number. If the episode fails to end in the
+   given seconds, the platform will force it to restart. You can ignore this
+   field or set a non-positive number to disable this function.
+8. `max_num_steps` - An integer. Similar to `max_duration_sec`, the platform
+   will restart the episode if it does not end after the specified steps.
+   Ignoring this field or setting a non-positive number will disable this
+   function.
+9. `event_sources` - Defines the task event sources.
+10. `event_slots` - Defines the virtual event trees connected to the task event
+    slots.
+11. `extra_spec` - Defines the specification of the task extras. This is kept
+    for the compatility of AndroidEnv.
+12. `command` - An array of string providing a description or a global command
+    for the task target which will be sent to the agent.
+13. `vocabulary` - An array of string providing a tiny vocabulary corresponding
+    to the task. This vocabulary can be used to remit the difficulty of the
+    task and the annotation of human demonstration.
+
+More message types are in need to define `setup_steps`, `reset_steps`,
+`expected_app_screen`, `event_sources`, and `event_slots` and will be
+introduced below.
 
 ### `SetupStep` Message
 
+<!-- `SetupStep` Message {{{ -->
+A `SetupStep` array is required by the `setup_steps` and `reset_steps` fields.
+Each `SetupStep` message defines a config step.
+
+The `SetupStep` message defines two fields:
+
+* `success_condition` - Defines an operation to check if the config succeeds.
+* `step` - Defines the certain config operation.
+
+At least one field should be defined. The `step` will be executed first to
+complete the config, then the `success_condition` will be executed to check the
+success if both fields are specified.
+
+A message object is required for `success_condition`, which contains two
+fields:
+
+<!-- `success_condition` Field {{{ -->
+<details>
+    <summary>The details about the `success_condition` field.</summary>
+
+* `num_retries` - The maximum attempt times if the config fails. The platform
+  will try at least 3 times even though it is ignored or a value smaller than 3
+  is specified.
+* `check` - The certain check operation.
+
+`check` is an exclusive field decorated with [`oneof`
+keyword](https://protobuf.dev/programming-guides/proto3/#oneof). Only one
+sub-field should be chosen from three options. The options are:
+
+* `wait_for_app_screen` - Requires to wait for a specific screen. An
+  `AppScreen` message should be provided through the `app_screen` field. The
+  `AppScreen` message determines a screen through the activity name and the
+  view hierarchy (VH) characteristics of the screen. The details will be
+  presented in the following sections.
+* `check_install` - Checks if a specific app package is installed through a
+  command. The package name is specified through the `package_name` field.
+* `wait_for_message` - Waits for a specific message from the system logs. A
+  regex for the waited message is expected to provide through the `message`
+  field. The regex's syntax follows the [`re` module of
+  Python](https://docs.python.org/3/library/re.html).
+
+Besides, all the aforementioned three operations require a float field
+`timeout_sec` to specify the waiting time, *e.g.*, 10 seconds. If the
+`timeout_sec` field is ignored, then this check will not be executed.
+</details>
+<!-- }}} `success_condition` Field -->
+
+`step` is also a `oneof` field with two options:
+
+* `sleep` - Requires a message in which the sleeping seconds should be
+  specified through the float field `time_sec`.
+* `adb_call` - An `AdbCall` message object is required to revoke the ADB.
+
+<!-- `AdbCall` Message {{{ -->
+<details>
+    <summary>The details about the `AdbCall` message.</summary>
+
+`AdbCall` message is defined in
+[`android_env/proto/adb.proto`](android_env/proto/adb.proto) and supports many
+kinds of operations. Some frequently-used operations comprise:
+
+* `install_apk` - Installs a package. The path to the apk package is expected
+  from the string field `path` of the message field `filesystem`. The path can
+  be specified either as a relative path to the current `textproto` file or as
+  an absolute path (not recommended).
+* `force_stop` - Forces a process to terminate according to the package name
+  provided by `package_name`.
+* `clear_cache` - Clears the app's cache according to the package name provided
+  by `package_name`.
+* `start_activity` - Launches an Android activity whose name is specified by
+  `full_activity`. The format of the Android activity names are
+  `package_name/activity_name`, *e.g.*,
+  `com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`.
+* `start_screen_pinning` - Enables screen pinning. After enabling, the Android
+  system will switch back to the certain activity if an exit is detected. The
+  activity name should be specified through `full_activity`.
+</details>
+<!-- }}} `AdbCall` Message -->
+<!-- }}} `SetupStep` Message -->
+
 ### `AppScreen` Message
+
+<!-- `AppScreen` Message {{{ -->
+An `AppScreen` message object is required as the argument by both
+`expected_app_screen` and `wait_for_app_screen`. This type of message needs two
+parameters:
+
++ `activity` - A string indicating the name of the Android activity. The format
+  of the Android activity names is `package_name/activity_name`, *e.g.*,
+  `com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`.
++ `view_hierarchy_path` - An array of string requiring a VH path.  Each array
+  element turns to be a regex which matches an item on the path. The VH path
+  comprises a VH node sequence from the top to the bottom. It is not necessary
+  to provide the nodes consecutively.
+
+It is worth noting that, the representation of the nodes in
+`AppScreen.view_hierarchy_path` is the same with the output of the command `adb
+shell dumpsys`, *i.e.* the output of `android.view.View::toString`. This is a
+quite compat format and hard to read. However, in most cases, this property can
+be ignored, because this property will locates to a specific page while most
+InfoUI interaction tasks require transfering between different pages of the
+app. Consequently, this property shouldn't be used to fix the interaction to a
+specific page. If you really need to give a value for this property, you can
+refer to the following example:
+
+<details>
+    <summary>The example of the `view_hierarchy_path` property</summary>
+
+```
+view_hierarchy_path: [
+    "^DecorView@.*\[MainActivity\]$",
+    "^android.widget.LinearLayout\{.*\}$",
+    "^android.widget.FrameLayout\{.*android\:id\/content\}",
+    "^android.widget.RelativeLayout\{.*\}",
+    "^android.widget.FrameLayout\{.*app\:id\/fragment_holder\}",
+    "^android.widget.RelativeLayout\{.*\}",
+    "^com.google.example.games.nostalgicracer.views.RaceView3D\{.*app\:id\/gameplay_screen_3d\}",
+]
+```
+</details>
+
+<!-- TODO -->
+<!-- }}} `AppScreen` Message -->
 
 ### Definition of the Task Events
