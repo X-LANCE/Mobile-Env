@@ -652,3 +652,184 @@ public String toString() {
 <!-- }}} `AppScreen` Message -->
 
 ### Definition of the Task Events
+
+The fields `event_sources` and `event_slots` are used for the definition of the
+task events. A tree-based event system is designed for Mobile-Env to manage the
+task events. The event system comprises 6 event slots and the tree of virtual
+events connected to the slots. The event slots are corresponding to the events
+that the agent will have a perception to:
+
++ Score event (`score_listener`)
++ Reward event (`reward_listener`)
++ Episode end event (`episode_end_listener`)
++ Instruction event (`instruction_listener`)
++ Extra info event (`extra_listener`)
++ JSON extra info event (`json_extra_listener`)
+
+There are two types of virtual events: the event sources and the combinators.
+Usually, the event sources constitute the leaf nodes of the event tree and are
+corresponding to the specific feedbacks from the Android operating system (OS).
+They are:
+
++ Screen texts (`text_recognize`, `text_detect`)
++ Scrren icons (`icon_recognize`, `icon_detect`, `icon_match`,
+  `icon_detect_match`)
++ View hierarchy (`view_hierarchy_event`)
++ System log (`log_event`)
+
+There are three combinators: `And`, `Or`, and `SINGLE`, which are used to
+combine or wrap the virtual events.
+
+The platform will send the feedback signals from the OS to the defined event
+sources after each step in the episode. The event sources will check if the
+signal matches the defined pattern and decide whether the event should be
+triggered or not. If the event is triggered, the signals will be applied to the
+parent node. The combinator will first check whether its prerequisites are
+satisfied, *i.e.*, the combinator can be triggered only if all the prerequisite
+nodes have been triggered ever. This mechanism is designed to handle the
+temporal sequence of the steps in the multi-step tasks. If the prerequisites
+are satisfied, the combinator will decide the triggering according the
+triggering flag of its child nodes. To be specific, the `Or` combinator will be
+triggered once one of its children is triggered while the `And` combinator will
+be triggered only all its children is triggered and the `SINGLE` combinator
+will follow the state of its sole child. If the combinator is triggered, the
+signals will be applied to its parent as well. The signals will be processed
+level by level and be aggregated to the root node. Then the root node will pass
+it to the slot and the slot will send it as a feedback to the agent.
+
+![A Demo Event Tree](images/demo-event-tree.png)
+
+This demo event tree is connected to the reward event slot. The event sources
+with the combinators form a tree-like event logic. The `SINGLE` combinator is
+not depicted in the figure.
+
+#### Event Sources and Event Slots
+
+##### The Input and Output of the Event Sources
+
+This section will introduce the system feedbacks listend by the event sources
+and their outputs applied to the parent nodes.
+
+The two kinds of screen text event sources listen the the text contents on the
+screen, which should be enabled by an external OCR module. The source with
+detection will run a detection model to detect the text instances in the
+specified region before recognizing the certain contents, while the source with
+only recognition directly run the recognition model on the assumption that the
+specified region is close to the text instance's bounds. After the contents are
+recognized, the platform will try to match the results by the regex in the
+event source definition. If the results match the regex and the triggering
+condition is satisfied, this event will be triggered. Then the text event
+source will return a tuple comprising all the captured groups, which is just
+the returning value of
+[`re.Match.groups`](https://docs.python.org/3/library/re.html#re.Match.groups).
+
+The four kinds of screen icon event sources listen to the icons on the screen,
+which should be enabled by an external icon recognition and matching module.
+The source with detection will fisrt invoke the detection model and then the
+recognition or mathing model, which is the same with the text sources. The
+sources for recognition will classify the icon instance using a recognition
+model and check if the predition matches the class in the evenet source
+definition. In contrast, a source for matching will task a mathing model to
+decide if the input icon instance matches with a reference image. If the
+classfication is right or the reference is matched, the event source will be
+triggered according to the aforementioned triggering conditions. If the event
+source is triggered, a boolean true `True` will be returned to the parent.
+
+A VH event source will take the VH of the current screen and check if there is
+a specific node and if the node's properties satisfy some constraints. If the
+node exists and the constraints for its properties are satisfied, the event
+source will be triggered according to the aforementioned triggering conditions.
+A triggered event source will return a list storing the values of the checked
+properties. However, it is worth noting that the VH events will not be checked
+after each step. Owing to the high latency of the acquisition through ADB and
+the high length of the VH XML which will cause conflict of the output if the
+request is too fast, the platform slows down the check frequency of the VH.
+Consequently, there is no guarantee that the VH event source can be triggered
+in time. Therefore, the crucial task events shouldn't rely solely on the VH
+event sources.
+
+A system log event source will listen to the runtime log of the system and
+matches each line by the regex in the definition. If any line is matched and
+the aforementioned triggering conditions are satisfied, the event source will
+be triggered and return a tuple comprising all the regex-captured groups, which
+is the same with the screen text event sources.
+
+##### The Event Slots
+
+This section will introduce the six kinds of event slots designed for the
+platform. The event slots are corresponding to the event information that the
+agents can have a perception to. At runtime, each slots will be connected with
+an event tree so that the right event signals can be parsed from the feedbacks
+of the OS.
+
+The slots of the score event (`score_listener`) and the reward event
+(`reward_listener`) are designed for the parsing of the reward which are to be
+returned to the agent. Their difference is the explanation to the signal
+received from the event tree. The score event slot regards the received signal
+as an accumulated score, *i.e.*, the platform will subtract the last recorded
+score from the novel one to get the single-step reward, if a score event is
+triggered. In contrast, the reward event slot considers the received signal as
+the single-step reward, thus the value will be returned directly. The resulted
+single-step reward from these two slots will be added and then returned to the
+agent.
+
+The episode end event slot (`episode_end_listener`) indicated if the episode
+comes to the end and the platform will restart the task at the next step. This
+usually means that the agent has just achieved the task target. But it is also
+possible that several severe errors have occured and the system cannot the
+system cannot resume and has to restart. Only the triggering flag of the
+episode end event slot makes sense and it returns no further values to the
+agent.
+
+The instruction event slot (`instruction_listener`) gives the agent the novel
+step instructions which are generated during the interaction. This slot wants a
+string list from the event tree, in which each element is a line or a sentence
+of instruction.
+
+The extra info and the JSON extra info is the task-specific extra info which is
+not included in the observation and may assist the agent to make a decision,
+which is proposed in AndroidEnv. The extra info event slot (`extra_listener`)
+expects a dict like `Dict[str, List[Any]]` with the strings as the keys and the
+lists storing some data as the values. The JSON extra info event slot
+(`json_extra_listener`) expects a JSON string which should be parsed into the
+same format with that of the extra slot. The signals from the two slots will be
+mixed before returning to the agent.
+
+#### Define the Event Sources through `event_sources`
+
+The event sources receive the feedbacks from the OS and checks if they matches
+some pattern and decide if the event should be triggered. The `Task` message
+expects the defintions of the event sources through the `event_sources` field.
+To define an event source, you need to specify three properties:
+
++ `event` - A `oneof` field defining the particular pattern to be recognized.
++ `id` - A 32-bit interger providing the unique id for the event source for
+  refering. *The id is required to be a **positive** number*.
++ `repeatability` - An enum from `NONE`, `LAST`, and `UNLIMITED`. This field
+  indicates if the event should be triggered repeatedly when the pattern
+  defined by `event` is satisfied continuously. The value defaults to `NONE`.
+  - `NONE` indicates to never trigger again, *i.e.*, the event can be triggered
+    by one input only once in an episode.
+  - `LAST` indicates not to trigger continuously. If the identical input
+    matched with the pattern is met continuously, then only the first match
+    will trigger the event. However, if the identical input is met again after
+    some different inputss the event can be triggered as usual.
+  - `UNLIMITED` conducts no constraints for the repeatability, Once the
+    platform meets the defined pattern, the event will be triggered.
+
+The options of `event` is the aforementioned event sources:
+
++ `text_recognize`, `text_detect` - These two sources recognize/detect the text
+  contents in the particular region on the screen. The required fields are
+  + `expect` - A regex for the expected texts.
+  + `rect` - Expects a message with four float properties: `x0`, `y0`, `x1`,
+    and `y1` to indicate the screen region where the recognition/detection is
+    conducted. The coordinates are expected to be normalized to `[0, 1`].
++ `icon_recognize`, `icon_detect` - These two sources recognize/detect the icon
+  contents in the particular region on the screen. These needs:
+  + `class` - A string as the certain name of the icon class. The name set
+    depends on the mounted icon model.
+  + `rect` - Gives the region for the recognition/detection, which is the same
+    with the text event sources.
+
+<!-- TODO -->
