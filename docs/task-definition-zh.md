@@ -43,11 +43,11 @@ Mobile-Env中，任务元信息采用一个[ProtoBuf](https://protobuf.dev/)版�
 
 相关参考文档：
 
-* [`Task`消息类型的详细定义](android_env/proto/task.proto)
+* [`Task`消息类型的详细定义](../android_env/proto/task.proto)
 * [ProtoBuf文档](https://protobuf.dev/)
 * [textproto语法说明](https://protobuf.dev/reference/protobuf/textformat-spec/)
 
-若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文对[Mobile-Env的任务事件管理系统的介绍](#定义任务事件)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
+若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](../android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文对[Mobile-Env的任务事件管理系统的介绍](#定义任务事件)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
 
 <!-- 任务定义示例 {{{ -->
 <details>
@@ -350,7 +350,7 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 <details>
     <summary>`AdbCall`消息详情</summary>
 
-`AdbCall`消息定义于[`android_env/proto/adb.proto`](android_env/proto/adb.proto)，支持声明多种操作，常用的有：
+`AdbCall`消息定义于[`android_env/proto/adb.proto`](../android_env/proto/adb.proto)，支持声明多种操作，常用的有：
 
 * `install_apk` - 安装某安装包，需要为`filesystem`字段提供一条消息体参数，内含字符串类型字段`path`，指定apk安装包的位置，可以采用相对于该`textproto`文件的路径，也可以采用绝对路径（不推荐）
 * `force_stop` - 强制终止某进程，通过`package_name`提供应用的包名

@@ -79,15 +79,15 @@ required for everay interaction task.
 
 Some references:
 
-* [The definition of `Task` message type](android_env/proto/task.proto)
+* [The definition of `Task` message type](../android_env/proto/task.proto)
 * [The document of ProtoBuf](https://protobuf.dev/)
 * [The syntax definition of
   textproto](https://protobuf.dev/reference/protobuf/textformat-spec/)
 
 If you are familiar with the syntax of ProtoBuf 3, we recommend you to compose
 the task definition file directly with the help of [the definition of `Task`
-message](android_env/proto/task.proto), the following task definition demo, and
-[the introduction to the task event management of
+message](../android_env/proto/task.proto), the following task definition demo,
+and [the introduction to the task event management of
 Mobile-Env](#definition-of-the-task-events). Otherwise you are recommended to
 read the following guides to the message types like `Task`. We will introduce
 these types as detailed and clear as possible.
@@ -431,8 +431,8 @@ Besides, all the aforementioned three operations require a float field
     <summary>The details about the `AdbCall` message.</summary>
 
 `AdbCall` message is defined in
-[`android_env/proto/adb.proto`](android_env/proto/adb.proto) and supports many
-kinds of operations. Some frequently-used operations comprise:
+[`android_env/proto/adb.proto`](../android_env/proto/adb.proto) and supports
+many kinds of operations. Some frequently-used operations comprise:
 
 * `install_apk` - Installs a package. The path to the apk package is expected
   from the string field `path` of the message field `filesystem`. The path can
