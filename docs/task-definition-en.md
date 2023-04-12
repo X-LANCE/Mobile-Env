@@ -494,7 +494,161 @@ view_hierarchy_path: [
 ```
 </details>
 
-<!-- TODO -->
+If you really need to specify a node's property detailed, you can refer to the
+following EBNF and the source code of `android.view.View::toString`.
+
+<!-- The Output Format and Source Code of View::toString {{{ -->
+<details>
+    <summary>Expand to check the output format and the source code of
+    `android.view.View::toString`.</summary>
+
+The EBNF definition of the output format of `android.view.View::toString`:
+
+```ebnf
+view-hierarchy-line = class-name
+    , "{" object-hash-code
+    , " " view-flags
+    , " " private-flags
+    , " " bbox
+    , [ " #" element-id-code
+        , [ " " resource-package-name
+            , ":" resource-type-name
+            , "/" resource-entry-name
+        ]
+    ] "}" ;
+
+view-flags = visibility-flag
+    , focusable-flag
+    , enabled-flag
+    , draw-flag
+    , scrollbars-horizontal
+    , scrollbars-vertical
+    , clickable
+    , long-clickable
+    , context-clickable ;
+
+private-flags = is-root-namespace
+    , focused
+    , selected
+    , pressed-flag
+    , hovered
+    , activated
+    , invalidated
+    , dirty-flag ;
+
+bbox = left "," top "-" right "," bottom ;
+left = integer-symbol ;
+top = integer-symbol ;
+right = integer-symbol ;
+bottom = integer-symbol ;
+
+visibility-flag = "V" (* Visible *)
+    | "I" (* Invisible *)
+    | "G" (* Gone *)
+    | "." ;
+focusable-flag = "F" | "." ;
+enabled-flag = "E" | "." ;
+draw-flag = "D" (* Will Draw *)
+    | "." ;
+scrollbars-horizontal = "H" | "." ;
+scrollbars-vertical = "V" | "." ;
+clickable = "C" | "." ;
+long-clickable = "L" | "." ;
+context-clickable = "X" | "." ;
+
+is-root-namespace = "R" | "." ;
+focused = "F" | "." ;
+selected = "S" | "." ;
+pressed-flag = "p" (* Prepressed *)
+    | "P" (* Pressed *)
+    | "." ;
+hovered = "H" | "." ;
+activated = "A" | "." ;
+invalidated = "I" | "." ;
+dirty-flag = "D" | "." ;
+```
+
+The source code of `android.view.View::toString` from Android API 27:
+
+```java
+public String toString() {
+	StringBuilder out = new StringBuilder(128);
+	out.append(getClass().getName());
+	out.append('{');
+	out.append(Integer.toHexString(System.identityHashCode(this)));
+	out.append(' ');
+	switch (mViewFlags&VISIBILITY_MASK) {
+		case VISIBLE: out.append('V'); break;
+		case INVISIBLE: out.append('I'); break;
+		case GONE: out.append('G'); break;
+		default: out.append('.'); break;
+	}
+	out.append((mViewFlags & FOCUSABLE) == FOCUSABLE ? 'F' : '.');
+	out.append((mViewFlags&ENABLED_MASK) == ENABLED ? 'E' : '.');
+	out.append((mViewFlags&DRAW_MASK) == WILL_NOT_DRAW ? '.' : 'D');
+	out.append((mViewFlags&SCROLLBARS_HORIZONTAL) != 0 ? 'H' : '.');
+	out.append((mViewFlags&SCROLLBARS_VERTICAL) != 0 ? 'V' : '.');
+	out.append((mViewFlags&CLICKABLE) != 0 ? 'C' : '.');
+	out.append((mViewFlags&LONG_CLICKABLE) != 0 ? 'L' : '.');
+	out.append((mViewFlags&CONTEXT_CLICKABLE) != 0 ? 'X' : '.');
+	out.append(' ');
+	out.append((mPrivateFlags&PFLAG_IS_ROOT_NAMESPACE) != 0 ? 'R' : '.');
+	out.append((mPrivateFlags&PFLAG_FOCUSED) != 0 ? 'F' : '.');
+	out.append((mPrivateFlags&PFLAG_SELECTED) != 0 ? 'S' : '.');
+	if ((mPrivateFlags&PFLAG_PREPRESSED) != 0) {
+		out.append('p');
+	} else {
+		out.append((mPrivateFlags&PFLAG_PRESSED) != 0 ? 'P' : '.');
+	}
+	out.append((mPrivateFlags&PFLAG_HOVERED) != 0 ? 'H' : '.');
+	out.append((mPrivateFlags&PFLAG_ACTIVATED) != 0 ? 'A' : '.');
+	out.append((mPrivateFlags&PFLAG_INVALIDATED) != 0 ? 'I' : '.');
+	out.append((mPrivateFlags&PFLAG_DIRTY_MASK) != 0 ? 'D' : '.');
+	out.append(' ');
+	out.append(mLeft);
+	out.append(',');
+	out.append(mTop);
+	out.append('-');
+	out.append(mRight);
+	out.append(',');
+	out.append(mBottom);
+	final int id = getId();
+	if (id != NO_ID) {
+		out.append(" #");
+		out.append(Integer.toHexString(id));
+		final Resources r = mResources;
+		if (id > 0 && Resources.resourceHasPackage(id) && r != null) {
+			try {
+				String pkgname;
+				switch (id&0xff000000) {
+					case 0x7f000000:
+						pkgname="app";
+						break;
+					case 0x01000000:
+						pkgname="android";
+						break;
+					default:
+						pkgname = r.getResourcePackageName(id);
+						break;
+				}
+				String typename = r.getResourceTypeName(id);
+				String entryname = r.getResourceEntryName(id);
+				out.append(" ");
+				out.append(pkgname);
+				out.append(":");
+				out.append(typename);
+				out.append("/");
+				out.append(entryname);
+			} catch (Resources.NotFoundException e) {
+			}
+		}
+	}
+	out.append("}");
+	return out.toString();
+}
+```
+</details>
+<!-- }}} The Output Format and Source Code of View::toString -->
 <!-- }}} `AppScreen` Message -->
 
 ### Definition of the Task Events
