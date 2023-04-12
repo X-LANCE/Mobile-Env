@@ -19,7 +19,7 @@ Created by Danyang Zhang @X-Lance.
 from android_env.environment import AndroidEnv
 from android_env.wrappers import base_wrapper
 
-from typing import Dict, List, Pattern
+from typing import Dict, List, Pattern, Tuple
 from typing import Union
 from numbers import Number
 import dm_env
@@ -29,10 +29,41 @@ from android_env.components import action_type
 import enum
 from transformers import PreTrainedTokenizer
 import numpy as np
-#import lxml.etree
+import lxml.etree
 import re
 
 #import logging
+
+def filter_elements(tree: lxml.etree.Element)\
+        -> Tuple[ List[lxml.etree.Element]
+                , List[List[int]]
+                ]:
+    #  function filter_elements {{{ # 
+    node_list: List[lxml.etree.Element] = []
+    bbox_list: List[List[int]] = []
+
+    for n in tree.iterdescendants():
+        n.set( "clickable"
+             , str(  n.get("clickable")=="true"\
+                  or n.getparent().get("clickable")=="true"
+                  ).lower()
+             )
+        if n.get("bounds")=="[0,0][0,0]":
+            continue
+        if len(list(n))==0:
+            bounds_match = VhIoWrapper.bounds_pattern.match(n.get("bounds"))
+            bbox: List[int] = list( map( int
+                                       , bounds_match.groups()
+                                       )
+                                  )
+            if bbox[0]>=bbox[2] or bbox[1]>=bbox[3]:
+                continue
+
+            node_list.append(n)
+            bbox_list.append(bbox)
+
+    return node_list, bbox_list
+    #  }}} function filter_elements # 
 
 class VhIoWrapper(base_wrapper.BaseWrapper):
     """
@@ -233,26 +264,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
         #  method _process_timestep {{{ # 
-        self._bbox_list: List[List[int]] = []
-
-        for n in timestep.observation["view_hierarchy"].iterdescendants():
-            n.set( "clickable"
-                 , str(  n.get("clickable")=="true"\
-                      or n.getparent().get("clickable")=="true"
-                      ).lower()
-                 )
-            if n.get("bounds")=="[0,0][0,0]":
-                continue
-            if len(list(n))==0:
-                bounds_match = VhIoWrapper.bounds_pattern.match(n.get("bounds"))
-                bbox: List[int] = list( map( int
-                                           , bounds_match.groups()
-                                           )
-                                      )
-                if bbox[0]==bbox[2] or bbox[1]==bbox[3]:
-                    continue
-                self._bbox_list.append(bbox)
-
+        self._bbox_list: List[List[int]] = filter_elements(timestep.observation["view_hierarchy"])[1]
         return timestep
         #  }}} method _process_timestep # 
 
