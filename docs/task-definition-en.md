@@ -436,8 +436,8 @@ many kinds of operations. Some frequently-used operations comprise:
 
 * `install_apk` - Installs a package. The path to the apk package is expected
   from the string field `path` of the message field `filesystem`. The path can
-  be specified either as a relative path to the current `textproto` file or as
-  an absolute path (not recommended).
+  be specified either as a relative path from the current `textproto` file or
+  as an absolute path (not recommended).
 * `force_stop` - Forces a process to terminate according to the package name
   provided by `package_name`.
 * `clear_cache` - Clears the app's cache according to the package name provided
@@ -804,7 +804,7 @@ To define an event source, you need to specify three properties:
 
 + `event` - A `oneof` field defining the particular pattern to be recognized.
 + `id` - A 32-bit interger providing the unique id for the event source for
-  refering. *The id is required to be a **positive** number*.
+  later referencing. *The id is required to be a **positive** number*.
 + `repeatability` - An enum from `NONE`, `LAST`, and `UNLIMITED`. This field
   indicates if the event should be triggered repeatedly when the pattern
   defined by `event` is satisfied continuously. The value defaults to `NONE`.
@@ -831,5 +831,102 @@ The options of `event` is the aforementioned event sources:
     depends on the mounted icon model.
   + `rect` - Gives the region for the recognition/detection, which is the same
     with the text event sources.
++ `icon_match`, `icon_detect_match` - These two sources recognize/detect the
+  icon contents in the particular region on the screen. However, these two
+  event sources check if the icon matches with a reference, which is different
+  from the two icon event sources above. The required fields are
+  + `path` - The path to the reference image. Either a relative path from the
+    definition file or an absolute path is acceptable. (The latter one is not
+    recommended.)
+  + `rect` - The same with the events above.
++ `view_hierarchy_event` - Matches the contents in the VH and expects:
+  + `view_hierarchy_path` - The VH path to a specific VH node. The format is
+    fairly simplified compared to that in `AppScreen`, which will be detailed
+    below.
+  + `properties` - The list of the properties to check of the VH node indicated
+    by `view_hierarchy_path`. To check a property, you need to provide:
+    - `property_name` - The property name. The property names are the name of
+      the node attributes in the VH XML required through the command `adb shell
+      uiautomator dump`. Besides, four virtual properties `left`, `top`,
+      `right`, and `bottom` are enabled for convenience, which are
+      corresponding to the four coordinates in the `bounds` attribute in the
+      XML respectively.
+    - `sign` - Works only for the numeric properties and specifies the
+      comparison approach of the reference value with the read value. The
+      reference value in the definition is the first operand of the
+      comparators. The supported comparators are `EQ` (equal to), `LE` (less
+      than or equal to), `LT` (less than), `GE` (greater than or equal to),
+      `GT` (greater than), and `NE` (inequal to).
+    - `property_value` - A `oneof` field for the reference value:
+      * `pattern` - A regex for a string property
+      * `interger` - An integer reference
+      * `floating` - A floating reference
++ `log_event` - Matches the system log lines and requires two fields:
+  - `filters` - An array of string for the log filters like `jd:D`. The system
+    logs are obtained by the command `adb logcat -v epoch FILTERS *:S`, where
+    `FILTERS` is all the filter names declared in the definition. The filters
+    declared all across the log event sources in the definition file will be
+    merged (without duplicates) before invoking the command.
+  - `pattern` - The regex for the expected log line.
 
-<!-- TODO -->
+The VH node in the definition of the VH event sources are specified as
+`class_pattern@id_pattern`. Here two regexes are expected before and after the
+`@`. The `class_pattern` matches the `class` property of the node, which is
+commonly the Java class name of the node. The `id_pattern` matches the
+`resource-id` property of the node. The `id_pattern` with the preceding `@` can
+be ignored. If an `@` appears in the regex, it should be escaped by `\`.
+
+#### Define the Virtual Event Trees for the Event Slots through `event_slots`
+
+The `event_slots` field expects a message object in which the properties are
+defined for the aforementioned 6 event slots. Each property expects an event
+tree. The properties can be ignored for that this event slot will never be
+triggered.
+
+An event tree is represented by an `EventSlot` message. Each `EventSlot`
+message constitutes a virtual event node on the event tree. It has the
+following properties:
+
++ `type` - An enum from `SINGLE`, `AND`, `OR`. The default value is `SINGLE`
++ `id` - A 32-bit integer as the id of the virtual event. Note that all the
+  nodes on the event tree and the event sources share the same id space. Thus,
+  this id shouldn't be the same with an existing id to prevent conflicts. *An
+  id should be a **positive** number.* The id is optional and can be ignored if
+  the virtual event will not be referenced.
++ `events` - An array defining the child nodes sequentially. Only the first
+  element is used for a `SINGLE` node.
++ `prerequisite` - An array of 32-bit interger. The other virtual events are
+  referenced by their id through this field as the prerequisites of the current
+  node. In an episode, the current node can be triggered only if all the
+  prerequisites have been triggered ever. This field can be ignored.
++ `transformation` - An array of string expecting a series of Python statements
+  defining a transformation to handle the signals applied by the child nodes.
+  If this field is ignored, then the transformation will be regared as an
+  identity transformation.
+
+##### Definition of the Child Event Nodes
+
+The child event nodes are defined by a message containing only a `oneof` field.
+The available fields are:
+
++ `id` - Expects a 32-bit interger as the reference to a virtual event's id.
++ `event` - Expects a new `EventSlot` message as the definition of the child
+  event.
+
+##### Definition of the Transformation
+
+A group of Python statements can be offered through the `transformation`
+property to process the signals applied by the child nodes. The statements will
+be executed by `exec` sequentially. In the statements, the input from the child
+nodes can be referenced as the variable `x` and the processing result is
+expected to be stored in the variable `y`. The transformation defined in
+`transformation` in an `OR` nodes will be applied to the inputs from the
+different children respectively, thus, there is only the value from a single
+child stored in `x`. In contrast, the defined transformation in an `AND` node
+will be applied to the ensemble of the outputs from all its children, in which
+case the type of `x` will be `List[List[T]]`. The length of the outer list is
+just the number of the child events and the elements are corresponding to the
+children respectively. The length of the inner list is 1 in most situations.
+While multiple results may be returned by the system log event sources if
+multiple lines are matched or the event sources with detection if multiple
+instances are detected.
