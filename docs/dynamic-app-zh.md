@@ -3,7 +3,7 @@
 
 ## 针对动态信息的应用的解决方案
 
-许多信息类应用以来互联网获取动态内容，其中大多都采用SSL加密传输应用数据。采用中间人代理工具为这类应用回放数据时，应用需要信任代理工具的证书，才能与代理工具通信。然而有些应用采用了固定证书的策略，只信任操作系统内置证书库，或只信任本应用网站的证书，这是，简单地将代理证书加进操作系统的“用户证书”列表无法解决问题。对此，测试了三种解决方案，本文档将介绍这些方案及平台对应提供的快捷脚本。
+许多信息类应用依赖互联网获取动态内容，其中大多都采用SSL加密传输应用数据。采用中间人代理工具为这类应用回放数据时，应用需要信任代理工具的证书，才能与代理工具通信。然而有些应用采用了固定证书的策略，只信任操作系统内置证书库，或只信任本应用网站的证书，这时，简单地将代理证书加进操作系统的“用户证书”列表无法解决问题。对此，测试了三种解决方案，本文档将介绍这些方案及平台对应提供的快捷脚本。
 
 本平台测试的中间人代理工具为[mitmproxy](https://mitmproxy.org/)。本文档所采用的方案主要参考自[Intercepting HTTPS on Android](https://httptoolkit.com/blog/intercepting-android-https/)。其他参考文献包括：
 
@@ -16,7 +16,7 @@
 
 该方案，通过将代理证书注入操作系统的内置证书库，来绕过部分固定证书的应用的检查。要启用该方案，需要安卓虚拟机上的adbd能够获取root权限，因此，需要采用Google APIs版本的镜像，而非Google Play版本。在加载环境时，`mitm_config`参数中的`method`字段要设置为`syscert`。
 
-使用该方案启动Mobile-Env环境时，需要事先将代理证书注入使用的安卓镜像中，对此，平台提供了[`syscert_setup.exp`](tools/syscert_setup.exp)脚本自动配置。该脚本需要安装Tcl库[expect](https://www.nist.gov/services-resources/software/expect)来运行，通常这可以直接从Linux发行版的软件仓库中安装，如
+使用该方案启动Mobile-Env环境时，需要事先将代理证书注入使用的安卓镜像中，对此，平台提供了[`syscert_setup.exp`](../tools/syscert_setup.exp)脚本自动配置。该脚本需要安装Tcl库[expect](https://www.nist.gov/services-resources/software/expect)来运行，通常这可以直接从Linux发行版的软件仓库中安装，如
 
 ```sh
 apt install expect # Ubuntu
@@ -33,11 +33,11 @@ tools/syscert_setup.exp [EMULATOR_PATH [AVD_NAME [CERT_PATH]]]
 
 + `EMULATOR_PATH` - 模拟器可执行文件的路径，默认为`$HOME/Android/Sdk/emulator`
 + `AVD_NAME` - 要修改的安卓虚拟机（镜像）名称，默认为`Pixel_2_API_30_x64`
-+ `CERT_PATH` - 要注入的SSL证书路径，默认为`$HOME/.mitmproxy/mitmproxy-ca-cert.cer`
++ `CERT_PATH` - 要注入的SSL证书的路径，默认为`$HOME/.mitmproxy/mitmproxy-ca-cert.cer`
 
 #### frida方案：运行时替换应用程序的证书验证器
 
-该方案，采用运行时注入工具[Frida](https://github.com/frida/frida)替换应用程序的证书验证器，以解除其固定证书。该方案同样需要adbd获取root权限，因此需要采用Google APIs版本镜像。加载环境时，`mitm_config`参数中，`method`字段要设置为`frida`。本方案仅基于frida 14.2.2完成了测试，并针对该版本，提供了配置脚本[`frida_setup.sh`](tools/frida_setup.sh)，该脚本同样需要安装expect来执行。
+该方案，采用运行时注入工具[Frida](https://github.com/frida/frida)替换应用程序的证书验证器，以解除其固定证书。该方案同样需要adbd获取root权限，因此需要采用Google APIs版本镜像。加载环境时，`mitm_config`参数中，`method`字段要设置为`frida`。本方案仅基于frida 14.2.2完成了测试，并针对该版本，提供了配置脚本[`frida_setup.sh`](../tools/frida_setup.sh)，该脚本同样需要安装expect来执行。
 
 要采用本方案，需要准备
 
