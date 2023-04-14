@@ -19,7 +19,7 @@ python resave_pickles.py PKL_NAME:S:T DUMPDIR TASKFOLDER
 ```
 
 + `PKL_NAME` - 要转存的轨迹文件路径的模式，如`web-dumps/zdy023.%d.pkl`
-+ `S`,`T` - 轨迹编号的范围（包含），用来取代路径模式串中的`%d`
++ `S``T` - 轨迹编号的范围（包含），用来取代路径模式串中的`%d`
 + `DUMPDIR` - 转存得到的文件要存放的目录
 + `TASKFOLDER` - 存放任务定义文件的目录
 
@@ -39,7 +39,7 @@ python resave_pickles.py PKL_NAME:S:T DUMPDIR TASKFOLDER
             "observation": np.ndarray # 形状为(宽, 高, 3)，类型为float32，以RGB形式保存观测到的屏幕图像
             "view_hierarchy": Optional[str] # 保存XML格式的视图框架
             "orientation": np.int64 # 记录屏幕方向
-            "action_type": np.int64 # 0, 1, 2, 3分别对应TOUCH、LIFT、REPEAT、TEXT；列表首元素中没有该字段
+            "action_type": np.int64 # 0、1、2、3分别对应TOUCH、LIFT、REPEAT、TEXT；列表首元素中没有该字段
             "touch_position": np.ndarray # 形状为(2,)，类型为float32，归一化到了[0, 1]，列表首元素中没有该字段；仅动作类型为TOUCH的步骤有该字段
             "input_token": str # 列表首元素中没有该字段；仅动作类型为TEXT的步骤有该字段
             “reward": float # 列表首元素中没有该字段；回报为0的步骤可能没有该字段
