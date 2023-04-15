@@ -63,7 +63,7 @@ proxy during his training and testing. The data should be released along with
 the app package and the task definition files.
 
 It is noted that several apps adopt a certificate pinning policy for its SSL
-connection. Three [solutions](dynamic-app-zh.md) for this are tested and the
+connection. Three [solutions](dynamic-app-en.md) for this are tested and the
 corresponding script tools are provided. When a new task set is released, you
 are supposed to make sure that the used app will trust the certificate of the
 MitM proxy or at least one of the solutions work if the certificate pinning
