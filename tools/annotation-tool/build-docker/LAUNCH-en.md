@@ -18,7 +18,9 @@ Arguments:
 3. Annotator's name used in the dumped pickle file
 4. domains to replay
 
-Then access <http://127.0.0.1:5000> in the browser to open the annotation UI. Press `Ctrl+C` once in the terminal to close the docker after closing the webpage interface.
+Then access <http://127.0.0.1:5000> in the browser to open the annotation UI.
+Press `Ctrl+C` once in the terminal to close the docker after closing the
+webpage interface.
 
 The structure of the `INPUT_DIR`:
 
