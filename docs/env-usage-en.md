@@ -48,7 +48,7 @@ Finally, you can name your AVD and make several other configs.
 The created AVD can be checked in the AVD list. The AVD folder can also be
 opened in the file manager. It is always `~/.android/avd`.
 
-More options are referred to as the
+More options are referred to the
 [document](https://developer.android.com/studio/run/managing-avds) offered by
 Android Studio.
 
@@ -112,7 +112,7 @@ flow and replay the contents correctly only if the app trusts its SSL
 certificate. However, several apps adopt a policy named as certificate pinning,
 so that the certificates added into the "User Certificate" list in the
 operating system (OS) will not be trusted. Three solutions are tested for this
-problem and quick config scripts are provided. The details ared referred to as
+problem and quick config scripts are provided. The details ared referred to
 [Solution for Dynamic Information Apps](docs/dynamic-app-en.md).
 
 ### Launch the Interaction Environment

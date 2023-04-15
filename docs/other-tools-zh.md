@@ -93,12 +93,12 @@ modifier = index ":" name [ ":" param { ":" param } ] ;
 如`2:delete:1:3,2:rewardize:3:-1`表示：
 
 1. 先对第2条（序号从0记）轨迹应用`delete`修改，将区间`[1, 3)`的步骤删去（序号从0始）
-2. 再对第2条轨迹应用`rewardize`修改，该修改要将第3步记录（应用过`delete`后的第3步，也就是最开始的第5步）的回报减去1。<br>
+2. 再对第2条轨迹应用`rewardize`修改，该修改要将第3步记录（应用过`delete`后的第3步，也就是最开始的第5步）的回报减去1。
 
 该工具目前支持的修改符有（以下未将轨迹序号项`index`标出）：
 
 + `delete:start:end`，删去记录的`start`-`end`区间的步骤，包含`start`而不含`end`
-+ `instructionize:step:instruction_idx`，给第`step`步设置指令；指令通过序号指定，序号从0起始；可选择指令读取自任务定义文件，任务定义文件中指令事件槽下的各事件，按定义顺序，可依次从其中的`transformation`字段读取一条指令；若指令序号为-1，则会删去原有的指令
++ `instructionize:step:instruction_idx`，给第`step`步设置指令；指令通过序号指定，序号从0起始；可选择的指令读取自任务定义文件，任务定义文件中指令事件槽下的各事件，按定义顺序，可依次从其中的`transformation`字段读取一条指令；若指令序号为-1，则会删去原有的指令
 + `rewardize:step:reward_delta`，修改第`step`步的回报，指定的`reward_delta`为回报的变化量
 + `remove`，删去该轨迹
 
@@ -110,7 +110,7 @@ modifier = index ":" name [ ":" param { ":" param } ] ;
 
 1. `<step>.textproto.template`，小步任务定义模板
 2. `<step>-<stepname>.conf`，模板实例化配置，用来实例化一小步任务的定义，实例化的小步任务称为“任务元”
-3. `<taskname>.task`，任务组合配置，用来指定组合哪些任务元得到最终的多步任务
+3. `<taskname>.task`，任务元组合配置，用来指定组合哪些任务元得到最终的多步任务
 
 ##### 任务定义模板的语法
 
@@ -126,7 +126,7 @@ slot = "<" [ modifier { "," modifier } ":" ] identifier ">" ;
 * `<lower:name>`
 * `<regex_esc,regex_list:keywords>`
 
-槽位语法的具体定义可以查看[`syntax.ebnf`](tools/templates.toolkits/syntax.ebnf)。
+槽位语法的具体定义可以查看[`syntax.ebnf`](../tools/templates.toolkits/syntax.ebnf)。
 
 实例化模板的参数由`<step>-<stepname>.conf`配置文件提供。该配置文件名由两部分构成，`-`前的第一部分需要与要实例化的模板名相同；第二部分则为该任务元实例指定一个唯一名称。配置文件中，每一行为模板中的一个标识符提供一个配置值。格式为
 
@@ -152,14 +152,14 @@ access_author-Bob
 
 ##### 修饰符语法
 
-实例化时，每个标识符对应而配置值可以按两种方式解释：
+实例化时，每个标识符对应的配置值可以按两种方式解释：
 
 + 单个字符串
 + `,`分隔的字符串列表
 
 修饰符默认会将配置值作为单个完整的字符串处理；但若在修饰符末尾加上`'`，则该修饰符会将配置值视作列表，并分别应用于列表中各项上。如，对配置项`abc ,d ef, hi>g`，若直接应用修饰符`url_query`，则会得到`abc+%2Cd+ef%2C+hi%3Eg`；而若应用修饰符`url_query'`，则会得到`abc+,d+ef,+hi%3Eg`。
 
-由于槽位取代的文本多用于textproto中的字符串中，因此实例化时，会默认转义其中的`'``"``\`等字符；若不需要默认的转义，则可以在最后应用`no_quote`标识符关闭之。如，对配置项`abc ,d ef, hi>g`，若直接应用`to_list`，则会得到`[\"abc \", \"d ef\", \"hi>g\"]`；而若应用`no_quote,to_list`，则会得到`["abc ", "d ef", "hi>g"]`。
+由于槽位取代的文本多用于textproto中的字符串中，因此实例化时，会默认转义输入的配置值中的`'``"``\`等字符；若不需要默认的转义，则可以在最后应用`no_quote`标识符关闭之。如，对配置项`abc ,d ef, hi>g`，若直接应用`to_list`，则会得到`[\"abc \", \"d ef\", \"hi>g\"]`；而若应用`no_quote,to_list`，则会得到`["abc ", "d ef", "hi>g"]`。
 
 当前实现的通用修饰符大体可分为4类：
 
@@ -169,9 +169,9 @@ access_author-Bob
 * 正则操作
   * `regex_esc` - 按正则规则转义输入中的特殊字符
 * 网址文本操作
-  * `url_path` - 转义网址中的路径（path）段
-  * `url_query` - 转义HTTP地址中的请求（query）段
-  * `url_title` - 用`-`替换题目等内容中的空格
+  * `url_path` - 将输入视作网址中的路径（path）段来转义
+  * `url_query` - 将输入视作HTTP地址中的请求（query）段来转义
+  * `url_title` - 对题目等类型的输入，用`-`替换其中的空格
 * 一般文本操作
   * `lower` - 转为小写
   * `upper` - 转为大写
@@ -202,6 +202,6 @@ python parse.py --task TASKFILE -p TEMPLATES_DIR -o OUTPUTFILE
 
 参数
 
-* `TASKFILE` - `.task`组合任务配置文件的路径，涉及的`.conf`文件应该与`.task`文件处在同一文件夹下。
+* `TASKFILE` - `.task`组合任务元配置文件的路径，涉及的`.conf`文件应该与`.task`文件处在同一文件夹下。
 * `TEMPLATES_DIR` - 需要的所有模板文件所在的目录
 * `OUTPUTFILE` - 输出的任务定义文件的文件名

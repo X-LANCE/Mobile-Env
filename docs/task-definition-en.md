@@ -338,7 +338,8 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 To instantiate a `Task` message, the following parameters need to be specified:
 
 1. `id` - A string as the task id to identify the tasks. It is recommended that
-   the id comprises only English letters, digits, the underscore and the score.
+   the id comprises only English letters, digits, the underscore and the short
+   dash.
 2. `name` - A string. This field gives a readable task name.
 3. `description` - A string briefly explaining the task.
 4. `setup_steps` - An array of `SetupStep` messages defining the config
