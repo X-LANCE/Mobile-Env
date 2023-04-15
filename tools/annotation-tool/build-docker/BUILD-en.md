@@ -1,5 +1,9 @@
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
 
+0. Download the package of [Android Commandline
+   Tools](https://developer.android.com/studio) to this directory and rename it
+   to `commandlinetools-linux-latest.zip`.
+
 1. Build docker1.
 
 ```sh

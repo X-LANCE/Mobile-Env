@@ -27,9 +27,9 @@ ENV ANDROID_HOME="/root/Android/Sdk"
 ENV AVD_NAME="Pixel_2_API_30_ga_x64"
 
 # install android emulator
-COPY ./commandlinetools-linux-8512546_latest.zip ./android-package.list ./install_sdk.exp ./
+COPY ./commandlinetools-linux-latest.zip ./android-package.list ./install_sdk.exp ./
 RUN mkdir -p $ANDROID_HOME &&\
-    unzip commandlinetools-linux-8512546_latest.zip -d $ANDROID_HOME &&\
+    unzip commandlinetools-linux-latest.zip -d $ANDROID_HOME &&\
     ./install_sdk.exp &&\
     echo 'export PATH='$ANDROID_HOME'/cmdline-tools/bin:$PATH' >>/root/.bashrc &&\
     echo 'export PATH='$ANDROID_HOME'/emulator:$PATH' >>/root/.bashrc &&\

@@ -1,6 +1,8 @@
 <!-- vim: set nospell: -->
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
 
+0. 下载[安卓命令行工具](https://developer.android.com/studio)的压缩包，将之置于本文件夹下并重命名为`commandlinetools-linux-latest.zip`。
+
 1. 构建docker1。
 
 ```sh
