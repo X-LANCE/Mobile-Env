@@ -19,7 +19,7 @@ python resave_pickles.py PKL_NAME:S:T DUMPDIR TASKFOLDER
 ```
 
 + `PKL_NAME` - 要转存的轨迹文件路径的模式，如`web-dumps/zdy023.%d.pkl`
-+ `S``T` - 轨迹编号的范围（包含），用来取代路径模式串中的`%d`
++ `S`、`T` - 轨迹编号的范围（包含），用来取代路径模式串中的`%d`
 + `DUMPDIR` - 转存得到的文件要存放的目录
 + `TASKFOLDER` - 存放任务定义文件的目录
 
@@ -159,7 +159,7 @@ access_author-Bob
 
 修饰符默认会将配置值作为单个完整的字符串处理；但若在修饰符末尾加上`'`，则该修饰符会将配置值视作列表，并分别应用于列表中各项上。如，对配置项`abc ,d ef, hi>g`，若直接应用修饰符`url_query`，则会得到`abc+%2Cd+ef%2C+hi%3Eg`；而若应用修饰符`url_query'`，则会得到`abc+,d+ef,+hi%3Eg`。
 
-由于槽位取代的文本多用于textproto中的字符串中，因此实例化时，会默认转义输入的配置值中的`'``"``\`等字符；若不需要默认的转义，则可以在最后应用`no_quote`标识符关闭之。如，对配置项`abc ,d ef, hi>g`，若直接应用`to_list`，则会得到`[\"abc \", \"d ef\", \"hi>g\"]`；而若应用`no_quote,to_list`，则会得到`["abc ", "d ef", "hi>g"]`。
+由于槽位取代的文本多用于textproto中的字符串中，因此实例化时，会默认转义输入的配置值中的`'`、`"`、`\`等字符；若不需要默认的转义，则可以在最后应用`no_quote`标识符关闭之。如，对配置项`abc ,d ef, hi>g`，若直接应用`to_list`，则会得到`[\"abc \", \"d ef\", \"hi>g\"]`；而若应用`no_quote,to_list`，则会得到`["abc ", "d ef", "hi>g"]`。
 
 当前实现的通用修饰符大体可分为4类：
 

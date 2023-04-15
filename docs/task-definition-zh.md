@@ -308,7 +308,7 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 12. `command` - 字符串数组，定义提供给智能体的任务总括说明
 13. `vocabulary` - 字符串数组，提供与任务有关的小词表，可用于减小任务难度，或方便标注人类演示
 
-其中`setup_steps``reset_steps``expected_app_screen``event_sources``event_slots`等字段，定义它们涉及其他消息类型，将在后面一一介绍。
+其中`setup_steps`、`reset_steps`、`expected_app_screen`、`event_sources`、`event_slots`等字段，定义它们涉及其他消息类型，将在后面一一介绍。
 
 ### `SetupStep`消息
 
@@ -544,7 +544,7 @@ public String toString() {
 
 ### 定义任务事件
 
-`event_sources``event_slots`两个字段与定义任务事件有关。Mobile-Env采用一套基于事件树的系统来管理任务事件。该系统由6个事件槽及与槽连接的虚拟事件树构成。事件槽对应于智能体能够感知到的回报、交互终结、步骤指令、额外信息等事件，分别为
+`event_sources`、`event_slots`两个字段与定义任务事件有关。Mobile-Env采用一套基于事件树的系统来管理任务事件。该系统由6个事件槽及与槽连接的虚拟事件树构成。事件槽对应于智能体能够感知到的回报、交互终结、步骤指令、额外信息等事件，分别为
 
 + 分数事件`score_listener`
 + 回报事件`reward_listener`
@@ -555,8 +555,8 @@ public String toString() {
 
 虚拟事件可分为两类：事件源与组合算子。事件源通常是事件树的叶子节点，关联于特定的安卓操作系统反馈：包括
 
-+ 屏幕文本（`text_recognize``text_detect`）
-+ 屏幕图标（`icon_recognize``icon_detect``icon_match``icon_detect_match`）
++ 屏幕文本（`text_recognize`、`text_detect`）
++ 屏幕图标（`icon_recognize`、`icon_detect`、`icon_match`、`icon_detect_match`）
 + 视图框架（`view_hierarchy_event`）
 + 运行日志（`log_event`）
 
@@ -600,20 +600,20 @@ public String toString() {
 
 + `event` - 多选一字段，提供要识别的事件的具体模式
 + `id` - 32位整数，为事件源提供唯一编号，以供索引；*编号应当是**正**整数*
-+ `repeatability` - 枚举值，值从`NONE``LAST``UNLIMITED`中选取。规定，当`event`定义的模式持续满足时，事件是否应当重复触发；默认为`NONE`
++ `repeatability` - 枚举值，值从`NONE`、`LAST`、`UNLIMITED`中选取。规定，当`event`定义的模式持续满足时，事件是否应当重复触发；默认为`NONE`
   - `NONE`规定不重复触发，即，一次任务过程中，一种输入只能触发一次该事件
   - `LAST`规定不连续触发，即，连续识别到相同的符合模式的输入时，只有第一次触发；但若间隔了其他输入，则再次识别到时，仍可以触发
   - `UNLIMITED`不做任何限制，只要平台识别到相应模式，就会触发事件
 
 `event`的候选字段正是前文列出的几种事件源：
 
-+ `text_recognize``text_detect` - 这两类事件识别/检测屏幕上特定区域的文字内容，其所需要消息要提供
++ `text_recognize`、`text_detect` - 这两类事件识别/检测屏幕上特定区域的文字内容，其所需要消息要提供
   + `expect` - 正则表达式，给出期望的文字的模式
-  + `rect` - 提供一条消息，包含`x0``y0``x1``y1`四个浮点数属性，限制要识别/检测的屏幕区域；提供的坐标值应归一化到`[0, 1]`
-+ `icon_recognize``icon_detect` - 识别/检测屏幕上特定区域的图标内容，需要
+  + `rect` - 提供一条消息，包含`x0`、`y0`、`x1`、`y1`四个浮点数属性，限制要识别/检测的屏幕区域；提供的坐标值应归一化到`[0, 1]`
++ `icon_recognize`、`icon_detect` - 识别/检测屏幕上特定区域的图标内容，需要
   + `class` - 字符串，给出精确的图标类别的名称，具体名称集取决于挂载的图标模型
   + `rect` - 同上，提供要识别/检测的区域
-+ `icon_match``icon_detect_match` - 识别/检测屏幕上特定区域的图标内容，不同于上两类事件根据图标类别判断，这两类事件会利用图像匹配模型根据参考图片判断目标是否匹配，需要提供
++ `icon_match`、`icon_detect_match` - 识别/检测屏幕上特定区域的图标内容，不同于上两类事件根据图标类别判断，这两类事件会利用图像匹配模型根据参考图片判断目标是否匹配，需要提供
   + `path` - 参考图像的路径，可采用相对于该定义文件的路径，也可以采用绝对路径（不推荐）
   + `rect` - 同上
 + `view_hierarchy_event` - 识别视图框架中的内容，需要提供
@@ -637,7 +637,7 @@ public String toString() {
 
 事件树要借助`EventSlot`消息定义。单个`EventSlot`消息体代表了事件树上的一个虚拟事件节点，其包含如下属性：
 
-+ `type` - 枚举值，可选择`SINGLE``AND``OR`；默认为`SINGLE`
++ `type` - 枚举值，可选择`SINGLE`、`AND`、`OR`；默认为`SINGLE`
 + `id` - 指定32位整数作为该虚拟事件的编号；注意所有事件树上的全部节点及已定义的事件源共享编号空间，因此该编号不应与已定义的事件源或其他任何事件节点的编号重复；*编号应当是**正**整数*；编号是可选的，若该虚拟事件不需要索引，则可以留空不定义
 + `events` - 数组，依次定义该节点的子节点；对`SINGLE`类型的节点来说，只有数组的第一项有用
 + `prerequisite` - 32位整数数组，通过事件编号（`id`字段）索引其他虚拟事件，作为该事件的前置条件；在一次交互过程中，仅所有前置条件事件都曾触发过后，该事件才可以触发；可留空

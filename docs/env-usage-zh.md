@@ -110,7 +110,7 @@ env = android_env.load( task_path
 
 * `task_path` - `str`，要使用的`textproto`任务定义文件的路径，或提供一个目录，目录下面可以包含多个`textproto`文件，以一次性加载多个任务，从而多任务地训练智能体；加载多个任务时，各任务会根据文件名按字符串顺序排序。
 * `avd_name` - `str`，要使用的虚拟机的名称。
-* `android_avd_home``android_sdk_root``emulator_path``adb_path` - `str`，若干安卓工具的路径，示例中即为函数定义的默认参数。
+* `android_avd_home`、`android_sdk_root`、`emulator_path`、`adb_path` - `str`，若干安卓工具的路径，示例中即为函数定义的默认参数。
 * `run_headless` - 是否要在无图形窗口的情况下运行，`True`为无图像窗口，`False`为带图形窗口，默认为`False`。
 * `mitm_config` - 指定中间人代理的配置。若需要中间人代理回放流量，则要提供一个词典参数，其中包含三个通用字段：
   - `address` - 指定中间人代理提供服务的地址，默认为`127.0.0.1`；
@@ -272,7 +272,7 @@ while not step.last():
 1. `reward`，浮点数，记录回报值
 2. `observation`，记录当前观测
 
-此外还有三个返回逻辑值的方法：`first``mid``last`，可用来判断当前交互步处于交互过程中的什么位置。
+此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互过程中的什么位置。
 
 `observation`为一个`dict`对象，包含四项，其中前三项均以NumPy数组形式返回：
 
@@ -291,6 +291,6 @@ Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
 + `touch_position` - NumPy数组，数据类型为浮点数，长度为2，表示触击的坐标`(x, y)`，坐标值归一化到`[0, 1]`；仅需对`TOUCH`动作指定
 + `input_token` - NumPy标量数组，数据类型为整数，指定要输入的词元在词表中的序号，从0开始；仅需对`TEXT`动作指定
 
-可以使用`env.observation_spec``env.action_spec`方法获取对观测空间与动作空间格式的声明。此外，在`examples`目录下提供了两个分别使用随机策略和由人类充当智能体的例子，以供参考。
+可以使用`env.observation_spec`、`env.action_spec`方法获取对观测空间与动作空间格式的声明。此外，在`examples`目录下提供了两个分别使用随机策略和由人类充当智能体的例子，以供参考。
 
 <!-- TODO: 采用Oxygen等工具生成代码文档，并推送到readdocs等平台 -->

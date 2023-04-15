@@ -146,7 +146,7 @@ The parameters are
   once to train the agent in a multitask way. If multiple tasks are being
   loaded, the tasks will be sorted as string according to their file name.
 * `avd_name` - `str`. The name of the AVD.
-* `android_avd_home``android_sdk_root``emulator_path``adb_path` - `str`. The
+* `android_avd_home`, `android_sdk_root`, `emulator_path`, `adb_path` - `str`. The
   path to several Android tools. The arguments in the example are the default
   values.
 * `run_headless` - If the emulator should be launched headless. `True` is for
