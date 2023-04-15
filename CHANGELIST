@@ -39,3 +39,4 @@ android_env/utils.py
 android_env/wrappers/vh_io_wrapper.py
 tools/frida_setup.sh
 tools/syscert_setup.exp
+tools/annotation-tool/*

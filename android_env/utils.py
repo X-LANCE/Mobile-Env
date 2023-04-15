@@ -18,6 +18,7 @@ Created by Danyang Zhang @X-Lance.
 
 from android_env.proto import task_pb2
 import os.path
+from typing import Optional
 
 def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
     """
@@ -36,6 +37,14 @@ def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
         _fix(st, task_directory)
     for st in task.reset_steps:
         _fix(st, task_directory)
+    for evt_s in task.event_sources:
+        if evt_s.HasField("icon_match"):
+            attribute_name: Optional[str] = evt_s.WhichOneof("event")
+            if attribute_name=="icon_match" or attribute_name=="icon_detect_match":
+                path: str = getattr(evt_s, attribute_name).path
+                if not os.path.isabs(path):
+                    getattr(evt_s, attribute_name).path =\
+                            os.path.normpath(os.path.join(task_directory, path))
     return task
 
 def _fix(setup: task_pb2.SetupStep, task_directory: str):

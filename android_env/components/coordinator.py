@@ -60,6 +60,7 @@ class Coordinator():
               , max_steps_per_sec: float = 15.0
               , periodic_restart_time_min: float = 0.0
               , force_simulator_launch: bool = True
+              , with_view_hierarchy: bool = False
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
@@ -79,6 +80,8 @@ class Coordinator():
         episode once the time has been reached.
       force_simulator_launch: Forces the simulator to relaunch even if it is
         already launched.
+      with_view_hierarchy (bool): if the view hierarchy should be included in
+        the observation
     """
 
     self._simulator: base_simulator.BaseSimulator = simulator
@@ -90,6 +93,7 @@ class Coordinator():
     self._max_steps_per_sec = max_steps_per_sec
     self._periodic_restart_time_min = periodic_restart_time_min
     self._force_simulator_launch = force_simulator_launch
+    self._with_view_hierarchy: bool = with_view_hierarchy
 
     # Logging settings.
     self._log_dict = {
@@ -372,9 +376,10 @@ class Coordinator():
 
       self._task_manager.snapshot_events(observation["pixels"])
       reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
+      observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
-      episode_end = self._task_manager.check_if_episode_ended()
+      episode_end = self._task_manager.check_if_episode_ended(self._with_view_hierarchy)
       self._task_manager.clear_events()
       return observation, reward, task_extras, instructions, episode_end
     except (errors.ReadObservationError, socket.error):
@@ -425,7 +430,8 @@ class Coordinator():
       Boolean indicating if the step timeout limit has been reached.
     """
 
-    if self._step_timeout_sec and self._latest_observation_time:
+    if not self._with_view_hierarchy\
+        and self._step_timeout_sec and self._latest_observation_time:
       time_since_last_obs = self._get_time_since_last_observation()
       if time_since_last_obs > self._step_timeout_sec:
         logging.exception('Time between steps exceeded %f',

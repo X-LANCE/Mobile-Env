@@ -1,0 +1,43 @@
+(* Copyright 2023 SJTU X-Lance Lab
+   
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+   
+       http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   Created by Danyang Zhang @X-Lance.
+*)
+
+slot = "<" [ modifier { "," modifier } ":" ] identifier ">" ;
+
+modifier = ( list-modifier
+           | regex-modifier
+           | url-modifier
+           | common-modifier
+           | other-modifier
+           | "no_quote"
+           ) , [ "'" ] ;
+(* "'"指该修饰器应应用于列表每个元素上
+   "no_quote"是保留关键字，应用作最后的修饰词，表示该串不需要对引号等自动转义
+   多个修饰符按从右到左的顺序依次作用
+*)
+
+list-modifier = "to_list"
+              | "regex_list" ;
+regex-modifier = "regex_esc" ;
+url-modifier = "url_path"
+             | "url_query"
+             | "url_title" ;
+common-modifier = "lower"
+                | "upper" ;
+other-modifier = "filter_comma"
+               | "remove_howto" ;
+
+identifier = ( alphadigit-symbol | "_" ), { alphadigit-symbol | "_" } ;
