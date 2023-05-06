@@ -8,6 +8,8 @@ Mobile-Env是针对信息用户界面交互设计的新的训练、验证平台�
 
 Mobile-Env是基于[AndroidEnv](https://github.com/deepmind/android_env)开发的。通过Mobile-Env，智能体可以观测到Android操作系统的屏幕截图和视图框架（View Hierarchy，由于获取时延较高，该项是默认关闭的），然后采取点触屏幕或输入词元（token）等动作来与Android应用交互。交互过程中的某些步骤上，回报、步骤指令、交互终结等任务事件可能触发并统治智能体。具体是哪些步骤取决于特定的[任务定义](docs/task-definition-zh.md)，可能是打开了某个目标界面，或者滚动到了正确的区域等等。
 
+所构建的WikiHow任务集发布于[Hugging Face平台](https://huggingface.co/datasets/zdy023/WikiHow-taskset)。
+
 * [英文文档（Documents in English）](README.md)
 
 ## 目录

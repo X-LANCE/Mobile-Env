@@ -21,6 +21,9 @@ so-called crucial step may be opening a target page, srolling to a correct
 area, *etc*. and is depending on the specific [task
 definition](docs/task-definition-en.md).
 
+The proposed WikiHow task set is available at the [Hugging Face
+Platform](https://huggingface.co/datasets/zdy023/WikiHow-taskset).
+
 * [Documents in Chinese (中文文档)](README-zh.md)
 
 ## Index
