@@ -26,7 +26,7 @@ Mobile-Env是基于[AndroidEnv](https://github.com/deepmind/android_env)开发�
 * 观测空间包含屏幕截图和视图框架，动作空间包括点触与输入词元，适用于各种手机应用。同时支持通过环境包装器修改观测与动作空间的形式。
 * 新任务可以通过任务定义文件简单启用，因此扩展新任务非常容易。
 * Mobile-Env能够从多种操作系统反馈中解析任务事件，包括：屏幕文本、屏幕图标、视图框架、系统日志。因此Mobile-Env能够直接迁移到大多现实应用上，而不需要对应用定制修改。（屏幕文本和屏幕图标需要外部的文字、图标识别工具来支持。目前平台内置了一个对[EasyOCR](https://github.com/JaidedAI/EasyOCR)的包装，可以直接启用。内置的图标模型也在训练调试中，会在将来集成进去。）
-* 设计了一套崭新的树状事件管理系统来处理任务事件逻辑。具体介绍可以查看论文和[任务定义指南](docs/task-definition-zh.md)。<!-- TODO: 论文链接 -->
+* 设计了一套崭新的树状事件管理系统来处理任务事件逻辑。具体介绍可以查看[论文](https://arxiv.org/abs/2305.08144)和[任务定义指南](docs/task-definition-zh.md)。
 
 ## 快捷指南
 
@@ -56,9 +56,9 @@ pip install .
 
 ## 项目信息
 
-本库由[上海交通大学跨媒体语言智能实验室](https://x-lance.sjtu.edu.cn/en)（X-Lance）开发、维护。相关论文已投稿ACL Demo 2023，正在审稿中。<!-- TODO: 论文链接 -->
+本库由[上海交通大学跨媒体语言智能实验室](https://x-lance.sjtu.edu.cn/en)（X-Lance）开发、维护。相关论文可查阅<https://arxiv.org/abs/2305.08144>。
 
-若在研究中使用了Mobile-Env，敬请引用本项目。可以使用下列的BibTex：
+若Mobile-Env对您的研究起到了帮助，敬请引用本项目。可以使用下列的BibTex：
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
@@ -66,11 +66,11 @@ pip install .
   author    = {Danyang Zhang and
                Lu Chen and
                Kai Yu},
+  journal   = {CoRR},
+  volume    = {abs/2305.08144},
   year      = {2023},
-  %eprint    = {2105.13231},
-  %archivePrefix = {arXiv},
-  %primaryClass = {cs.LG},
-  %volume    = {abs/2105.13231},
-  url       = {https://github.com/X-LANCE/Mobile-Env},
+  url       = {https://arxiv.org/abs/2305.08144},
+  eprinttype = {arXiv},
+  eprint    = {2305.08144},
 }
 ```

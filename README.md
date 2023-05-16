@@ -54,9 +54,9 @@ interaction with the following features:
   and can be enabled directly. An intergrated icon model will be embedded soon
   as well.)
 * A brand-new tree-based event management system is designed to handle the
-  logics of the task events. The details should be referred to the paper and
-  the [task definition guide](docs/task-definition-en.md). <!-- TODO: the paper
-  link -->
+  logics of the task events. The details should be referred to the
+  [paper](https://arxiv.org/abs/2305.08144) and the [task definition
+  guide](docs/task-definition-en.md).
 
 # Getting Started
 
@@ -101,11 +101,11 @@ referred to [Other Assistant Tools](docs/other-tools-en.md).
 ## About
 
 This library is developed and maintained by [SJTU
-X-Lance](https://x-lance.sjtu.edu.cn/en). The corresponding paper is under
-review of ACL Demo 2023. <!-- TODO: paper link -->
+X-Lance](https://x-lance.sjtu.edu.cn/en). The corresponding paper is available
+at <https://arxiv.org/abs/2305.08144>.
 
-If you use Mobile-Env in your research, you can cite the project using the
-following BibTeX:
+If you find Mobile-Env useful in your research, you can cite the project using
+the following BibTeX:
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
@@ -113,11 +113,11 @@ following BibTeX:
   author    = {Danyang Zhang and
                Lu Chen and
                Kai Yu},
+  journal   = {CoRR},
+  volume    = {abs/2305.08144},
   year      = {2023},
-  %eprint    = {2105.13231},
-  %archivePrefix = {arXiv},
-  %primaryClass = {cs.LG},
-  %volume    = {abs/2105.13231},
-  url       = {https://github.com/X-LANCE/Mobile-Env},
+  url       = {https://arxiv.org/abs/2305.08144},
+  eprinttype = {arXiv},
+  eprint    = {2305.08144},
 }
 ```
