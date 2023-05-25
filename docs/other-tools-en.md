@@ -144,7 +144,7 @@ definition file. To use this toolkit, You need to prepare three type of files:
 
 1. `<step>.textproto.template`, the template of a small task step.
 2. `<step>-<stepname>.conf`, the configuration for the instantiation of the
-   template. This is used th instantiate the definition of a small task step,
+   template. This is used to instantiate the definition of a small task step,
    which is called a `task token`.
 3. `<taskname>.task`, The configuration for the combination of task tokens
    indicating how to form the final multi-step task with the task tokens.

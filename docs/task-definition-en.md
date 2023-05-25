@@ -689,14 +689,15 @@ parent node. The combinator will first check whether its prerequisites are
 satisfied, *i.e.*, the combinator can be triggered only if all the prerequisite
 nodes have been triggered ever. This mechanism is designed to handle the
 temporal sequence of the steps in the multi-step tasks. If the prerequisites
-are satisfied, the combinator will decide the triggering according the
+are satisfied, the combinator will decide the triggering according to the
 triggering flag of its child nodes. To be specific, the `Or` combinator will be
-triggered once one of its children is triggered while the `And` combinator will
-be triggered only all its children is triggered and the `SINGLE` combinator
-will follow the state of its sole child. If the combinator is triggered, the
-signals will be applied to its parent as well. The signals will be processed
-level by level and be aggregated to the root node. Then the root node will pass
-it to the slot and the slot will send it as a feedback to the agent.
+triggered once one of its children is triggered, while the `And` combinator
+will be triggered only all its children are triggered, and the `SINGLE`
+combinator will follow the state of its sole child. If the combinator is
+triggered, the signals will be applied to its parent as well. The signals will
+be processed level by level and be aggregated to the root node. Then the root
+node will pass it to the slot and the slot will send it as a feedback to the
+agent.
 
 ![A Demo Event Tree](images/demo-event-tree.png)
 
