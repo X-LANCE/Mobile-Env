@@ -269,7 +269,7 @@ The parameters:
 
 An initial config file for the task token will be generated under `DUMPDIR`
 after execution. It is recommended to initialize the config file in this way to
-prevent missing identifiers while manuallly composing a config file from
+prevent missing identifiers while manually composing a config file from
 scratch.
 
 Instantiate a task definition:
