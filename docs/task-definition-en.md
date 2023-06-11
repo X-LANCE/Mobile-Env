@@ -14,11 +14,12 @@ To extend a new task for the Mobile-Env platform, you need to prepare:
 ### Preparation of the App Package
 
 You need to prepare the installation package for the app and check if it can be
-successfully launched and run on the emulator. Nowadays, most desktops have an
+successfully launched and run on the emulator. Nowadays, most hosts have an
 `amd64` CPU, however, most Android mobiles run on the `arm`-arch devices. Thus,
 plenty of installation packages provide the binary libraries only for the `arm`
 architecture. Our test reveals that, the image of Android 11 (API Level 30)
-offers the best support for the `arm`-arch packages on the `amd64` desktops.
+offers the best support for the `arm`-arch packages on the `amd64`
+infrastructure.
 
 Here are several websites offering Android app package downloading:
 
