@@ -1,7 +1,7 @@
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```ini', '```', 'dosini', 'NonText'): -->
 
-## Training and Evaluating Agents on Mobile-Env
+## Evaluating and Training Agents on Mobile-Env
 
 ### Create an Android Virtual Device
 
@@ -37,7 +37,7 @@ Subsequently, select a version for the system image. For the same reason,
 Android 11 (API Level 30) is recommended. Meanwhile, please choose the version
 of Google APIs, but not that of Google Play. This is due to the root privillige
 cannot be seized on Google Play images, which is required to solve the problem
-of certificate pinning of several Internet-based apps.
+of certificate pinning for Internet-based apps.
 
 ![Choose an AVD Image](images/avd-image.png)
 
@@ -48,7 +48,7 @@ Finally, you can name your AVD and make several other configs.
 The created AVD can be checked in the AVD list. The AVD folder can also be
 opened in the file manager. It is always `~/.android/avd`.
 
-More options are referred to the
+More options are referred to in the
 [document](https://developer.android.com/studio/run/managing-avds) offered by
 Android Studio.
 
@@ -99,21 +99,21 @@ Or you can modify the file directly using the following command.
 sed -i.bak -e 's#^\(image\.sysdir\.1[[:space:]]*=[[:space:]]*\)Sdk/#\1#g' ~/.android/avd/$AVD_NAME.avd/config.ini
 ```
 
-### Solution of Certificate Pinning of Several Internet-Based Apps
+### Solution of Certificate Pinning of Internet-Based Apps
 
-Numbers of Information apps rely on the dynamic contents from the Internet. The
+Lots of information apps rely on the varying contents from the Internet. The
 Internet contents vary according to the user's spatiotemporal position, which
-will make the training and the evaluation of the agents inconsistent and the
-results will be uncomparable. Commonly, we can crawl and store amounts of
-online contents of the app to fix it. Then we can replay the stored contents
-during training and evaluation through an MitM (Man-in-the-Middle) proxy. Most
-apps tranfer their data through HTTPS, thus, the MitM proxy can intercept the
-flow and replay the contents correctly only if the app trusts its SSL
-certificate. However, several apps adopt a policy named as certificate pinning,
-so that the certificates added into the "User Certificate" list in the
-operating system (OS) will not be trusted. Three solutions are tested for this
-problem and quick config scripts are provided. The details ared referred to
-[Solution for Dynamic Information Apps](docs/dynamic-app-en.md).
+will make the evaluation and training of agents inconsistent and the results
+will be uncomparable. Commonly, we can crawl and store the necessary online
+contents of the app and replay the stored contents during evaluation and
+training through an MitM (Man-in-the-Middle) proxy. However, most apps tranfer
+their data through HTTPS, thus, the MitM proxy can intercept the flow and
+replay the contents correctly only if the app trusts its SSL certificate.
+However, many apps adopt a policy named certificate pinning, so that the
+certificates added into the "User Certificate" list in the operating system
+(OS) will not be trusted. Three solutions are tested for this problem and quick
+config scripts are provided. The details are referred to in [Certificate
+Pinning Problem & Solutions](docs/dynamic-app-en.md).
 
 ### Launch the Interaction Environment
 
@@ -143,29 +143,30 @@ The parameters are
 
 * `task_path` - `str`. The path to the `textproto` task definition file. A
   folder is acceptable, in which case multiple `textproto` files can be loaded
-  once to train the agent in a multitask way. If multiple tasks are being
-  loaded, the tasks will be sorted as string according to their file name.
+  once to switch between them at runtime. If multiple tasks are being loaded,
+  the tasks will be sorted as string according to their file name.
 * `avd_name` - `str`. The name of the AVD.
 * `android_avd_home`, `android_sdk_root`, `emulator_path`, `adb_path` - `str`. The
   path to several Android tools. The arguments in the example are the default
   values.
-* `run_headless` - If the emulator should be launched headless. `True` is for
+* `run_headless` - If the emulator should be launched headlessly. `True` is for
   headless, which means no graphical window will be created. `False` indicates
   that a graphical window will be available. `False` is the default.
-* `mitm_config` - The config for the MitM proxy. If an MitM proxy is in need
-  for flow replaying, this parameter should be provided a dict argument, in
-      which there are three common fields:
+* `mitm_config` - The config for the MitM proxy. If an MitM proxy is required
+  for flow replaying, this parameter should be provided with a dict argument,
+  in which there are three common fields:
   - `address` - The address the MitM proxy listens to, defaults to `127.0.0.1`.
   - `port` - The port the MitM proxy listens to, defaults to `8080`.
-  - `method` - The solution. Three solutions are supported.
-    - `syscert` - Mocking the system certificate with the proxy's one
-    - `frida` - Replacing the certificate verifier in runtime by the instrument
-      tool [Frida](https://github.com/frida/frida).
-    - `packpatch` - Modifying the config inside the package to unpin its
+  - `method` - The solution of certificate pinning. Three solutions are
+    supported.
+    - `syscert` - Mocking a system certificate with the proxy's certificate
+    - `frida` - Replacing the certificate verifier of the app at runtime by the
+      instrument tool [Frida](https://github.com/frida/frida).
+    - `packpatch` - Modifying the config inside the app package to unpin its
       certificate
-    The details are presented in [Solution for Dynamic Information
-    Apps](docs/dynamic-app-en.md). If `frida` solution is adopted, then three
-    extra parameters can be set in the dict:
+    The details are presented in [Certificate Pinning Problem &
+    Solutions](docs/dynamic-app-en.md). If `frida` solution is adopted, then
+    three extra parameters can be set in the dict:
     - `frida-server` - The path to the frida server on the Android system,
       defaults to `/data/local/tmp/frida-server`.
     - `frida` - The path to the frida client on the host system, defaults to
@@ -175,7 +176,7 @@ The parameters are
     `packpatch` will enable an extra parameter as well:
     - `patch-suffix` - This parameter defines a suffix `$suffix`. If the
       package file name defined in the task definition file is `$package.apk`,
-      then the platform will seek `$package-$suffix.apk` for the modified
+      then the platform will seek `$package-$suffix.apk` for the patched
       package file. The prameter defaults to `patched`.
 * `start_token_mark` - `str`. The prefix of the beginning tokens in the
   vocabulary. The typed beginning tokens will be separated with the preceding
@@ -184,8 +185,8 @@ The parameters are
   vocabulary. The typed non-beginning tokens are prepended to the existing
   texts directly. This parameter defaults to the prefix of BERT-style
   vocabularies `##`.
-* `special_token_pattern` - `str`. The pattern of the special tokens in the
-  vocabulary, defauts to `r"\[\w+\]"`, which matches the special tokens in
+* `special_token_pattern` - `str`. The regex pattern of the special tokens in
+  the vocabulary, defauts to `r"\[\w+\]"`, which matches the special tokens in
   BERT-style vocabularies like `[CLS]`.
 * `unify_vocabulary` - `Optional[str]`. If a file name is specified, then it
   will be regarded as the vocabulary file, in which each line constitutes a
@@ -194,12 +195,12 @@ The parameters are
   task definition file will be adopted, in which case the small vocabulary for
   the different tasks may be different. This parameter defauts to `None`, which
   means "unspecified".
-* `text_model` - Text model to enable recognizing the task events such as
-  reward, episode end, and step instruction from the screen texts. No valid
-  models will be loaded with the default argument.
-* `icon_model` - Icon model to enable recognizing the task events such as
-  reward, episode end, and step instruction from the screen icons. No valid
-  models will be loaded with the default argument.
+* `text_model` - Text model to enable recognizing the episode signals (*i.e.*,
+  step instruction, reward, and the episode end) from the screen texts. No
+  valid models will be loaded with the default argument.
+* `icon_model` - Icon model to enable recognizing the episode signals (*i.e.*,
+  step instruction, reward, and the episode end) from the screen icons. No
+  valid models will be loaded with the default argument.
 * `with_view_hierarchy` - If the view hierarchy (VH) should be returned in the
   observation. This option is disabled defaultly for the long latency of VH
   acquisition through ADB.

@@ -4,7 +4,7 @@
 
 # Mobile-Env：大模型时代的交互智能体评测平台与基准
 
-Mobile-Env是针对信息用户界面交互设计的验证、训练平台，基于[AndroidEnv](https://github.com/deepmind/android_env)开发。通过Mobile-Env，智能体可以观测到Android操作系统的屏幕截图和视图框架（View Hierarchy，由于获取时延较高，该项是默认关闭的），然后采取点触屏幕或输入词元（token）等动作来与Android应用交互。交互过程中的某些步骤上，步骤指令、回报、交互终结等历程信号可能触发并统治智能体。具体是哪些步骤取决于特定的[任务定义](docs/task-definition-zh.md)，可能是打开了某个目标界面，或者滚动到了正确的区域等等。
+Mobile-Env是针对信息用户界面交互设计的验证、训练平台，基于[AndroidEnv](https://github.com/deepmind/android_env)开发。通过Mobile-Env，智能体可以观测到Android操作系统的屏幕截图和视图框架（View Hierarchy，由于获取时延较高，该项是默认关闭的），然后采取点触屏幕或输入词元（token）等动作来与Android应用交互。交互过程中的某些步骤上，步骤指令、回报、历程结束等历程信号可能触发并统治智能体。具体是哪些步骤取决于特定的[任务定义](docs/task-definition-zh.md)，可能是打开了某个目标界面，或者滚动到了正确的区域等等。
 
 所构建的WikiHow任务集发布于[Hugging Face平台](https://huggingface.co/datasets/zdy023/WikiHow-taskset)。
 
@@ -39,9 +39,9 @@ cd android_env
 pip install .
 ```
 
-### 加载、运行
+### 加载、运行Mobile-Env以评测或训练
 
-接载Mobile-Env的环境前，需要先创建一个[安卓模拟器](https://developer.android.com/about)虚拟设备。然后才能加载已有的任务定义并启动环境。详细的指南请参考[利用Mobile-Env训练、验证智能体](docs/env-usage-zh.md)。`examples`目录下提供了几个采用随机智能体，或由人类充当智能体的示例程序。
+加载Mobile-Env的环境前，需要先创建一个[安卓模拟器](https://developer.android.com/about)虚拟设备。然后才能加载已有的任务定义并启动环境。详细的指南请参考[利用Mobile-Env验证、训练智能体](docs/env-usage-zh.md)。`examples`目录下提供了几个采用随机智能体，或由人类充当智能体的示例程序。
 
 ### 扩展新环境、新任务
 

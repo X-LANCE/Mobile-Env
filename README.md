@@ -63,7 +63,7 @@ cd android_env
 pip install .
 ```
 
-### Load and Run
+### Load and Run Mobile-Env for evaluation or training
 
 Before loading the Mobile-Env environment, you will need to set up an [Android
 Emulator](https://developer.android.com/about) device. Then you can load the
@@ -81,9 +81,9 @@ the necessary data should be crawled and dumped and then be replayed for a
 consistent evaluation. In such case, the designer is supposed to validate the
 certain effectiveness of [certificate unpinning plan](docs/dynamic-app-en.md)
 for the package.  As regards to extend new tasks, task definition files are
-    just required. Detailed instructions can be found in [Extending a New
-    Environment (App) or a New Task Based on
-    Mobile-En](docs/task-definition-en.md).
+just required. Detailed instructions can be found in [Extending a New
+Environment (App) or a New Task Based on
+Mobile-En](docs/task-definition-en.md).
 
 ### Miscellaneous Auxiliary Tools
 
