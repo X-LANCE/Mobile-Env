@@ -347,9 +347,9 @@ Commonly, there are 2 properties you will always access:
 1. `reward`, a floating number, records the current reward.
 2. `observation`, records the current observation.
 
-`dm_env.TimeStep` is equipped with three methods returning a boolean as well:
-`first`, `mid`, and `last`. These methods tell the what state in the episode
-the agent is.
+In addition, `dm_env.TimeStep` is equipped with three methods returning a
+boolean: `first`, `mid`, and `last`. These methods tell what state of the
+episode the agent is in.
 
 `observation` is a `dict` object containing four items:
 
@@ -359,15 +359,15 @@ the agent is.
 + `timedelta` - An scalar array of a 64-bit float as the seconds after the last
   `step`.
 + `orientation` - A 4-dim one-hot vector with dtype as 8-bit unsigned interger.
-  This item records the orientation of the screen. The positions of the 1 as 0,
-  1, 2, and 3 represent that the screen is rotated from the upright clockwise
-  by 0, 90, 180, and 270 degrees respectively.
+  This item records the orientation of the screen. The positions of the "one"
+  as 0, 1, 2, and 3 represent that the screen is rotated from the upright
+  clockwise by 0, 90, 180, and 270 degrees respectively.
 + `view_hierarchy` - This item will be included if the `with_view_hierarchy`
   option is enabled while loading the environment. The value is an
   [`lxml.etree.Element`](https://lxml.de/apidoc/lxml.etree.html#lxml.etree._Element)
   object representing the VH of the current screen. The platform will request
-  for the VH only at the initial step and the `LIFT` step owing to the long
-      latency. In the other cases, this item will return `None`.
+  for the VH only at the initial step and `LIFT` steps owing to the long
+  latency. In the other cases, this item will return `None`.
 
 Here the first three items are returned as NumPy arrays.
 
@@ -375,16 +375,16 @@ Mobile-Env accepts a `dict` object as the action containing three item:
 
 + `action_type` - A NumPy scalar array. The dtype is integer. It is
   corresponding to 4 action types:
-  - 0（`android_env.components.action_type.ActionType.TOUCH`） - The touch
+  - 0 (`android_env.components.action_type.ActionType.TOUCH`) - The touch
     action.
-  - 1（`android_env.components.action_type.ActionType.LIFT`） - The (finger)
+  - 1 (`android_env.components.action_type.ActionType.LIFT`) - The (finger)
     lifting action.
-  - 2（`android_env.components.action_type.ActionType.REPEAT`） - "Repeat"
+  - 2 (`android_env.components.action_type.ActionType.REPEAT`) - "Repeat"
     action, *i.e.* doing nothing. This action will keep the previous touching
     or lifting status and inputing no tokens meanwhile.
-  - 3（`android_env.components.action_type.ActionType.TEXT`） - The token input
+  - 3 (`android_env.components.action_type.ActionType.TEXT`) - The token input
     action. This action will type a token from the vocabulary. If the
-    `unify_vocabulary` parameter is specified while loading the environment,
+    `unify_vocabulary` parameter is specified during loading the environment,
     then the large vocabulary specified by this parameter is adopted. Otherwise
     the small vocabulary defined by the `vocabulary` field in the definition
     file of the current task will be used.
@@ -394,11 +394,34 @@ Mobile-Env accepts a `dict` object as the action containing three item:
   is required only for the `TOUCH` actions.
 + `input_token` - A NumPy scalar array, The dtype is integer. It is used to
   indicate the index of the token in the vocabulary. The index starts from 0.
-  This argument is in need only for the `TEXT` actions
+  This argument is required only for the `TEXT` actions
 
 `env.observation_spec` and `env.action_spec` can be invoked to obtain a
 declaration of the observation space and the action space. Meanwhile, two
 examples using a random policy and a human agent respectively are offered under
 `examples` for reference.
 
-<!-- TODO: generate the code docs using tools like oxygen and push it to the platforms like readdocs -->
+In order to adapt to different types of agents, a suite of wrappers are
+designed to alter the observation and action spaces. A few typical predefined
+wrappers are listed below:
+
+|         Wrapper         | Description                                                                |
+|:-----------------------:|:---------------------------------------------------------------------------|
+| `DiscreteActionWrapper` | Gridizes the screen to enable discrete agents.                             |
+|  `ImageRescaleWrapper`  | Resizes the raw screen pixels.                                             |
+|  `GymInterfaceWrapper`  | Provides [Gymnasium](https://gymnasium.farama.org/)-compatible interfaces. |
+|      `VhIoWrapper`      | Provides VH-based interfaces for text-based agents.                        |
+
+If new wrappers are expected to be defined, you can inherit
+`android_env.wrappers.BaseWrapper` and implement the necessary hook methods
+declared in it. There are four key hooks:
+
+|         Hook        | Description                                                       |
+|:-------------------:|:------------------------------------------------------------------|
+|    `_reset_state`   | Invoked before resetting the environment or switching task goals. |
+| `_post_switch_task` | Invoked after switching task goals.                               |
+| `_process_timestep` | Alters `dm_env.TimeStep` before returning it to agent.            |
+|  `_process_action`  | Alters the action before sending it to Android OS.                |
+
+As regard more details about the wrappers and the usage, we refer you to
+`android_env.wrappers` module.

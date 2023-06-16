@@ -68,7 +68,7 @@ pip install .
 Before loading the Mobile-Env environment, you will need to set up an [Android
 Emulator](https://developer.android.com/about) device. Then you can load the
 environment with some existing task definitions and start your experiments. A
-detailed guideline is provided in [Evaluating and Traning Agents on
+detailed guidance is provided in [Evaluating and Traning Agents on
 Mobile-Env](docs/env-usage-en.md). Several examples with a random agent or a
 human agent is also provided under `examples`.
 

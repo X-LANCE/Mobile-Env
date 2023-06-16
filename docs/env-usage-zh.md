@@ -272,13 +272,13 @@ while not step.last():
 1. `reward`，浮点数，记录回报值
 2. `observation`，记录当前观测
 
-此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互过程中的什么位置。
+此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互历程中的什么位置。
 
 `observation`为一个`dict`对象，包含四项，其中前三项均以NumPy数组形式返回：
 
 + `pixels` - 形状为`(H, W, 3)`（高、宽、通道数），元素类型为`np.uint8`（8位无符号整数），提供屏幕图像的RGB表示
 + `timedelta` - 64位浮点数标量数组，距上次`step`后经过的秒数
-+ `orientation` - 四维单热向量，类型为8位无符号整数，表示屏幕的方向；1的位置0、1、2、3分别表示屏幕相对竖直位置顺时针旋转0、90、180、270度。
++ `orientation` - 四维单热向量，类型为8位无符号整数，表示屏幕的方向；“一”的位置0、1、2、3分别表示屏幕相对竖直位置顺时针旋转0、90、180、270度。
 + `view_hierarchy` - 若加载环境时启用了`with_view_hierarchy`选项，则会返回该项。为[`lxml.etree.Element`](https://lxml.de/apidoc/lxml.etree.html#lxml.etree._Element)对象，表示屏幕对应的视图框架。由于获取视图框架的时延较长，只会在初始步骤以及`LIFT`动作之后尝试获取之，其余情况下，该项的值为`None`
 
 Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
@@ -287,10 +287,28 @@ Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
   - 0（`android_env.components.action_type.ActionType.TOUCH`） - 触击动作
   - 1（`android_env.components.action_type.ActionType.LIFT`） - 抬起（手指）动作
   - 2（`android_env.components.action_type.ActionType.REPEAT`） - “重复”动作，即什么都不做，保持之前的触击或抬起状态，同时不输入任何词元
-  - 3（`android_env.components.action_type.ActionType.TEXT`） - 输入词元动作，输入词表中的一个词元；若加载环境时指定了`unify_vocabulary`参数，则使用该参数指向的大词表，否则使用当前任务的定义文件中`vocabulary`字段提供的小词表
+  - 3（`android_env.components.action_type.ActionType.TEXT`） - 输入词元动作，输入词表中的一个词元；若加载环境时指定了`unify_vocabulary`参数，则使用的是该参数指定的大词表，否则使用的是当前任务的定义文件中`vocabulary`字段提供的小词表
 + `touch_position` - NumPy数组，数据类型为浮点数，长度为2，表示触击的坐标`(x, y)`，坐标值归一化到`[0, 1]`；仅需对`TOUCH`动作指定
 + `input_token` - NumPy标量数组，数据类型为整数，指定要输入的词元在词表中的序号，从0开始；仅需对`TEXT`动作指定
 
 可以使用`env.observation_spec`、`env.action_spec`方法获取对观测空间与动作空间格式的声明。此外，在`examples`目录下提供了两个分别使用随机策略和由人类充当智能体的例子，以供参考。
 
-<!-- TODO: 采用Oxygen等工具生成代码文档，并推送到readdocs等平台 -->
+为了适应观测、动作空间多样的智能体，本平台支持利用包装器修改观测和动作空间。一些预定义的典型包装器包括：
+
+|          包装器         | 说明                                                     |
+|:-----------------------:|:---------------------------------------------------------|
+| `DiscreteActionWrapper` | 将屏幕网格化，从而能够使用离散动作的智能体               |
+|  `ImageRescaleWrapper`  | 缩放屏幕尺寸                                             |
+|  `GymInterfaceWrapper`  | 提供[Gymnasium](https://gymnasium.farama.org/)风格的接口 |
+|      `VhIoWrapper`      | 为基于文本的智能体提供基于视图框架的交互接口             |
+
+若要自行定义新的包装器，可以继承`android_env.wrappers.BaseWrapper`，根据需要实现其中声明的挂钩方法即可。主要的挂钩方法有四个：
+
+|         挂钩        | 说明                                            |
+|:-------------------:|:------------------------------------------------|
+|    `_reset_state`   | 在重置环境，或切换任务目标前，会调用该方法      |
+| `_post_switch_task` | 在切换任务目标后，会调用该方法                  |
+| `_process_timestep` | 修改得到的`dm_env.TimeStep`，再将之返回给智能体 |
+|  `_process_action`  | 修改智能体输入的动作对象，再送入环境            |
+
+更多包装器及其用法，请参考`android_env.wrappers`模块。
