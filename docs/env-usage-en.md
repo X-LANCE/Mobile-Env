@@ -349,7 +349,9 @@ Commonly, there are 2 properties you will always access:
 
 In addition, `dm_env.TimeStep` is equipped with three methods returning a
 boolean: `first`, `mid`, and `last`. These methods tell what state of the
-episode the agent is in.
+episode the agent is in. `first` means that this is the first step after
+resetting the environment, while `last` indicates that this is the last step of
+the current episode (*i.e.*, the episode end).
 
 `observation` is a `dict` object containing four items:
 
@@ -370,6 +372,9 @@ episode the agent is in.
   latency. In the other cases, this item will return `None`.
 
 Here the first three items are returned as NumPy arrays.
+
+`task_instructions` method returns a list of string storing the instructions at
+the current step.
 
 Mobile-Env accepts a `dict` object as the action containing three item:
 

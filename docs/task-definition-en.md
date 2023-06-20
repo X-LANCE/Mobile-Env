@@ -79,26 +79,28 @@ of the webpage's URL. For instance, `com.wikihow.wikihowapp` from
 <https://play.google.com/store/apps/details?id=com.wikihow.wikihowapp> is the
 package name.
 
-### Definition of the Task Meta-Information
+### Extending New Task: Task Definition File
 
-Mobile-Env presents the task meta-information in a `Task` message object of
-[ProtoBuf](https://protobuf.dev/) 3. A `Task` message instance in textproto is
-required for everay interaction task.
+A task definition file defines the necessary task configurations includeing the
+setup steps, the task goal, step instructions, rewards, the episode end, *etc*.
+Mobile-Env accepts a task definition file in the text format of
+[ProtoBuf](https://protobuf.dev/) 3 (Protocol Buffers 3). To be specific, each
+task definition is a `Task` message object.
 
 Some references:
 
 * [The definition of `Task` message type](../android_env/proto/task.proto)
-* [The document of ProtoBuf](https://protobuf.dev/)
-* [The syntax definition of
-  textproto](https://protobuf.dev/reference/protobuf/textformat-spec/)
+* [The documents of Protocol Buffers](https://protobuf.dev/)
+* [The syntax definition of the text format of Protocol
+  Buffers](https://protobuf.dev/reference/protobuf/textformat-spec/)
 
 If you are familiar with the syntax of ProtoBuf 3, we recommend you to compose
 the task definition file directly with the help of [the definition of `Task`
 message](../android_env/proto/task.proto), the following task definition demo,
-and [the introduction to the task event management of
-Mobile-Env](#definition-of-the-task-events). Otherwise you are recommended to
-read the following guides to the message types like `Task`. We will introduce
-these types as detailed and clear as possible.
+and [the introduction to the timing of episode signals in
+Mobile-Env](#extending-new-task-timing-of-episode-signals). Otherwise you are
+recommended to read the following guides to the message types like `Task`. We
+will introduce these types as detailedly and clearly as possible.
 
 <!-- Task Definition Demo {{{ -->
 <details>
@@ -350,24 +352,29 @@ To instantiate a `Task` message, the following parameters need to be specified:
    dash.
 2. `name` - A string. This field gives a readable task name.
 3. `description` - A string briefly explaining the task.
-4. `setup_steps` - An array of `SetupStep` messages defining the config
-   behaviours to set up a task.
-5. `reset_steps` - An array of `SetupStep` messages defining the config
-   behaviours during the lauching or restarting of the task.
+4. `setup_steps` - An array of `SetupStep` messages defining the steps to set
+   up a task.
+5. `reset_steps` - An array of `SetupStep` messages defining the steps to
+   launch or restart a task.
 6. `expected_app_screen` - Optional. This field specifies the running activity
-   name and the characteristics of the screen which is used by the platform to
-   determine whether the agent has quitted the task app mistakingly during the
-   interaction. If it is, the platform will restart the episode in time.
+   name and the characteristics of the screen. This information is used by the
+   platform to determine whether the agent has quitted the task app mistakenly
+   during the interaction. If it is, the platform will reset the episode in
+   time.
 7. `max_duration_sec` - A floating number. If the episode fails to end in the
    given seconds, the platform will force it to restart. You can ignore this
-   field or set a non-positive number to disable this function.
+   field or set a non-positive number to disable this feature.
 8. `max_num_steps` - An integer. Similar to `max_duration_sec`, the platform
    will restart the episode if it does not end after the specified steps.
    Ignoring this field or setting a non-positive number will disable this
-   function.
-9. `event_sources` - Defines the task event sources.
-10. `event_slots` - Defines the virtual event trees connected to the task event
-    slots.
+   feature.
+9. `event_sources` - Defines the event sources. Event sources are referred to
+   in [the following section](#extending-new-task-timing-of-episode-signals)
+   and the [paper](https://arxiv.org/abs/2305.08144).
+10. `event_slots` - Defines the timing of the episode signals. See the
+    [paper](https://arxiv.org/abs/2305.08144) for a brief introduction.
+    Details are presented in [the following
+    section](#extending-new-task-timing-of-episode-signals).
 11. `extra_spec` - Defines the specification of the task extras. This is kept
     for the compatility of AndroidEnv.
 12. `command` - An array of string providing a description or a global command
@@ -376,20 +383,20 @@ To instantiate a `Task` message, the following parameters need to be specified:
     to the task. This vocabulary can be used to remit the difficulty of the
     task and the annotation of human demonstration.
 
-More message types are in need to define `setup_steps`, `reset_steps`,
+More message types are requird to define `setup_steps`, `reset_steps`,
 `expected_app_screen`, `event_sources`, and `event_slots` and will be
 introduced below.
 
-### `SetupStep` Message
+### Extending New Task: `SetupStep` Message
 
 <!-- `SetupStep` Message {{{ -->
 A `SetupStep` array is required by the `setup_steps` and `reset_steps` fields.
-Each `SetupStep` message defines a config step.
+Each `SetupStep` message defines a configuration step.
 
 The `SetupStep` message defines two fields:
 
-* `success_condition` - Defines an operation to check if the config succeeds.
-* `step` - Defines the certain config operation.
+* `success_condition` - Defines an operation to check if the step succeeds.
+* `step` - Defines the certain configuration operation.
 
 At least one field should be defined. The `step` will be executed first to
 complete the config, then the `success_condition` will be executed to check the
@@ -402,38 +409,38 @@ fields:
 <details>
     <summary>The details about the `success_condition` field.</summary>
 
-* `num_retries` - The maximum attempt times if the config fails. The platform
+* `num_retries` - The maximum attempt times if the step fails. The platform
   will try at least 3 times even though it is ignored or a value smaller than 3
   is specified.
 * `check` - The certain check operation.
 
 `check` is an exclusive field decorated with [`oneof`
 keyword](https://protobuf.dev/programming-guides/proto3/#oneof). Only one
-sub-field should be chosen from three options. The options are:
+sub-field should be chosen from three options. The options (operations) are:
 
 * `wait_for_app_screen` - Requires to wait for a specific screen. An
   `AppScreen` message should be provided through the `app_screen` field. The
   `AppScreen` message determines a screen through the activity name and the
-  view hierarchy (VH) characteristics of the screen. The details will be
-  presented in the following sections.
-* `check_install` - Checks if a specific app package is installed through a
-  command. The package name is specified through the `package_name` field.
+  view hierarchy (VH) characteristics of the screen. The details are presented
+  in the following section.
+* `check_install` - Checks if a specific app package is installed. The package
+  name is specified through the `package_name` field.
 * `wait_for_message` - Waits for a specific message from the system logs. A
-  regex for the waited message is expected to provide through the `message`
+  regex for the waited message is expected to be provided through the `message`
   field. The regex's syntax follows the [`re` module of
   Python](https://docs.python.org/3/library/re.html).
 
 Besides, all the aforementioned three operations require a float field
-`timeout_sec` to specify the waiting time, *e.g.*, 10 seconds. If the
-`timeout_sec` field is ignored, then this check will not be executed.
+`timeout_sec` to specify the timeout, *e.g.*, 10 seconds. If the `timeout_sec`
+field is ignored, then the whole check operation will not be executed.
 </details>
 <!-- }}} `success_condition` Field -->
 
 `step` is also a `oneof` field with two options:
 
-* `sleep` - Requires a message in which the sleeping seconds should be
-  specified through the float field `time_sec`.
-* `adb_call` - An `AdbCall` message object is required to revoke the ADB.
+* `sleep` - Sleeps for several seconds. This field requires a message in which
+  the sleeping seconds should be specified through the float field `time_sec`.
+* `adb_call` - Revokes an ADB command. An `AdbCall` message object is required.
 
 <!-- `AdbCall` Message {{{ -->
 <details>
@@ -444,48 +451,48 @@ Besides, all the aforementioned three operations require a float field
 many kinds of operations. Some frequently-used operations comprise:
 
 * `install_apk` - Installs a package. The path to the apk package is expected
-  from the string field `path` of the message field `filesystem`. The path can
-  be specified either as a relative path from the current `textproto` file or
-  as an absolute path (not recommended).
+  in the string field `path` of the message field `filesystem`. The path can be
+  specified either as a relative path from the current `textproto` file or as
+  an absolute path (not recommended).
 * `force_stop` - Forces a process to terminate according to the package name
   provided by `package_name`.
 * `clear_cache` - Clears the app's cache according to the package name provided
   by `package_name`.
 * `start_activity` - Launches an Android activity whose name is specified by
-  `full_activity`. The format of the Android activity names are
+  `full_activity`. The format of the Android activity identification is
   `package_name/activity_name`, *e.g.*,
   `com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`.
 * `start_screen_pinning` - Enables screen pinning. After enabling, the Android
   system will switch back to the certain activity if an exit is detected. The
-  activity name should be specified through `full_activity`.
+  activity should be specified through `full_activity`.
 </details>
 <!-- }}} `AdbCall` Message -->
 <!-- }}} `SetupStep` Message -->
 
-### `AppScreen` Message
+### Extending New Task: `AppScreen` Message
 
 <!-- `AppScreen` Message {{{ -->
-An `AppScreen` message object is required as the argument by both
+An `AppScreen` message object is required for the argument of both
 `expected_app_screen` and `wait_for_app_screen`. This type of message needs two
 parameters:
 
-+ `activity` - A string indicating the name of the Android activity. The format
-  of the Android activity names is `package_name/activity_name`, *e.g.*,
++ `activity` - A string indicating an Android activity. The format is
+  `package_name/activity_name`, *e.g.*,
   `com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`.
 + `view_hierarchy_path` - An array of string requiring a VH path.  Each array
-  element turns to be a regex which matches an item on the path. The VH path
-  comprises a VH node sequence from the top to the bottom. It is not necessary
+  element is be a regex which matches an item on the path. The VH path
+  comprises a VH node sequence from the root to the leaf. It is not necessary
   to provide the nodes consecutively.
 
 It is worth noting that, the representation of the nodes in
 `AppScreen.view_hierarchy_path` is the same with the output of the command `adb
 shell dumpsys`, *i.e.* the output of `android.view.View::toString`. This is a
 quite compat format and hard to read. However, in most cases, this property can
-be ignored, because this property will locates to a specific page while most
-InfoUI interaction tasks require transfering between different pages of the
-app. Consequently, this property shouldn't be used to fix the interaction to a
-specific page. If you really need to give a value for this property, you can
-refer to the following example:
+be ignored. This is due to that this property will locates to a specific page,
+while most InfoUI interaction tasks require transferring between different
+pages of the app. Consequently, this property shouldn't be used to fix the
+interaction to a specific page. If you really need to give a value to this
+property, you can refer to the following example:
 
 <details>
     <summary>The example of the `view_hierarchy_path` property</summary>
@@ -503,8 +510,8 @@ view_hierarchy_path: [
 ```
 </details>
 
-If you really need to specify a node's property detailed, you can refer to the
-following EBNF and the source code of `android.view.View::toString`.
+If you really need to specify a node's property detailedly, you can refer to
+the following EBNF and the source code of `android.view.View::toString`.
 
 <!-- The Output Format and Source Code of View::toString {{{ -->
 <details>
@@ -660,7 +667,7 @@ public String toString() {
 <!-- }}} The Output Format and Source Code of View::toString -->
 <!-- }}} `AppScreen` Message -->
 
-### Definition of the Task Events
+### Extending New Task: Timing of Episode Signals
 
 The fields `event_sources` and `event_slots` are used for the definition of the
 task events. A tree-based event system is designed for Mobile-Env to manage the

@@ -272,7 +272,7 @@ while not step.last():
 1. `reward`，浮点数，记录回报值
 2. `observation`，记录当前观测
 
-此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互历程中的什么位置。
+此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互历程中的什么位置。`first`意味着这是任务开始后的第一个步骤，`last`意味着该步骤是当前历程的最后一个步骤（即历程结束）。
 
 `observation`为一个`dict`对象，包含四项，其中前三项均以NumPy数组形式返回：
 
@@ -280,6 +280,8 @@ while not step.last():
 + `timedelta` - 64位浮点数标量数组，距上次`step`后经过的秒数
 + `orientation` - 四维单热向量，类型为8位无符号整数，表示屏幕的方向；“一”的位置0、1、2、3分别表示屏幕相对竖直位置顺时针旋转0、90、180、270度。
 + `view_hierarchy` - 若加载环境时启用了`with_view_hierarchy`选项，则会返回该项。为[`lxml.etree.Element`](https://lxml.de/apidoc/lxml.etree.html#lxml.etree._Element)对象，表示屏幕对应的视图框架。由于获取视图框架的时延较长，只会在初始步骤以及`LIFT`动作之后尝试获取之，其余情况下，该项的值为`None`
+
+`task_instructions`方法返回字符串列表，存储当前步骤下的指令。
 
 Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
 

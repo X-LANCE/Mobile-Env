@@ -42,17 +42,17 @@ adb shell am stack list
 
 该命令会列出虚拟机上所有正在运行的活动，列出的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`。其中包名就是Java包的名称，活动名是`android.app.Activity`的子类的类名。此外，对在谷歌应用商店中上架的应用，也可以查看应用商店网页版网址中`id`字段的值，如<https://play.google.com/store/apps/details?id=com.wikihow.wikihowapp>中的`com.wikihow.wikihowapp`。
 
-### 定义任务元信息
+### 扩展新任务：任务定义文件
 
-Mobile-Env中，任务元信息采用一个[ProtoBuf](https://protobuf.dev/)版本3的`Task`消息对象表示，因此每个任务要提供一份textproto格式的`Task`消息实例。
+任务定义文件定义一个任务所必须的配置，包括设置操作、任务目标、步骤指令、回报、历程结束等。Mobile-Env的任务定义文件采用[ProtoBuf](https://protobuf.dev/) 3（Protocol Buffers 3）的文本格式。每个任务定义都表示为一个`Task`消息对象。
 
 相关参考文档：
 
 * [`Task`消息类型的详细定义](../android_env/proto/task.proto)
-* [ProtoBuf文档](https://protobuf.dev/)
-* [textproto语法说明](https://protobuf.dev/reference/protobuf/textformat-spec/)
+* [Protocol Buffers文档](https://protobuf.dev/)
+* [Protocol Buffers的文本格式的语法说明](https://protobuf.dev/reference/protobuf/textformat-spec/)
 
-若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](../android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文对[Mobile-Env的任务事件管理系统的介绍](#定义任务事件)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
+若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](../android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文[对Mobile-Env中管理历程信号及其时机的介绍](#扩展新任务-管理历程信号的时机)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
 
 <!-- 任务定义示例 {{{ -->
 <details>
@@ -302,54 +302,54 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 1. `id` - 字符串，任务编号，用来区分各任务，建议只包含英文字母、数字、下划线、短线
 2. `name` - 字符串，易读的任务名称
 3. `description` - 字符串，简要描述任务的信息
-4. `setup_steps` - `SetupStep`消息数组，定义任务建立时需要的配置操作
-5. `reset_steps` - `SetupStep`消息数组，定义任务启动或重启时需要的重置操作
+4. `setup_steps` - `SetupStep`消息数组，定义载入任务时需要的操作
+5. `reset_steps` - `SetupStep`消息数组，定义启动或重启任务时需要的操作
 6. `expected_app_screen` - 可空，定义交互过程中运行的安卓活动名和屏幕特征，平台会使用该配置检查交互过程中智能体是否错误退出了任务应用，若是，则会及时重启任务过程
 7. `max_duration_sec` - 浮点数，若经过该值指定的秒后，任务过程仍未结束，则平台会强制重启任务过程，留空或设置非正值可以禁用该功能
 8. `max_num_steps` - 整数，与`max_duration_sec`类似，但按照智能体的交互次数来计数，留空或设置非正值可以禁用该功能
-9. `event_sources` - 定义任务事件源
-10. `event_slots` - 定义任务事件槽上的虚拟事件树
+9. `event_sources` - 定义事件源。事件源，见于[后文](#扩展新任务-管理历程信号的时机)及[论文](https://arxiv.org/abs/2305.08144)
+10. `event_slots` - 定义历程信号如何触发。简述可见于[论文](https://arxiv.org/abs/2305.08144)，详情于[后文](#扩展新任务-管理历程信号的时机)介绍
 11. `extra_spec` - 为与AndroidEnv兼容保留，定义任务额外信息的格式
-12. `command` - 字符串数组，定义提供给智能体的任务总括说明
-13. `vocabulary` - 字符串数组，提供与任务有关的小词表，可用于减小任务难度，或方便标注人类演示
+12. `command` - 字符串数组，定义提供给智能体的任务目标总括说明
+13. `vocabulary` - 字符串数组，提供与任务有关的小词表，可以缓解任务难度，或方便标注人类演示
 
 其中`setup_steps`、`reset_steps`、`expected_app_screen`、`event_sources`、`event_slots`等字段，定义它们涉及其他消息类型，将在后面一一介绍。
 
-### `SetupStep`消息
+### 扩展新任务：`SetupStep`消息
 
 <!-- `SetupStep`消息 {{{ -->
-`setup_steps`与`reset_steps`字段都需要提供`SetupStep`数组，数组中每个`SetupStep`消息定义一步配置操作。
+`setup_steps`与`reset_steps`字段都需要提供`SetupStep`数组，数组中每个`SetupStep`消息定义一步设置操作。
 
 `SetupStep`消息定义了两个字段：
 
-* `success_condition` - 定义操作以检查是否配置成功
-* `step` - 定义具体配置操作
+* `success_condition` - 定义操作以检查当前步骤是否成功
+* `step` - 定义具体操作
 
-两个字段至少要定义其中一个，若二者皆定义，则会先执行`step`来配置，再执行`success_condition`以检查配置是否成功。
+两个字段至少要定义其中一个，若二者皆定义，则会先执行`step`来设置，再执行`success_condition`以检查成功与否。
 
-`success_condition`字段需要提供一个消息体，包含两个字段：
+`success_condition`字段需要提供一个消息对象，包含两个字段：
 
 <!-- `success_condition`字段 {{{ -->
 <details>
     <summary>`success_condition`字段详情</summary>
 
-* `num_retries` - 若配置失败，最大的尝试次数；最少为3次，即使留空或提供比3小的值，也会视作3次
+* `num_retries` - 若设置失败，最大的尝试次数；最少为3次，即使留空或提供比3小的值，也会视作3次
 * `check` - 具体的检查操作
 
-`check`是由[`oneof`关键字](https://protobuf.dev/programming-guides/proto3/#oneof)修饰的多选一字段，即可以从三类操作中选择其一，可供选择的操作包括
+`check`是由[`oneof`关键字](https://protobuf.dev/programming-guides/proto3/#oneof)修饰的多选一字段，即需要从三个可选字段中选择其一，可供选择的字段（操作）包括
 
 * `wait_for_app_screen` - 等待特定的屏幕内容，通过`app_screen`字段提供一条`AppScreen`消息，`AppScreen`消息会通过活动名和屏幕的视图框架（View Hierarchy）特征确定屏幕页面，有关它的详情请参考后文说明
-* `check_install` - 采用命令检查指定的应用包是否已安装，通过`package_name`字段提供包名
-* `wait_for_message` - 等待系统日志中特定的消息，需要通过`message`字段提供等待消息的正则表达式，采用[Python的`re`模块支持的正则语法](https://docs.python.org/3/library/re.html)
+* `check_install` - 检查指定的应用包是否已安装，通过`package_name`字段提供包名
+* `wait_for_message` - 等待系统日志中特定的消息，需要通过`message`字段提供所等待消息的正则表达式，语法采用[Python的`re`模块支持的正则语法](https://docs.python.org/3/library/re.html)
 
-此外，以上三类操作都还需要指定一个浮点数字段`timeout_sec`，以指定等待的时间，如10秒；若留空，则检查不会生效。
+此外，以上三类操作都还需要指定一个浮点数字段`timeout_sec`，以指定超时的时间，如10秒；若该字段留空，则整个检查步骤都不会执行。
 </details>
 <!-- }}} `success_condition`字段 -->
 
 `step`字段的定义同样由`oneof`关键字修饰，其有两项候选：
 
-* `sleep` - 通过浮点数字段`time_sec`指定休眠的秒数
-* `adb_call` - 提供`AdbCall`消息体以指定调用一步ADB
+* `sleep` - 休眠一段时间，通过浮点数字段`time_sec`指定休眠的秒数
+* `adb_call` - 调用ADB命令，通过`AdbCall`消息以指定具体信息
 
 <!-- `AdbCall`消息 {{{ -->
 <details>
@@ -357,24 +357,24 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 
 `AdbCall`消息定义于[`android_env/proto/adb.proto`](../android_env/proto/adb.proto)，支持声明多种操作，常用的有：
 
-* `install_apk` - 安装某安装包，需要为`filesystem`字段提供一条消息体参数，内含字符串类型字段`path`，指定apk安装包的位置，可以采用相对于该`textproto`文件的路径，也可以采用绝对路径（不推荐）
+* `install_apk` - 安装某安装包，需要为`filesystem`字段提供一条消息参数，内含字符串类型字段`path`，指定apk安装包的位置，可以采用相对于该`textproto`文件的路径，也可以采用绝对路径（不推荐）
 * `force_stop` - 强制终止某进程，通过`package_name`提供应用的包名
 * `clear_cache` - 清理应用包的缓存，通过`package_name`提供应用的包名
-* `start_activity` - 启动某安卓活动，通过`full_activity`提供活动名；安卓活动名的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`
-* `start_screen_pinning` - 开启固定屏幕功能；开启后，当安卓系统检测到屏幕上退出了指定的活动时，会自动切换回去；通过`full_activity`指定活动名
+* `start_activity` - 启动某安卓活动，通过`full_activity`指定活动；指定安卓活动的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`
+* `start_screen_pinning` - 开启固定屏幕功能；开启后，当安卓系统检测到屏幕上退出了指定的活动时，会自动切换回去；通过`full_activity`指定活动
 </details>
 <!-- }}} `AdbCall`消息 -->
 <!-- }}} `SetupStep`消息 -->
 
-### `AppScreen`消息
+### 扩展新任务：`AppScreen`消息
 
 <!-- `AppScreen`消息 {{{ -->
-`expected_app_screen`与`wait_for_app_screen`都需要提供`AppScreen`消息体作为参数。该消息类型需要两个参数：
+`expected_app_screen`与`wait_for_app_screen`都需要提供`AppScreen`消息对象作为参数。该消息类型需要两个参数：
 
-+ `activity` - 字符串，指定等待的安卓活动名；安卓活动名的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`
-+ `view_hierarchy_path` - 字符串数组，提供一串视图框架（View Hierarchy）路径，数组中每一个元素都是正则表达式，匹配路径上的一项。视图框架路径为从上至下的一条视图框架节点序列，可以不连续提供。
++ `activity` - 字符串，指定所等待的安卓活动；指定安卓活动的格式是`包名/活动名`，如`com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity`
++ `view_hierarchy_path` - 字符串数组，提供一串视图框架（View Hierarchy）路径，数组中每一个元素都是正则表达式，匹配路径上的一项。视图框架路径为从根至叶的一条视图框架节点序列，路径上的节点可以不连续提供。
 
-需要注意，`AppScreen.view_hierarchy_path`中，采用来表示每个节点的方式，与`adb shell dumpsys`命令输出的视图框架中相同，其实也就是`android.view.View::toString`的输出格式。该格式将节点的各种属性表示得非常紧凑，并不易读。好在一般并不需要指定该属性，因为该属性会指定到某个具体的页面，而许多信息界面交互任务需要在应用的不同页面间跳转，因此不应该利用该属性将交互固定到某一特定页面。若有必要指定该属性，可以参考如下示例：
+需要注意，`AppScreen.view_hierarchy_path`中，用来表示每个节点的方式，与`adb shell dumpsys`命令输出的视图框架中相同，其实也就是`android.view.View::toString`的输出格式。该格式将节点的各种属性表示得非常紧凑，并不易读。好在一般并不需要指定该属性，因为该属性会指定到某个具体的页面，而大多信息界面交互任务需要在应用的不同页面间跳转，因此不应该利用该属性将交互固定到某一特定页面。若确有必要指定该属性，可以参考如下示例：
 
 <details>
     <summary>`view_hierarchy_path`属性示例</summary>
@@ -547,7 +547,7 @@ public String toString() {
 <!-- }}} View::toString的输出格式与源码 -->
 <!-- }}} `AppScreen`消息 -->
 
-### 定义任务事件
+### 扩展新任务：管理历程信号及其时机
 
 `event_sources`、`event_slots`两个字段与定义任务事件有关。Mobile-Env采用一套基于事件树的系统来管理任务事件。该系统由6个事件槽及与槽连接的虚拟事件树构成。事件槽对应于智能体能够感知到的回报、历程终点、步骤指令、额外信息等事件，分别为
 
@@ -638,9 +638,9 @@ public String toString() {
 
 #### 通过`event_slots`字段为各事件槽定义虚拟事件树
 
-`event_slots`字段需要提供一个消息体，该消息中为前述6个事件槽预定义了属性，每个属性都可以提供一棵事件树，也可以留空，意味着该事件槽永远不会触发。
+`event_slots`字段需要提供一个消息对象，该消息中为前述6个事件槽预定义了属性，每个属性都可以提供一棵事件树，也可以留空，意味着该事件槽永远不会触发。
 
-事件树要借助`EventSlot`消息定义。单个`EventSlot`消息体代表了事件树上的一个虚拟事件节点，其包含如下属性：
+事件树要借助`EventSlot`消息定义。单个`EventSlot`消息对象代表了事件树上的一个虚拟事件节点，其包含如下属性：
 
 + `type` - 枚举值，可选择`SINGLE`、`AND`、`OR`；默认为`SINGLE`
 + `id` - 指定32位整数作为该虚拟事件的编号；注意所有事件树上的全部节点及已定义的事件源共享编号空间，因此该编号不应与已定义的事件源或其他任何事件节点的编号重复；*编号应当是**正**整数*；编号是可选的，若该虚拟事件不需要索引，则可以留空不定义

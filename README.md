@@ -4,7 +4,8 @@
 # Mobile-Env: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era 
 
 Mobile-Env is a interaction platform for evaluation and training of the
-interaction of information user interface (InfoUI).
+interaction of information user interface (InfoUI). Our paper is available at
+[arXiv](https://arxiv.org/abs/2305.08144).
 
 Mobile-Env is developed based on
 [AndroidEnv](https://github.com/deepmind/android_env). The agent can take the
