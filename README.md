@@ -84,7 +84,7 @@ certain effectiveness of [certificate unpinning plan](docs/dynamic-app-en.md)
 for the package.  As regards to extend new tasks, task definition files are
 just required. Detailed instructions can be found in [Extending a New
 Environment (App) or a New Task Based on
-Mobile-En](docs/task-definition-en.md).
+Mobile-Env](docs/task-definition-en.md).
 
 ### Miscellaneous Auxiliary Tools
 
