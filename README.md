@@ -64,7 +64,7 @@ cd android_env
 pip install .
 ```
 
-### Load and Run Mobile-Env for evaluation or training
+### Load and Run Mobile-Env for Evaluation or Training
 
 Before loading the Mobile-Env environment, you will need to set up an [Android
 Emulator](https://developer.android.com/about) device. Then you can load the
@@ -104,9 +104,11 @@ the following BibTeX:
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
-  title     = {{Mobile-Env}: A Universal Platform for Training and Evaluation of Mobile Interaction},
+  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era},
   author    = {Danyang Zhang and
                Lu Chen and
+               Zihan Zhao and
+               Ruisheng Cao and
                Kai Yu},
   journal   = {CoRR},
   volume    = {abs/2305.08144},

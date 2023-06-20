@@ -61,9 +61,11 @@ pip install .
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
-  title     = {{Mobile-Env}: A Universal Platform for Training and Evaluation of Mobile Interaction},
+  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era},
   author    = {Danyang Zhang and
                Lu Chen and
+               Zihan Zhao and
+               Ruisheng Cao and
                Kai Yu},
   journal   = {CoRR},
   volume    = {abs/2305.08144},
