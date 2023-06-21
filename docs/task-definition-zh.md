@@ -407,11 +407,12 @@ view-hierarchy-line = class-name
     , " " private-flags
     , " " bbox
     , [ " #" element-id-code
-        , [ " " resource-package-name
-            , ":" resource-type-name
-            , "/" resource-entry-name
+      , [ " " resource-package-name
+        , ":" resource-type-name
+        , "/" resource-entry-name
         ]
-    ] "}" ;
+      ]
+	, "}" ;
 
 view-flags = visibility-flag
     , focusable-flag
