@@ -669,11 +669,9 @@ public String toString() {
 
 ### Extending New Task: Timing of Episode Signals
 
-The fields `event_sources` and `event_slots` are used for the definition of the
-task events. A tree-based event system is designed for Mobile-Env to manage the
-task events. The event system comprises 6 event slots and the tree of virtual
-events connected to the slots. The event slots are corresponding to the events
-that the agent will have a perception to:
+Step instructions, rewards, the episode end, *etc.* are called *episode
+signals*, or *event slots* in the task definition file. To be specific, there
+are 6 different event slots:
 
 + Score event (`score_listener`)
 + Reward event (`reward_listener`)
@@ -682,10 +680,17 @@ that the agent will have a perception to:
 + Extra info event (`extra_listener`)
 + JSON extra info event (`json_extra_listener`)
 
-There are two types of virtual events: the event sources and the combinators.
-Usually, the event sources constitute the leaf nodes of the event tree and are
-corresponding to the specific feedbacks from the Android operating system (OS).
-They are:
+The event slots are corresponding to the signals the agent will receive from
+the environment. The triggering state of an event slot depends on the *event
+sources*. An event source indicates a specific pattern for the OS feedback.
+Given a triggering state of an event slot $t$, matching states of a group of
+event sources $S = \{s_1, s_2, \dots, s_n\}$, the simplified triggering logic
+can be formalized as
+$$
+t = f(s_1, s_2, \dots, s_n),
+$$
+where ther triggering function $f$ is a boolean function. There are 4 types of
+OS feedback that can be used for event sources:
 
 + Screen texts (`text_recognize`, `text_detect`)
 + Scrren icons (`icon_recognize`, `icon_detect`, `icon_match`,
@@ -693,32 +698,28 @@ They are:
 + View hierarchy (`view_hierarchy_event`)
 + System log (`log_event`)
 
-There are three combinators: `And`, `Or`, and `SINGLE`, which are used to
-combine or wrap the virtual events.
+Here is a demonstration of event triggering logic $f$ with diverse operating
+system feedback. The triggering state $t$ of the event slot depends on a
+combinatorial boolean logic of the matching states $s_i$ of multiple event
+sources. `Text`, `VH`, and `Log` indicate different types of OS feedback.
 
-The platform will send the feedback signals from the OS to the defined event
-sources after each step in the episode. The event sources will check if the
-signal matches the defined pattern and decide whether the event should be
-triggered or not. If the event is triggered, the signals will be applied to the
-parent node. The combinator will first check whether its prerequisites are
-satisfied, *i.e.*, the combinator can be triggered only if all the prerequisite
-nodes have been triggered ever. This mechanism is designed to handle the
-temporal sequence of the steps in the multi-step tasks. If the prerequisites
-are satisfied, the combinator will decide the triggering according to the
-triggering flag of its child nodes. To be specific, the `Or` combinator will be
-triggered once one of its children is triggered, while the `And` combinator
-will be triggered only all its children are triggered, and the `SINGLE`
-combinator will follow the state of its sole child. If the combinator is
-triggered, the signals will be applied to its parent as well. The signals will
-be processed level by level and be aggregated to the root node. Then the root
-node will pass it to the slot and the slot will send it as a feedback to the
-agent.
+![Demonstration of Event Triggering Logic with Diverse Operating System
+Feedback](images/demo-event-tree.png)
 
-![A Demo Event Tree](images/demo-event-tree.png)
-
-This demo event tree is connected to the reward event slot. The event sources
-with the combinators form a tree-like event logic. The `SINGLE` combinator is
-not depicted in the figure.
+In addition to the combinatorial logic form of boolean function $f$, we
+introduce "prerequisite" mechanism to correctly handle the step order for
+multistep tasks. To be specific, we call each node (including the event sources
+at leaves and the `And` and `Or` operators inside) on the tree representation
+of $f$ a *virtual event*. If virtual event $a$ is declared as the prerequisite
+of virtual event $b$ in the task definition file, then event $b$ will not be
+triggered until event $a$ has already been triggered ever in one episode. For
+example, an order is supposed to be placed ($b$) only after all the information
+fields have been filled in ($a$), thus, information filling can be declared as
+the prerequisite of order placing to guarantee such a constraint.  After each
+interaction step during episode, a virtual event will first check if its
+prerequisites are satisfied and then decide its triggering flag according to
+the matching state (for event sources) or the triggering flags of its child
+(for `And` and `Or`).
 
 #### Event Sources and Event Slots
 
