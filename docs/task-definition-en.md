@@ -719,7 +719,7 @@ fields have been filled in ($a$), thus, information filling can be declared as
 the prerequisite of order placing to guarantee such a constraint.  After each
 interaction step during episode, a virtual event will first check if its
 prerequisites are satisfied and then decide its triggering flag according to
-the matching state (for event sources) or the triggering flags of its child
+the matching state (for event sources) or the triggering flags of its children
 (for `And` and `Or`).
 
 #### Event Sources and Event Slots
