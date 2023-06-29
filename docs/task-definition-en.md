@@ -813,7 +813,7 @@ event slot (`json_extra_listener`) expects a JSON string which should be parsed
 into the same format with that of the extra slot. The signals from the two
 slots will be mixed before returning to the agent.
 
-#### Define the Event Sources through `event_sources`
+#### Define Event Sources through `event_sources`
 
 Patterns for OS feedback are defined through `event_sources` field in the task
 definition file. Then at runtime, the instances of the event sources will check
@@ -895,22 +895,24 @@ the Java class name of the node. `id_pattern` matches `resource-id` property of
 the node. `id_pattern` together with the preceding `@` can be ignored. If an
 `@` appears in the regexes, it should be escaped by `\`.
 
-#### Define the Virtual Event Trees for the Event Slots through `event_slots`
+#### Define Triggering Function for the Event Slots through `event_slots`
 
-The `event_slots` field expects a message object in which the properties are
-defined for the aforementioned 6 event slots. Each property expects an event
-tree. The properties can be ignored for that this event slot will never be
-triggered.
+The `event_slots` field expects a message object in which there are 6
+properties corresponding to the aforementioned 6 event slots. Each property
+expects a tree-shape triggering logic defined recursively.  A property can be
+ignored if the corresponding event slot will never be triggered.
 
-An event tree is represented by an `EventSlot` message. Each `EventSlot`
-message constitutes a virtual event node on the event tree. It has the
+An triggering function tree is defined with `EventSlot` message. Each
+`EventSlot` message constitutes a virtual event node on the tree. It has the
 following properties:
 
-+ `type` - An enum from `SINGLE`, `AND`, `OR`. The default value is `SINGLE`
++ `type` - An enum from `SINGLE`, `AND`, and `OR`. The default value is
+  `SINGLE`. `SINGLE` is a special wrapper that wraps a virtual event or event
+  source to provide additional prerequisites or transformations.
 + `id` - A 32-bit integer as the id of the virtual event. Note that all the
-  nodes on the event tree and the event sources share the same id space. Thus,
-  this id shouldn't be the same with an existing id to prevent conflicts. *An
-  id should be a **positive** number.* The id is optional and can be ignored if
+  nodes on the trees and the event sources share the same id space. Thus, this
+  id shouldn't be the same with an existing id to prevent conflicts. *An id
+  should be a **positive** number.* The id is optional and can be ignored if
   the virtual event will not be referenced.
 + `events` - An array defining the child nodes sequentially. Only the first
   element is used for a `SINGLE` node.
@@ -928,15 +930,16 @@ following properties:
 The child event nodes are defined by a message containing only a `oneof` field.
 The available fields are:
 
-+ `id` - Expects a 32-bit interger as the reference to a virtual event's id.
++ `id` - Expects a 32-bit interger as the reference to an id of a virtual event
+  or event source.
 + `event` - Expects a new `EventSlot` message as the definition of the child
   event.
 
 ##### Definition of the Transformation
 
-A group of Python statements can be offered through the `transformation`
-property to process the signals applied by the child nodes. The statements will
-be executed by `exec` sequentially. In the statements, the input from the child
+A group of Python statements can be offered through `transformation` property
+to process the signals applied by the child nodes. The statements will be
+executed by `exec` sequentially. In the statements, the input from the child
 nodes can be referenced as the variable `x` and the processing result is
 expected to be stored in the variable `y`. The transformation defined in
 `transformation` in an `OR` nodes will be applied to the inputs from the
@@ -946,6 +949,6 @@ will be applied to the ensemble of the outputs from all its children, in which
 case the type of `x` will be `List[List[T]]`. The length of the outer list is
 just the number of the child events and the elements are corresponding to the
 children respectively. The length of the inner list is 1 in most situations.
-While multiple results may be returned by the system log event sources if
-multiple lines are matched or the event sources with detection if multiple
-instances are detected.
+The length may be greater than 1 if several special cases, *e.g.*, multiple
+results are returned by a system log event source if multiple lines are
+matched or an event source with detection if multiple instances are detected.
