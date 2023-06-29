@@ -19,8 +19,8 @@ Appearance & Behavior > System Settings > Android SDK sequentially. Here you
 can check the installation path of the ADK (Android SDK Location). It is
 commonly `~/Android/Sdk`. The desired version can be selected in the list
 below. It is recommended to install Android 11 (API Level 30), as it is
-observed in the test that, on the `amd64` host devices, the Android 11 emulator
-and image offer the best support for the `arm` packages.
+observed in the test that, on the `amd64` host devices, Android 11 emulator and
+image offer the best support for the `arm` packages.
 
 ![Android SDK Manager](images/android-sdk-manager.png)
 
