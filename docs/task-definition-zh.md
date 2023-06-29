@@ -52,7 +52,7 @@ adb shell am stack list
 * [Protocol Buffers文档](https://protobuf.dev/)
 * [Protocol Buffers的文本格式的语法说明](https://protobuf.dev/reference/protobuf/textformat-spec/)
 
-若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](../android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文[对Mobile-Env中管理历程信号及其时机的介绍](#扩展新任务-管理历程信号的时机)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
+若您熟悉ProtoBuf 3的语法，推荐您直接参考[`Task`消息的定义](../android_env/proto/task.proto)、下面给出的示例任务定义，并参照后文[对Mobile-Env中管理历程信号及其时机的介绍](#扩展新任务：管理历程信号及其时机)，编写任务定义文件。否则您可以阅读后文对`Task`等消息类型的介绍，本文会尽可能将之介绍得详细清晰。
 
 <!-- 任务定义示例 {{{ -->
 <details>
@@ -307,8 +307,8 @@ vocabulary: ["how to", "tails", "lobster", "bake"]
 6. `expected_app_screen` - 可空，定义交互过程中运行的安卓活动名和屏幕特征，平台会使用该配置检查交互过程中智能体是否错误退出了任务应用，若是，则会及时重启任务过程
 7. `max_duration_sec` - 浮点数，若经过该值指定的秒后，任务过程仍未结束，则平台会强制重启任务过程，留空或设置非正值可以禁用该功能
 8. `max_num_steps` - 整数，与`max_duration_sec`类似，但按照智能体的交互次数来计数，留空或设置非正值可以禁用该功能
-9. `event_sources` - 定义事件源。事件源，见于[后文](#扩展新任务-管理历程信号的时机)及[论文](https://arxiv.org/abs/2305.08144)
-10. `event_slots` - 定义历程信号如何触发。简述可见于[论文](https://arxiv.org/abs/2305.08144)，详情于[后文](#扩展新任务：管理历程信号的时机)介绍
+9. `event_sources` - 定义事件源。事件源，见于[后文](#扩展新任务：管理历程信号及其时机)及[论文](https://arxiv.org/abs/2305.08144)
+10. `event_slots` - 定义历程信号如何触发。简述可见于[论文](https://arxiv.org/abs/2305.08144)，详情于[后文](#扩展新任务：管理历程信号及其时机)介绍
 11. `extra_spec` - 为与AndroidEnv兼容保留，定义任务额外信息的格式
 12. `command` - 字符串数组，定义提供给智能体的任务目标总括说明
 13. `vocabulary` - 字符串数组，提供与任务有关的小词表，可以缓解任务难度，或方便标注人类演示
