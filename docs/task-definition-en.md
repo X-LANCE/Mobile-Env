@@ -815,63 +815,64 @@ slots will be mixed before returning to the agent.
 
 #### Define the Event Sources through `event_sources`
 
-The event sources receive the feedbacks from the OS and checks if they matches
-some pattern and decide if the event should be triggered. The `Task` message
-expects the defintions of the event sources through the `event_sources` field.
-To define an event source, you need to specify three properties:
+Patterns for OS feedback are defined through `event_sources` field in the task
+definition file. Then at runtime, the instances of the event sources will check
+if received OS feedback matches the defined pattern and decide if the event
+should be triggered. To define an event source, you need to specify three
+properties:
 
 + `event` - A `oneof` field defining the particular pattern to be recognized.
-+ `id` - A 32-bit interger providing the unique id for the event source for
++ `id` - A 32-bit interger providing the unique id of the event source for
   later referencing. *The id is required to be a **positive** number*.
 + `repeatability` - An enum from `NONE`, `LAST`, and `UNLIMITED`. This field
   indicates if the event should be triggered repeatedly when the pattern
   defined by `event` is satisfied continuously. The value defaults to `NONE`.
-  - `NONE` indicates to never trigger again, *i.e.*, the event can be triggered
-    by one input only once in an episode.
+  - `NONE` indicates to never trigger again in an episode, *i.e.*, the event
+    can be triggered by one input only once in an episode.
   - `LAST` indicates not to trigger continuously. If the identical input
     matched with the pattern is met continuously, then only the first match
     will trigger the event. However, if the identical input is met again after
-    some different inputss the event can be triggered as usual.
-  - `UNLIMITED` conducts no constraints for the repeatability, Once the
-    platform meets the defined pattern, the event will be triggered.
+    some different inputs, the event can be triggered as before.
+  - `UNLIMITED` makes no constraints for the repeatability, Once the feedback
+    meets the defined pattern, the event will be triggered.
 
 The options of `event` is the aforementioned event sources:
 
-+ `text_recognize`, `text_detect` - These two sources recognize/detect the text
-  contents in the particular region on the screen. The required fields are
++ `text_recognize`, `text_detect` - These two sources recognizes/detects the
+  text contents in the particular region on the screen. The required fields are
   + `expect` - A regex for the expected texts.
   + `rect` - Expects a message with four float properties: `x0`, `y0`, `x1`,
     and `y1` to indicate the screen region where the recognition/detection is
-    conducted. The coordinates are expected to be normalized to `[0, 1`].
-+ `icon_recognize`, `icon_detect` - These two sources recognize/detect the icon
-  contents in the particular region on the screen. These needs:
+    conducted. The coordinates are expected to be normalized to `[0, 1]`.
++ `icon_recognize`, `icon_detect` - These two sources recognizes/detects the
+  icon contents in the particular region on the screen. They needs:
   + `class` - A string as the certain name of the icon class. The name set
     depends on the mounted icon model.
   + `rect` - Gives the region for the recognition/detection, which is the same
     with the text event sources.
-+ `icon_match`, `icon_detect_match` - These two sources recognize/detect the
-  icon contents in the particular region on the screen. However, these two
-  event sources check if the icon matches with a reference, which is different
-  from the two icon event sources above. The required fields are
++ `icon_match`, `icon_detect_match` - These two sources recognizes/detects the
+  icon contents in the particular region on the screen. In contrast to
+  `icon_recognize` and `icon_detect`, these two event sources check if the icon
+  matches with a reference. The required fields are
   + `path` - The path to the reference image. Either a relative path from the
     definition file or an absolute path is acceptable. (The latter one is not
     recommended.)
   + `rect` - The same with the events above.
 + `view_hierarchy_event` - Matches the contents in the VH and expects:
   + `view_hierarchy_path` - The VH path to a specific VH node. The format is
-    fairly simplified compared to that in `AppScreen`, which will be detailed
-    below.
+    fairly more readable compared to that in `AppScreen`, which will be
+    detailed below.
   + `properties` - The list of the properties to check of the VH node indicated
     by `view_hierarchy_path`. To check a property, you need to provide:
-    - `property_name` - The property name. The property names are the name of
-      the node attributes in the VH XML required through the command `adb shell
-      uiautomator dump`. Besides, four virtual properties `left`, `top`,
-      `right`, and `bottom` are enabled for convenience, which are
+    - `property_name` - The property name. The property name is the name of the
+      node attribute in the VH XML acquired through the command `adb shell
+      uiautomator dump`. Besides, four virtual properties, `left`, `top`,
+      `right`, and `bottom`, are enabled for convenience, which are
       corresponding to the four coordinates in the `bounds` attribute in the
       XML respectively.
     - `sign` - Works only for the numeric properties and specifies the
-      comparison approach of the reference value with the read value. The
-      reference value in the definition is the first operand of the
+      comparison approach of the reference value with the runtime read value.
+      The reference value in the definition is the first operand of the
       comparators. The supported comparators are `EQ` (equal to), `LE` (less
       than or equal to), `LT` (less than), `GE` (greater than or equal to),
       `GT` (greater than), and `NE` (inequal to).
@@ -882,17 +883,17 @@ The options of `event` is the aforementioned event sources:
 + `log_event` - Matches the system log lines and requires two fields:
   - `filters` - An array of string for the log filters like `jd:D`. The system
     logs are obtained by the command `adb logcat -v epoch FILTERS *:S`, where
-    `FILTERS` is all the filter names declared in the definition. The filters
-    declared all across the log event sources in the definition file will be
-    merged (without duplicates) before invoking the command.
+    `FILTERS` is all the filter names declared in the definition. All the
+    filters declared across the log event sources in the definition file will
+    be merged (with duplicates removed) before invoking the ADB command.
   - `pattern` - The regex for the expected log line.
 
-The VH node in the definition of the VH event sources are specified as
+The VH node in the definition of the VH event sources is specified as
 `class_pattern@id_pattern`. Here two regexes are expected before and after the
-`@`. The `class_pattern` matches the `class` property of the node, which is
-commonly the Java class name of the node. The `id_pattern` matches the
-`resource-id` property of the node. The `id_pattern` with the preceding `@` can
-be ignored. If an `@` appears in the regex, it should be escaped by `\`.
+`@`. `class_pattern` matches `class` property of the node, which is commonly
+the Java class name of the node. `id_pattern` matches `resource-id` property of
+the node. `id_pattern` together with the preceding `@` can be ignored. If an
+`@` appears in the regexes, it should be escaped by `\`.
 
 #### Define the Virtual Event Trees for the Event Slots through `event_slots`
 
