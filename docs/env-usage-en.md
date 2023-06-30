@@ -376,7 +376,7 @@ Here the first three items are returned as NumPy arrays.
 `task_instructions` method returns a list of string storing the instructions at
 the current step.
 
-Mobile-Env accepts a `dict` object as the action containing three item:
+Mobile-Env accepts a `dict` object as the action containing four items:
 
 + `action_type` - A NumPy scalar array. The dtype is integer. It is
   corresponding to 4 action types:
@@ -397,9 +397,11 @@ Mobile-Env accepts a `dict` object as the action containing three item:
   as 2. This argument represents the coordinates of the touch position `(x,
   y)`.  The coordinate values should be normalized to `[0, 1]`. This argument
   is required only for the `TOUCH` actions.
-+ `input_token` - A NumPy scalar array, The dtype is integer. It is used to
++ `input_token` - A NumPy scalar array. The dtype is integer. It is used to
   indicate the index of the token in the vocabulary. The index starts from 0.
   This argument is required only for the `TEXT` actions
++ `response` - A NumPy scalar array of Python `str` object. This field is
+  designed for the responses from the agent to the human user.
 
 `env.observation_spec` and `env.action_spec` can be invoked to obtain a
 declaration of the observation space and the action space. Meanwhile, two

@@ -283,7 +283,7 @@ while not step.last():
 
 `task_instructions`方法返回字符串列表，存储当前步骤下的指令。
 
-Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
+Mobile-Env的环境接受的动作的形式为`dict`对象，其包含四项：
 
 + `action_type` - 是NumPy标量数组，数据类型为整数，对应4种动作类型
   - 0（`android_env.components.action_type.ActionType.TOUCH`） - 触击动作
@@ -292,6 +292,7 @@ Mobile-Env的环境接受的动作的形式为`dict`对象，其包含三项：
   - 3（`android_env.components.action_type.ActionType.TEXT`） - 输入词元动作，输入词表中的一个词元；若加载环境时指定了`unify_vocabulary`参数，则使用的是该参数指定的大词表，否则使用的是当前任务的定义文件中`vocabulary`字段提供的小词表
 + `touch_position` - NumPy数组，数据类型为浮点数，长度为2，表示触击的坐标`(x, y)`，坐标值归一化到`[0, 1]`；仅需对`TOUCH`动作指定
 + `input_token` - NumPy标量数组，数据类型为整数，指定要输入的词元在词表中的序号，从0开始；仅需对`TEXT`动作指定
++ `response` - NumPy标量数组，存储Python`str`对象，为智能体给人类用户的回复内容
 
 可以使用`env.observation_spec`、`env.action_spec`方法获取对观测空间与动作空间格式的声明。此外，在`examples`目录下提供了两个分别使用随机策略和由人类充当智能体的例子，以供参考。
 

@@ -691,13 +691,15 @@ $$
 t = f(s_1, s_2, \dots, s_n),
 $$
 where ther triggering function $f$ is a boolean function. There are 4 types of
-OS feedback that can be used for event sources:
+OS feedback and response from the agent to human user that can be used for
+event sources:
 
 + Screen texts (`text_recognize`, `text_detect`)
 + Scrren icons (`icon_recognize`, `icon_detect`, `icon_match`,
   `icon_detect_match`)
 + View hierarchy (`view_hierarchy_event`)
 + System log (`log_event`)
++ Response to human user (`response_event`)
 
 Here is a demonstration of event triggering logic $f$ with diverse operating
 system feedback. The triggering state $t$ of the event slot depends on a
@@ -774,6 +776,10 @@ matches each line with the regex in the definition. If any line is matched and
 the aforementioned triggering conditions are satisfied, the event source will
 be triggered and return a tuple comprising all the regex-captured groups, which
 is the same with the screen text event sources.
+
+The response event source will react to the response from the agent to human
+user. If the response matches with the defined pattern, the event source will
+be triggered and return a tuple comprising all the regex-captured groups.
 
 ##### The Event Slots
 
@@ -887,6 +893,8 @@ The options of `event` is the aforementioned event sources:
     filters declared across the log event sources in the definition file will
     be merged (with duplicates removed) before invoking the ADB command.
   - `pattern` - The regex for the expected log line.
++ `response_event` - Matches the response to human user.
+  - `pattern` - The regex for the response.
 
 The VH node in the definition of the VH event sources is specified as
 `class_pattern@id_pattern`. Here two regexes are expected before and after the
