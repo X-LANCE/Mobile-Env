@@ -141,6 +141,9 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 , "direction": specs.DiscreteArray( num_values=len(VhIoWrapper.ScrollDirection)
                                                   , name="direction"
                                                   )
+                , "response": specs.StringArray( shape=()
+                                               , name="response"
+                                               )
                 }
 
         scroll_trajectory = np.linspace(0.2, 0.8, num=self._nb_scroll_frames, dtype=np.float32)
@@ -307,14 +310,19 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
         elif action["action_type"]==VhIoWrapper.ActionType.GOBACK:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_BACK")
-        timestep = self._env.step( { "action_type": np.array( action_type.ActionType.LIFT
-                                                            , dtype=np.int32
-                                                            )
-                                   , "touch_position": np.array( [0., 0.]
-                                                               , dtype=np.float32
-                                                               )
-                                   }
-                                 )
+
+        appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
+                                                                        , dtype=np.int32
+                                                                        )
+                                               , "touch_position": np.array( [0., 0.]
+                                                                           , dtype=np.float32
+                                                                           )
+                                               }
+        if "response" in action\
+                and action["response"] is not None\
+                and action["response"] != "":
+            appended_lift["response"] = action["response"]
+        timestep = self._env.step(appended_lift)
         instructions += self._env.task_instructions()
         if timestep.reward>0.:
             total_reward += timestep.reward

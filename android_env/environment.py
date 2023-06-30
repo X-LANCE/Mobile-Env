@@ -85,10 +85,10 @@ class AndroidEnv(dm_env.Environment):
     return self._coordinator.vocabulary()
 
   @property
-  def nb_tasks(self) -> str:
+  def nb_tasks(self) -> int:
     return self._coordinator.nb_tasks
   @property
-  def task_index(self) -> str:
+  def task_index(self) -> int:
     return self._coordinator.task_index
   @property
   def task_id(self) -> str:

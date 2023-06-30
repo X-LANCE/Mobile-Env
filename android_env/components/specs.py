@@ -75,22 +75,25 @@ def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.A
     input_token: An integer as the input token id.
     action_type_i: Action type for additional fingers (i>1).
     touch_position_i: Touch position for additional fingers (i>1).
+    response: text
   """
 
   nb_types = len(action_type.ActionType)-1 if num_tokens==0 else len(action_type.ActionType)
-  action_spec = {
-      'action_type':
-          specs.DiscreteArray(
-              num_values=nb_types,
-              name='action_type'),
-      'touch_position':
-          specs.BoundedArray(
-              shape=(2,),
-              dtype=np.float32,
-              minimum=[0.0, 0.0],
-              maximum=[1.0, 1.0],
-              name='touch_position')
-    }
+  action_spec = { 'action_type':
+                    specs.DiscreteArray( num_values=nb_types
+                                       , name='action_type'
+                                       )
+                , 'touch_position':
+                    specs.BoundedArray( shape=(2,)
+                                      , dtype=np.float32
+                                      , minimum=[0.0, 0.0]
+                                      , maximum=[1.0, 1.0]
+                                      , name='touch_position'
+                                      )
+                , 'response': specs.StringArray( shape=()
+                                               , name="response"
+                                               )
+                }
 
   for i in range(2, num_fingers + 1):
     action_spec.update({
