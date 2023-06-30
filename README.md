@@ -54,13 +54,17 @@ interaction with the following features:
 
 ### Installation
 
-<!-- TODO: pypi source -->
-
-Clone the repository and build locally.
+Install from PyPI:
 
 ```sh
-git clone https://github.com/deepmind/android_env/
-cd android_env
+pip insall mobile-env-rl
+```
+
+or clone the repository and build locally.
+
+```sh
+git clone https://github.com/X-LANCE/Mobile-Env
+cd Mobile-Env
 pip install .
 ```
 

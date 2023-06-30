@@ -31,13 +31,17 @@ Mobile-Env基于[AndroidEnv](https://github.com/deepmind/android_env)开发。�
 
 ### 安装
 
-<!-- TODO: pypi源 -->
-
-克隆本仓库并在本地构建。
+从PyPI安装：
 
 ```sh
-git clone https://github.com/deepmind/android_env/
-cd android_env
+pip install mobile-env-rl
+```
+
+或克隆本仓库并在本地构建：
+
+```sh
+git clone https://github.com/X-LANCE/Mobile-Env
+cd Mobile-Env
 pip install .
 ```
 

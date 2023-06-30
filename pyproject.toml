@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mobile-env-rl"
+version = "1.4"
+authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
+license = {file = "LICENSE"}
+description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
+keywords = ["InfoUI interaction"]
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+	"absl-py>=0.1.0",
+	"dm_env",
+	"grpcio",
+	"mock",
+	"numpy",
+	"pexpect>=4.8.0",
+	"portpicker>=1.2.0",
+	"protobuf>=2.6",
+	"lxml",
+	"torch",
+	"torchvision",
+	"transformers"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+[project.optional-dependencies]
+easyocr = ["easyocr"]
+pygame = ["pygame"]
+gym = ["gym"]
+testing = [
+	"attrs==20.3.0",
+    "pillow",
+    "pytype",
+    "pytest-xdist"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/X-LANCE/Mobile-Env"
+#"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"

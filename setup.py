@@ -111,7 +111,7 @@ class _BuildPy(build_py):
     build_py.run(self)
 
 setup(
-    name='mobile-env',
+    name='mobile-env-rl',
     version='1.1.0',
     description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
@@ -120,6 +120,7 @@ setup(
     keywords='InfoUI interaction',
     url='https://github.com/X-LANCE/Mobile-Env',
     packages=find_packages(exclude=['examples']),
+    package_data={"": ["proto/*.proto"]},
     setup_requires=[
         'grpcio-tools',
     ],
