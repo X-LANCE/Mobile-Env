@@ -450,7 +450,7 @@ field is ignored, then the whole check operation will not be executed.
 [`android_env/proto/adb.proto`](../android_env/proto/adb.proto) and supports
 many kinds of operations. Some frequently-used operations comprise:
 
-* `install_apk` - Installs a package. The path to the apk package is expected
+* `install_apk` - Installs a package. The path to the APK package is expected
   in the string field `path` of the message field `filesystem`. The path can be
   specified either as a relative path from the current `textproto` file or as
   an absolute path (not recommended).
