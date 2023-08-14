@@ -63,6 +63,7 @@ class BaseWrapper(dm_env.Environment):
     pass
 
   def _reset_state(self):
+    # CLEAR states rather than restart states
     pass
 
   def _process_action(self, action: Any) -> Any:
