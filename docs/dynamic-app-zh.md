@@ -31,7 +31,7 @@ tools/syscert_setup.exp [EMULATOR_PATH [AVD_NAME [CERT_PATH]]]
 
 三个可选参数：
 
-+ `EMULATOR_PATH` - 模拟器可执行文件的路径，默认为`$HOME/Android/Sdk/emulator`
++ `EMULATOR_PATH` - 模拟器可执行文件所在的目录，默认为`$HOME/Android/Sdk/emulator`
 + `AVD_NAME` - 要修改的安卓虚拟机（镜像）名称，默认为`Pixel_2_API_30_x64`
 + `CERT_PATH` - 要注入的SSL证书的路径，默认为`$HOME/.mitmproxy/mitmproxy-ca-cert.cer`
 
@@ -54,7 +54,7 @@ cd tools
 
 三个可选参数：
 
-+ `EMULATOR_PATH` - 模拟器可执行文件的路径，默认为`$HOME/Android/Sdk/emulator`
++ `EMULATOR_PATH` - 模拟器可执行文件所在的目录，默认为`$HOME/Android/Sdk/emulator`
 + `AVD_NAME` - 要修改的安卓虚拟机（镜像）名称，默认为`Pixel_2_API_30_x64`
 + `FRIDA_SERVER` - frida服务端程序（的压缩文件）的路径，默认为`frida-server-14.2.2-android-x86_64.xz`
 

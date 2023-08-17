@@ -59,7 +59,7 @@ tools/syscert_setup.exp [EMULATOR_PATH [AVD_NAME [CERT_PATH]]]
 
 The three optional arguments are:
 
-+ `EMULATOR_PATH` - The path to the executable of the emulator. Defaults to
++ `EMULATOR_PATH` - The folder of the executable of the emulator. Defaults to
   `$HOME/Android/Sdk/emulator`.
 + `AVD_NAME` - The name of the AVD (image) to be configured. Defaults to
   `Pixel_2_API_30_x64`.
@@ -96,7 +96,7 @@ cd tools
 
 The three optional arguments are:
 
-+ `EMULATOR_PATH` - The path to the executable of the emulator. Defaults to
++ `EMULATOR_PATH` - The folder of the executable of the emulator. Defaults to
   `$HOME/Android/Sdk/emulator`.
 + `AVD_NAME` - The name of the AVD (image) to be configured. Defaults to
   `Pixel_2_API_30_x64`.

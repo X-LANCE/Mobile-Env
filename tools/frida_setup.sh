@@ -47,7 +47,7 @@ proc wait_for_launch {emulator_process} {
             puts "\x1b\[5;31mTIMEOUT!\x1b\[0m"
             exit
         }
-        -i $emulator_process "boot completed" {
+        -i $emulator_process -re {[Bb]oot completed} {
             puts "\x1b\[32mBOOTED!\x1b\[0m"
             sleep 1
         }
