@@ -687,9 +687,11 @@ sources*. An event source indicates a specific pattern for the OS feedback.
 Given a triggering state of an event slot $t$, matching states of a group of
 event sources $S = \{s_1, s_2, \dots, s_n\}$, the simplified triggering logic
 can be formalized as
+
 $$
 t = f(s_1, s_2, \dots, s_n),
 $$
+
 where ther triggering function $f$ is a boolean function. There are 4 types of
 OS feedback and response from the agent to human user that can be used for
 event sources:

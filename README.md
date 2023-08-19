@@ -50,7 +50,7 @@ interaction with the following features:
   and can be enabled directly. An intergrated icon model will be embedded soon
   as well.)
 
-# Getting Started
+## Getting Started
 
 ### Installation
 
