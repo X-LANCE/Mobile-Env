@@ -1,0 +1,181 @@
+# Copyright 2023 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# Revised by Danyang Zhang @X-Lance based on
+# 
+# Copyright 2021 DeepMind Technologies Limited.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# proto-file: android_env/proto/task.proto
+# proto-message: android_env.Task
+
+id: "classic_2048"
+name: "Classic 2048 - Default"
+description: "Slide numbered tiles on a grid to combine them to create a tile with the number 2048"
+
+setup_steps: [
+  {
+    adb_call: {
+      install_apk: {
+        filesystem: {
+          path: "2021.05.25-2048-debug.apk"
+        }
+      }
+    }
+    success_condition: {
+      check_install: {
+        package_name: "com.tpcstld.twozerogame"
+        timeout_sec: 10.0
+      }
+    }
+  },
+  { adb_call: { rotate: { orientation: PORTRAIT_0 } } }
+]
+
+reset_steps: [
+  { adb_call: { force_stop: { package_name: "com.tpcstld.twozerogame" } } },
+  { adb_call: { clear_cache: { package_name: "com.tpcstld.twozerogame" } } },
+  {
+    adb_call: {
+      start_activity: {
+        full_activity: "com.tpcstld.twozerogame/com.tpcstld.twozerogame.MainActivity"
+        extra_args: [
+            "--ez", '"RL_TASK_ENABLED"', '"true"',
+            "--es", '"RL_TASK_GAME_CONFIG"', '"{}"'
+        ]
+      }
+    }
+    success_condition: {
+      wait_for_app_screen: {
+        app_screen: {
+          activity: "com.tpcstld.twozerogame/com.tpcstld.twozerogame.MainActivity"
+          view_hierarchy_path: [
+          ]
+        }
+        timeout_sec: 10.0
+      }
+      num_retries: 10
+    }
+  },
+  {
+    adb_call: {
+      start_screen_pinning: {
+        full_activity: "com.tpcstld.twozerogame/com.tpcstld.twozerogame.MainActivity"
+      }
+    }
+  }
+]
+
+expected_app_screen: {
+  activity: "com.tpcstld.twozerogame/com.tpcstld.twozerogame.MainActivity"
+  view_hierarchy_path: [
+  ]
+}
+
+max_num_steps: 500
+
+#log_parsing_config: {
+#
+  #filters: ["AndroidRLTask:V"]
+#
+  #log_regexps: {
+    #score: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #reward: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #episode_end: "^episode[ _]end$"
+    #extra: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+    #json_extra: "^json_extra: (?P<json_extra>.*)$"
+  #}
+#}
+
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+	}
+	id: 1
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+	}
+	id: 2
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^episode[ _]end$"
+	}
+	id: 3
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+	}
+	id: 4
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^json_extra: (?P<json_extra>.*)$"
+	}
+	id: 5
+	repeatability: UNLIMITED
+}
+
+event_slots: {
+	score_listener: {
+		events: { id: 1 }
+		transformation: "y = float(x)"
+	}
+	reward_listener: {
+		events: { id: 2 }
+		transformation: "y = float(x)"
+	}
+	episode_end_listener: { events: { id: 3 } }
+	extra_listener: {
+		events: { id: 4 }
+		transformation: [
+			"import ast",
+			"y = {x[0]: ast.literal_eval(x[1])}"
+		]
+	}
+	json_extra_listener: { events: { id: 5 } }
+}
+
+extras_spec: [
+  # Grid representing the state of the board.
+  { name: "grid" shape: [4, 4], dtype: INT32},
+  # Direction of the last swipe action that prompted that change in the state.
+  # 0: up, 1: right, 2: down, 3: left
+  { name: "direction" shape: [1], dtype: INT32 }
+]
+
+command: "Slide up, down, left, or right to obtain larger numbers and gain more scores!"

@@ -1,0 +1,183 @@
+# Copyright 2023 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# Revised by Danyang Zhang @X-Lance based on
+# 
+# Copyright 2022 DeepMind Technologies Limited.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# proto-file: android_env/proto/task.proto
+# proto-message: android_env.Task
+
+id: "systemui_egg_land_default"
+name: "SystemUI Egg Land - Default"
+description: "Flappy droid 'Marshmallow Land' from AOSP SystemUI."
+
+setup_steps: [
+  {
+    adb_request: {
+      install_apk: {
+        filesystem: {
+          path: "2020.02.05-systemui-egg-land-debug.apk"
+        }
+      }
+    }
+    success_condition: {
+      check_install: {
+        package_name: "com.android.systemui.egg"
+        timeout_sec: 10.0
+      }
+    }
+  },
+  {  # Put the device in portrait mode.
+    adb_request: {
+      settings: {
+        name_space: SYSTEM
+        put: { key: "user_rotation" value: "0" }
+      }
+    }
+  }
+]
+
+reset_steps: [
+  { adb_request: { force_stop: { package_name: "com.android.systemui.egg" } } },
+  { adb_request: { package_manager: { clear: { package_name: "com.android.systemui.egg" } } } },
+  {
+    adb_request: {
+      start_activity: {
+        force_stop: true
+        full_activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
+        extra_args: [
+            "--ez", '"RL_TASK_ENABLED"', '"true"',
+            "--es", '"RL_TASK_GAME_CONFIG"', '"{\\"speed_multiplier\\":1.0}"'
+        ]
+      }
+    }
+    success_condition: {
+      wait_for_app_screen: {
+        app_screen: {
+          activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
+          view_hierarchy_path: [
+          ]
+        }
+        timeout_sec: 10.0
+      }
+      num_retries: 10
+    }
+  },
+  {
+    adb_request: {
+      start_screen_pinning: {
+        full_activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
+      }
+    }
+  }
+]
+
+expected_app_screen: {
+  activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
+  view_hierarchy_path: [
+  ]
+}
+
+max_episode_sec: 7200  # Prevent infinite episodes.
+
+#log_parsing_config: {
+#
+  #filters: ["AndroidRLTask:V"]
+#
+  #log_regexps: {
+    #score: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #reward: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+    #episode_end: "^episode[ _]end$"
+    #extra: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+    #json_extra: "^json_extra: (?P<json_extra>.*)$"
+  #}
+#}
+
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^[Ss]core: ([-+]?[0-9]*\\.?[0-9]*)$"
+	}
+	id: 1
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^[Rr]eward: ([-+]?[0-9]*\\.?[0-9]*)$"
+	}
+	id: 2
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^episode[ _]end$"
+	}
+	id: 3
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^extra: (?P<name>[^ ]*)[ ]?(?P<extra>.*)$"
+	}
+	id: 4
+	repeatability: UNLIMITED
+}
+event_sources: {
+	log_event: {
+		filters: ["AndroidRLTask:V"]
+		pattern: "^json_extra: (?P<json_extra>.*)$"
+	}
+	id: 5
+	repeatability: UNLIMITED
+}
+
+event_slots: {
+	score_listener: {
+		events: { id: 1 }
+		transformation: "y = float(x)"
+	}
+	reward_listener: {
+		events: { id: 2 }
+		transformation: "y = float(x)"
+	}
+	episode_end_listener: { events: { id: 3 } }
+	extra_listener: {
+		events: { id: 4 }
+		transformation: [
+			"import ast",
+			"y = {x[0]: ast.literal_eval(x[1])}"
+		]
+	}
+	json_extra_listener: { events: { id: 5 } }
+}
+
+command: "Here is a flappy droid on the screen."
+command: "Tap the screen to lift the droid to elude obstacles."
+command: "Try to help the droid to fly as far as possible."

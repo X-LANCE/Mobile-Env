@@ -90,6 +90,20 @@ just required. Detailed instructions can be found in [Extending a New
 Environment (App) or a New Task Based on
 Mobile-Env](docs/task-definition-en.md).
 
+Several demo task definitions are provided under `demos`. Three of them are
+migrated from  AndroidEnv:
+
+* `classic_2048.m.textproto` - Classic 2048 game.
+* `accessibility_forwarder_clock_set_timer.m.textproto` - A simple task
+  requiring the agent to reset a running timer.
+* `systemui_egg_land_default.m.textproto` - Flappy Droid. An open-sourced
+  implementation of classic game, Flappy Bird.
+
+Another one, `openmoneybox.add_billings.textproto` is defined upon an
+open-sourced billing app,
+[OpenMoneyBox](https://f-droid.org/en/packages/com.igisw.openmoneybox/).
+Details are referred to in the task definition files.
+
 ### Miscellaneous Auxiliary Tools
 
 We also developed an annotation tool for the human demonstrations, and a suite

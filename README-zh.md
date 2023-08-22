@@ -53,6 +53,14 @@ pip install .
 
 要为Mobile-Env扩展新环境，需要准备好应用安装包，并确保其能在某个版本的安卓模拟器上启动、运行。如果该应用需要一些变化的在线数据，那么还需要将必要的数据保存下来，并在使用中回放，以保证评测的一致。这种情况下，还需要确认这些[解除证书固定的方法](docs/dynamic-app-zh.md)对该应用有效。至于扩展新任务，则只需要准备好任务定义文件。具体的教程，请参考[基于Mobile-Env扩展新环境（手机应用）或新任务](docs/task-definition-zh.md)。
 
+`demos`目录下提供了几个示例任务定义。其中三个迁移自AndroidEnv：
+
+* `classic_2048.m.textproto` - 经典的2048小游戏
+* `accessibility_forwarder_clock_set_timer.m.textproto` - 简单的小任务，需要智能体按按钮重设计时器
+* `systemui_egg_land_default.m.textproto` - Flappy Droid，对经典小游戏Flappy Bird的开源复现
+
+剩下一个文件`openmoneybox.add_billings.textproto`，基于开源记账应用[OpenMoneyBox](https://f-droid.org/en/packages/com.igisw.openmoneybox/)定义。任务的具体内容请查看该任务定义文件。
+
 ### 其他辅助工具
 
 还开发了一套标注工具用于采集人类演示，以及一套模板工具，来根据模板生成任务定义，并将多个任务定义串接成一个多步任务。更详细的介绍请查看[其他辅助工具](docs/other-tools-zh.md)。

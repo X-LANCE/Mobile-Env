@@ -1,0 +1,527 @@
+# vim: set filetype=conf:
+# Copyright 2023 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Created by Danyang Zhang @X-Lance.
+
+# There are three stages for this task:
+# + Set up initial funds
+# + Create needed categories
+# + Note the bills
+# Detailed task information:
+#
+# * Inital fund:
+#   * 2000 for saved money
+#   * 500 for cash money
+# * Categories:
+#   * Salary
+#   * Extra
+#   * Assets
+#   * Daily
+# * Bills:
+# 
+# | In/Ex   | Amount | Name   | Fund        | Category |
+# |---------|--------|--------|-------------|----------|
+# | Income  | 4000   | salary | saved money | Salary   |
+# | Income  | 1000   | bonus  | cash money  | Extra    |
+# | Expense | 1500   | PC     | saved money | Assets   |
+# | Expense | 1000   | lunch  | cash money  | Daily    |
+
+id: "openmoneybox_add_billings"
+name: "OpenMoneyBox - Add Billings"
+description: "Note the given billings in OpenMoneyBox"
+
+setup_steps: {
+	adb_call: {
+		install_apk: { filesystem: { path: "com.igisw.openmoneybox_55.apk" } }
+	}
+}
+setup_steps: {
+	adb_call: { rotate: { orientation: PORTRAIT_0 } }
+}
+
+reset_steps: [
+	{ adb_call: { force_stop: { package_name: "com.igisw.openmoneybox" } } },
+	{ adb_call: { clear_cache: { package_name: "com.igisw.openmoneybox" } } }
+]
+reset_steps: {
+	adb_call: {
+		start_activity: { full_activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
+	}
+	success_condition: {
+		wait_for_app_screen: {
+			app_screen: { activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
+			timeout_sec: 10.0
+		}
+		num_retries: 10
+	}
+}
+reset_steps: {
+	adb_call: {
+		start_screen_pinning: { full_activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
+	}
+}
+
+expected_app_screen: { activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
+
+max_num_steps: 500
+
+# opened init page
+event_sources: {
+	text_detect: {
+		expect: "[Ww]izard"
+		rect: { x0: 0., x1: 1., y0: 0.03, y1: 0.26 }
+	}
+	id: 1
+}
+# opened wizard page
+event_sources: {
+	text_detect: {
+		expect: "Document creation wizard"
+		rect: { x0: 0., x1: 1., y0: 0.03, y1: 0.09 }
+	}
+	id: 2
+}
+# entered init funds
+event_sources: [
+	{
+		text_detect: {
+			expect: "2000" # saved money
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.21 }
+		}
+		id: 3
+	},
+	{
+		text_detect: {
+			expect: "500" # cash money
+			rect: { x0: 0., x1: 1., y0: 0.24, y1: 0.30 }
+		}
+		id: 4
+	}
+]
+# entered dashboard
+event_sources: {
+	text_detect: {
+		expect: "OpenMoneyBox"
+		rect: { x0: 0.14, x1: 0.88, y0: 0.03, y1: 0.11 }
+	}
+	id: 5
+}
+# edit categories page
+event_sources: {
+	text_detect: {
+		expect: "Edit categories"
+		rect: { x0: 0., x1: 1., y0: 0.03, y1: 0.09 }
+	}
+	id: 6
+	repeatability: LAST
+}
+# add categories
+event_sources: [
+	#{
+		#text_detect: {
+			#expect: "Add category" # title
+			#rect: { x0: 0., x1: 1., y0: 0.18, y1: 0.53 }
+		#}
+		#id: 7
+	#},
+	{
+		text_detect: {
+			expect: "(?i)salary"
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.94 }
+		}
+		id: 8
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "(?i)extra"
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.94 }
+		}
+		id: 9
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "(?i)assets"
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.94 }
+		}
+		id: 10
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "(?i)daily"
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.94 }
+		}
+		id: 11
+		repeatability: UNLIMITED
+	}
+]
+
+event_sources: {
+	text_detect: {
+		expect: "Store a profit" # title
+		rect: { x0: 0., x1: 1., y0: 0.03, y1: 0.09 }
+	}
+	id: 12
+	repeatability: LAST
+}
+event_sources: {
+	text_detect: {
+		expect: "Store a expense" # title
+		rect: { x0: 0., x1: 1., y0: 0.03, y1: 0.09 }
+	}
+	id: 22
+	repeatability: LAST
+}
+# note income "salary"
+event_sources: [
+	{
+		text_detect: {
+			expect: "Saved money" # fund
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.18 }
+		}
+		id: 13
+	},
+	{
+		text_detect: {
+			expect: "(?i)4000" # amount
+			rect: { x0: 0., x1: 1., y0: 0.18, y1: 0.23 }
+		}
+		id: 14
+	},
+	{
+		text_detect: {
+			expect: "(?i)salary" # reason
+			rect: { x0: 0., x1: 1., y0: 0.29, y1: 0.34 }
+		}
+		id: 15
+		repeatability: LAST
+	},
+	{
+		text_detect: {
+			expect: "(?i)salary" # category
+			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+		}
+		id: 16
+		repeatability: LAST
+	}
+]
+# note income "bonus"
+event_sources: [
+	{
+		text_detect: {
+			expect: "Cash money" # fund
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.18 }
+		}
+		id: 18
+	},
+	{
+		text_detect: {
+			expect: "(?i)1000" # amount
+			rect: { x0: 0., x1: 1., y0: 0.18, y1: 0.23 }
+		}
+		id: 19
+	},
+	{
+		text_detect: {
+			expect: "(?i)bonus" # reason
+			rect: { x0: 0., x1: 1., y0: 0.29, y1: 0.34 }
+		}
+		id: 20
+	},
+	{
+		text_detect: {
+			expect: "(?i)extra" # category
+			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+		}
+		id: 21
+		repeatability: LAST
+	}
+]
+# note outcome "PC"
+event_sources: [
+	{
+		text_detect: {
+			expect: "Saved money" # fund
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.18 }
+		}
+		id: 23
+	},
+	{
+		text_detect: {
+			expect: "(?i)1500" # amount
+			rect: { x0: 0., x1: 1., y0: 0.18, y1: 0.23 }
+		}
+		id: 24
+	},
+	{
+		text_detect: {
+			expect: "(?i)PC" # reason
+			rect: { x0: 0., x1: 1., y0: 0.29, y1: 0.34 }
+		}
+		id: 25
+	},
+	{
+		text_detect: {
+			expect: "(?i)assets" # category
+			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+		}
+		id: 26
+		repeatability: LAST
+	}
+]
+# note outcome "lunch"
+event_sources: [
+	{
+		text_detect: {
+			expect: "Cash money" # fund
+			rect: { x0: 0., x1: 1., y0: 0.15, y1: 0.18 }
+		}
+		id: 28
+	},
+	{
+		text_detect: {
+			expect: "(?i)1000" # amount
+			rect: { x0: 0., x1: 1., y0: 0.18, y1: 0.23 }
+		}
+		id: 29
+	},
+	{
+		text_detect: {
+			expect: "(?i)lunch" # reason
+			rect: { x0: 0., x1: 1., y0: 0.29, y1: 0.34 }
+		}
+		id: 30
+	},
+	{
+		text_detect: {
+			expect: "(?i)daily" # category
+			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+		}
+		id: 31
+		repeatability: LAST
+	}
+]
+# final state
+event_sources: [
+	{
+		text_detect: {
+			expect: "(?i)assets"
+			rect: { x0: 0.23, x1: 0.77, y0: 0.23, y1: 0.94 }
+		}
+		id: 32
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "-1500.00 *\$"
+			rect: { x0: 0.23, x1: 0.77, y0: 0.23, y1: 0.94 }
+		}
+		id: 33
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "(?i)daily"
+			rect: { x0: 0.23, x1: 0.77, y0: 0.23, y1: 0.94 }
+		}
+		id: 34
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "-1000.00 *\$"
+			rect: { x0: 0.23, x1: 0.77, y0: 0.23, y1: 0.94 }
+		}
+		id: 35
+		repeatability: UNLIMITED
+	},
+	{
+		text_detect: {
+			expect: "4000.00 *\$"
+			rect: { x0: 0.23, x1: 0.77, y0: 0.23, y1: 0.94 }
+		}
+		id: 36
+		repeatability: UNLIMITED
+	}
+]
+
+event_slots: {
+	reward_listener: {
+		type: OR
+		events: {
+			event: {
+				type: AND # reward @ entered init funds
+				events: { id: 3 }
+				events: { id: 4 }
+				transformation: "y = 4."
+				id: 40
+			}
+		}
+		events: {
+			event: {
+				type: AND # rewards for creating categories
+				events: { id: 6 }
+				events: {
+					event: {
+						type: OR
+						events: [
+							{ id: 8 } ,
+							{ id: 9 } ,
+							{ id: 10 } ,
+							{ id: 11 }
+						]
+					}
+				}
+				prerequisite: 40
+				transformation: "y = 1."
+				id: 41
+			}
+		}
+		events: {
+			event: {
+				type: OR # rewards for billings
+				events: {
+					event: {
+						type: AND # salary +4000
+						events: [
+							{ id: 12 },
+							{ id: 13 },
+							{ id: 14 },
+							{ id: 15 },
+							{ id: 16 }
+						]
+						id: 42
+					}
+				}
+				events: {
+					event: {
+						type: AND # bonus +1000
+						events: [
+							{ id: 12 },
+							{ id: 18 },
+							{ id: 19 },
+							{ id: 20 },
+							{ id: 21 }
+						]
+						id: 43
+					}
+				}
+				events: {
+					event: {
+						type: AND # PC -1500
+						events: [
+							{ id: 22 },
+							{ id: 23 },
+							{ id: 24 },
+							{ id: 25 },
+							{ id: 26 }
+						]
+						id: 44
+					}
+				}
+				events: {
+					event: {
+						type: AND # lunch -1000
+						events: [
+							{ id: 22 },
+							{ id: 28 },
+							{ id: 29 },
+							{ id: 30 },
+							{ id: 31 }
+						]
+						id: 45
+					}
+				}
+				prerequisite: 41
+				transformation: "y = 1."
+			}
+		}
+		events: {
+			event: {
+				type: AND # reward @ episode end
+				events: { id: 32 }
+				events: { id: 33 }
+				events: { id: 34 }
+				events: { id: 35 }
+				events: { id: 36 }
+				prerequisite: [42, 43, 44, 45]
+				transformation: "y = 1."
+				id: 46
+			}
+		}
+	}
+	episode_end_listener: { events: { id: 46 } }
+	instruction_listener: {
+		type: OR
+		events: {
+			event: {
+				events: { id: 1 }
+				transformation: "y = \"Start from the creation wizard.\""
+			}
+		}
+		events: {
+			event: {
+				events: { id: 2 }
+				transformation: "y = \"Set the initial funds: I have 2000 for saved money and 500 for cash money.\""
+			}
+		}
+		events: {
+			event: {
+				events: { id: 5 }
+				transformation: "y = 'Set up 4 categories: \"Salary\", \"Extra\", \"Assets\", and \"Daily\".'"
+			}
+		}
+		events: {
+			event: {
+				events: { id: 41 }
+				transformation: "y = 'Now please note for me several bills.'"
+				transformation: "y = 'The first is my salary. The amount is 4000. This money is a profit for my saved money. It should be categorized into \"Salary\".'"
+			}
+		}
+		events: {
+			event: {
+				events: { id: 42 }
+				transformation: "y = 'I also received a bonux of 1000 as cash money. It should be categorized into \"Extra\".'"
+			}
+		}
+		events: {
+			event: {
+				events: { id: 43 }
+				transformation: "y = 'I spent 1500 from my saved money to buy a pc. It should be categorized into \"Assets\".'"
+			}
+		}
+		events: {
+			event: {
+				events: { id: 44 }
+				transformation: "y = 'It takes 1000 from my cash money for my lunch in this month. It should be categorized into \"Daily\".'"
+			}
+		}
+	}
+}
+
+command: "I have several funds and bills to be noted in OpenMoneyBox."
+command: "Now open the app, enter the wizard, and help me to note the bills."
+vocabulary: [
+	"100", "500", "1000",
+	"1500", "2000", "2500",
+	"3000", "3500", "4000",
+	"4500", "5000", "salary",
+	"extra" "assets", "daily",
+	"bonus", "PC", "lunch",
+	"category", "money", "saved",
+	"cach", "fund"
+]
