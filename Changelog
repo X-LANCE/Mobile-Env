@@ -1,0 +1,33 @@
+2023-08-22 Danyang Zhang <zdy004007@126.com>
+
+	Document update
+
+	* Changelog: Added this file.
+	* TODO.md: Added it to note the future development plan.
+
+	Supplemented several demo of task definitions.
+
+	* demos/classic_2048.m.textproto
+	* demos/accessibility_forwarder_clock_set_timer.m.textproto
+	* demos/systemui_egg_land_default.m.textproto
+	* demos/openmoneybox.add_billings.textproto
+
+2023-08-17 Danyang Zhang <zdy004007@126.com>
+
+	Updated two scripts for certificate unpinning to adapt to new version of
+	Android Simulator.
+
+	* tools/frida_setup.sh
+	* tools/syscert_setup.exp
+
+2023-06-30 Danyang Zhang <zdy004007@126.com>
+
+	v2.0
+
+	* (New type of event source): Added ResponseEvent to support triggering
+	events from response to human user (RHU). See the updated documents.
+	  * docs/env-usage-zh.md
+	  * docs/task-definition-zh.md
+	  * docs/env-usage-en.md
+	  * docs/task-definition-en.md
+	* (PyPI release): Released on PyPI as mobile-env-rl.
