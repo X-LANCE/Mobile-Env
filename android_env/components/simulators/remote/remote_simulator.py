@@ -25,6 +25,7 @@ from typing import Optional
 import numpy as np
 
 from absl import logging
+import traceback
 
 # ZDY_COMMENT: adb_root and frida_server arguments are ignored here
 # they should be configured directly on launching the daemon on server
@@ -33,10 +34,19 @@ class RemoteSimulator(base_simulator.BaseSimulator):
     #  class RemoteSimulator {{{ # 
     """
     Protocol:
-    - without payloads:
+    - without payloads and expectations:
       + launch
       + start
       + close
+    - queries, with expectations
+      + query_adbdevname
+        + { "name": str }
+    - queries, with both payloads and expectations:
+      + adb
+        + send {
+            "command": list of str
+            "timeout": float or none
+          }
     """
 
     def __init__( self
@@ -77,19 +87,32 @@ class RemoteSimulator(base_simulator.BaseSimulator):
                            )
         #  }}} method _get_response # 
 
+    #  Setup and Clear Methods {{{ # 
     def _restart_impl(self):
-        # TODO
-        pass
+        self._get_response("restart")
     def _launch_impl(self):
         self._session = requests.Session()
         self._get_response("launch")
     def close(self):
-        # TODO
+        try:
+            self._get_response("close")
+        except:
+            logging.exception("Response Error During Closing RemoteSimulator")
+            traceback.print_exc()
+        self._session.close()
         super(RemoteSimulator, self).close()
+    #  }}} Setup and Clear Methods # 
 
     def adb_device_name(self) -> str:
-        # TODO
-        pass
+        #  method adb_device_name {{{ # 
+        try:
+            response: requests.Response = self._get_response("query_adbdevname")
+            name: str = response.json()["name"]
+            name = "remote-device:{:}".format(name)
+        except:
+            name: str = "remote-device"
+        return name
+        #  }}} method adb_device_name # 
     def create_adb_controller(self) -> AdbController:
         # TODO
         pass
