@@ -42,7 +42,7 @@ class RemoteAdbController(AdbController):
         self._port: int = port
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
 
-        self._session: requests.Session = session
+        self._session: Optional[requests.Session] = session
         #  }}} method __init__ # 
 
     def _execute_command( self, args: List[str]

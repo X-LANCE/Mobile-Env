@@ -17,6 +17,7 @@
 from android_env.components.simulators import base_simulator
 from android_env.components.adb_controller import AdbController
 from android_env.components.log_stream import LogStream
+from android_env.components.simulators.remote import remote_base, remote_adb_controller
 
 import requests
 
@@ -30,7 +31,9 @@ import traceback
 # ZDY_COMMENT: adb_root and frida_server arguments are ignored here
 # they should be configured directly on launching the daemon on server
 
-class RemoteSimulator(base_simulator.BaseSimulator):
+class RemoteSimulator( base_simulator.BaseSimulator
+                     , remote_base.RemoteBase
+                     ):
     #  class RemoteSimulator {{{ # 
     """
     Protocol:
@@ -38,8 +41,9 @@ class RemoteSimulator(base_simulator.BaseSimulator):
       + launch
       + start
       + close
+      + create_adbc
     - queries, with expectations
-      + query_adbdevname
+      + create_adbc
         + { "name": str }
     - queries, with both payloads and expectations:
       + adb
@@ -58,6 +62,7 @@ class RemoteSimulator(base_simulator.BaseSimulator):
                 ):
         #  method __init__ {{{ # 
         super(RemoteSimulator, self).__init__(**kwargs)
+        #super(base_simulator.BaseSimulator, self).__init__()
 
         self._address: str = address
         self._port: int = port
@@ -67,25 +72,8 @@ class RemoteSimulator(base_simulator.BaseSimulator):
         self._retry: int = 3
 
         self._session: Optional[requests.Session] = None
+        self._adb_device_name: str = "remote-device"
         #  }}} method __init__ # 
-
-    def _get_response(self, action: str, args: Optional[Dict[str, str]] = None) -> requests.Response:
-        #  method _get_response {{{ # 
-        for i in range(self._retry):
-            response: requests.Response =\
-                    self._session.post( self._url_base + action
-                                      , json=args
-                                      , timeout=self._timeout
-                                      )
-            if response.status_code==200:
-                return response
-            logging.debug( "Remote Simulator Response Error %d: %d"
-                         , i, response.status_code
-                         )
-        raise ResponseError("Remote Simulator Response Error: {:d}"\
-                                .format(response.status_code)
-                           )
-        #  }}} method _get_response # 
 
     #  Setup and Clear Methods {{{ # 
     def _restart_impl(self):
@@ -105,17 +93,20 @@ class RemoteSimulator(base_simulator.BaseSimulator):
 
     def adb_device_name(self) -> str:
         #  method adb_device_name {{{ # 
-        try:
-            response: requests.Response = self._get_response("query_adbdevname")
-            name: str = response.json()["name"]
-            name = "remote-device:{:}".format(name)
-        except:
-            name: str = "remote-device"
-        return name
+        return self._adb_device_name
         #  }}} method adb_device_name # 
     def create_adb_controller(self) -> AdbController:
-        # TODO
-        pass
+        #  method create_adb_controller {{{ # 
+        response: requests.Response = self._get_response("create_adbc")
+        self._adb_device_name = response.json()["name"]
+        self._adb_device_name = "remote-device:{:}".format(self._adb_device_name)
+
+        return remote_adb_controller.RemoteAdbController( self._address
+                                                        , self._port
+                                                        , self._session
+                                                        , self._adb_device_name
+                                                        )
+        #  }}} method create_adb_controller # 
     def _create_log_stream(self) -> LogStream:
         # TODO
         pass
@@ -127,7 +118,3 @@ class RemoteSimulator(base_simulator.BaseSimulator):
         # TODO
         pass
     #  }}} class RemoteSimulator # 
-
-class ResponseError(Exception):
-    def __init__(self, description: str):
-        super(ResponseError, self).__init__(description)
