@@ -15,21 +15,27 @@
 # Created by Danyang Zhang @X-Lance.
 
 from android_env.components.adb_controller import AdbController
+from android_env.components.simulators.remote import remote_base
 
 import requests
 
 from typing import Optional
 from typing import List
 
+from absl import logging
+
 # ZDY_COMMENT: adb and frida arguments are left to server daemon
 
-class RemoteAdbController(AdbController):
+class RemoteAdbController( AdbController
+                         , remote_base.RemoteBase
+                         ):
     #  class RemoteAdbController {{{ # 
 
     def __init__( self
                 , address: str
                 , port: int
                 , session: requests.Session
+                , remote_id: int
                 , device_name: str
                 ):
         #  method __init__ {{{ # 
@@ -43,11 +49,40 @@ class RemoteAdbController(AdbController):
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
 
         self._session: Optional[requests.Session] = session
+        self._remote_id: int = remote_id
         #  }}} method __init__ # 
 
     def _execute_command( self, args: List[str]
                         , timeout: Optional[float] = None
                         ) -> Optional[bytes]:
-        # TODO
-        pass
+        #  method _execute_command {{{ # 
+        """
+        Args:
+            args (List[str]): adb command, e.g., `["install", "a.apk"]`
+            timeout (Optional[float]): if ignored, then the default timeout
+              defined at the remote daemon will be adopted
+
+        Returns:
+            Optional[bytes]: the output of the command from the stdout. None if
+              the command failed
+        """
+        with self._execute_command_lock:
+            response: requests.Response =\
+                    self._get_response( "adb"
+                                      , { "id": self._remote_id
+                                        , "cmd": args
+                                        , "timeout": timeout
+                                        }
+                                      )
+        response: Dict[str, Optional[bytes]] = response.json()
+        logging.debug( "Remote ADB response for %d from %d: %s"
+                     , self._remote_id, response["id"]
+                     , response["output"]
+                     }
+        assert self._remote_id==response["id"]\
+             , "Request Id: {:d}, Response Id: {:d}"\
+                .format(self._remote_id, response["id"])
+
+        return response["output"]
+        #  }}} method _execute_command # 
     #  }}} class RemoteAdbController # 

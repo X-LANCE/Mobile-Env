@@ -44,12 +44,20 @@ class RemoteSimulator( base_simulator.BaseSimulator
       + create_adbc
     - queries, with expectations
       + create_adbc
-        + { "name": str }
+        + {
+            "name": str
+            "id": int
+          }
     - queries, with both payloads and expectations:
       + adb
-        + send {
-            "command": list of str
+        + sends {
+            "id": int
+            "cmd": list of str
             "timeout": float or none
+          }
+        + receives {
+            "id": int
+            "output": bytes or none
           }
     """
 
@@ -98,12 +106,15 @@ class RemoteSimulator( base_simulator.BaseSimulator
     def create_adb_controller(self) -> AdbController:
         #  method create_adb_controller {{{ # 
         response: requests.Response = self._get_response("create_adbc")
-        self._adb_device_name = response.json()["name"]
+        response: Dict[str, Union[str, int]] = response.json()
+        self._adb_device_name = response["name"]
         self._adb_device_name = "remote-device:{:}".format(self._adb_device_name)
+        remote_id: int = response["id"]
 
         return remote_adb_controller.RemoteAdbController( self._address
                                                         , self._port
                                                         , self._session
+                                                        , remote_id
                                                         , self._adb_device_name
                                                         )
         #  }}} method create_adb_controller # 

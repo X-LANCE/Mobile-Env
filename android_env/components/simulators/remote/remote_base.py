@@ -16,7 +16,7 @@
 
 import abc
 import requests
-from typing import Optional
+from typing import Optional, Any
 from typing import Dict
 
 from absl import logging
@@ -24,7 +24,7 @@ from absl import logging
 class RemoteBase(abc.ABC):
     _session: Optional[requests.Session] = None
 
-    def _get_response(self, action: str, args: Optional[Dict[str, str]] = None) -> requests.Response:
+    def _get_response(self, action: str, args: Optional[Dict[str, Any]] = None) -> requests.Response:
         #  method _get_response {{{ # 
         for i in range(self._retry):
             response: requests.Response =\
