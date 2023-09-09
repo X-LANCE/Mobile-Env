@@ -19,7 +19,7 @@ from android_env.components.simulators.remote import remote_base
 
 import requests
 from typing import Optional
-from typing import List
+from typing import List, Dict
 
 from absl import logging
 
@@ -77,7 +77,7 @@ class RemoteAdbController( AdbController
         logging.debug( "Remote ADB response for %d from %d: %s"
                      , self._remote_id, response["id"]
                      , response["output"]
-                     }
+                     )
         assert self._remote_id==response["id"]\
              , "Request Id: {:d}, Response Id: {:d}"\
                 .format(self._remote_id, response["id"])

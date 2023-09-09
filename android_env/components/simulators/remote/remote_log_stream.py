@@ -18,7 +18,7 @@ from android_env.components import log_stream
 from android_env.components.simulators.remote import remote_base
 
 import requests
-from typing import Iterable
+from typing import Iterable, Optional
 
 class RemoteLogStream( log_stream.LogStream
                      , remote_base.RemoteBase

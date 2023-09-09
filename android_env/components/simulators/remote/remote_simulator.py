@@ -20,10 +20,11 @@ from android_env.components.log_stream import LogStream
 from android_env.components.simulators.remote import remote_base\
                                                    , remote_adb_controller\
                                                    , remote_log_stream
+#from android_env.components.action_type import ActionType
 
 import requests
 from typing import Dict, List
-from typing import Optional, Union
+from typing import Optional, Union, Any
 import numpy as np
 
 from absl import logging
@@ -38,20 +39,16 @@ class RemoteSimulator( base_simulator.BaseSimulator
     #  class RemoteSimulator {{{ # 
     """
     Protocol:
-    - without payloads and expectations:
+    - launching
       + launch
       + start
       + close
+    - adb
       + create_adbc
-    - queries, with expectations
-      + create_adbc
-        + {
+        + sends {
             "name": str
             "id": int
           }
-      + create_logs
-        + text line stream
-    - queries, with both payloads and expectations:
       + adb
         + sends {
             "id": int
@@ -61,6 +58,23 @@ class RemoteSimulator( base_simulator.BaseSimulator
         + receives {
             "id": int
             "output": bytes or none
+          }
+    - log
+      + create_logs
+        + text line stream
+    - act & observ.
+      + act
+        + sends {
+            "action_type": int
+            "touch_position": list of float
+            "input_token": int
+            "response": str
+          }
+      + observ
+        + receives {
+            "img": bytes
+            "size": [int, int] # W, H
+            "time": int
           }
     """
 
@@ -130,9 +144,37 @@ class RemoteSimulator( base_simulator.BaseSimulator
         #  }}} method _create_log_stream # 
 
     def send_action(self, action: Dict[str, np.ndarray]):
-        # TODO
-        pass
+        #  method send_action {{{ # 
+        action_dict: Dict[str, Any] = {}
+        action_dict["action_type"] = action["action_type"].tolist()
+        if "touch_position" in action:
+            action_dict["touch_position"] = action["touch_position"].tolist()
+        if "input_token" in action:
+            action_dict["input_token"] = action["input_token"].tolist()
+        if "response" in action:
+            action_dict["response"] = action["response"].tolist()
+        self._get_response("act", action_dict)
+        #  }}} method send_action # 
     def _get_observation(self) -> Optional[List[np.ndarray]]:
-        # TODO
-        pass
+        #  method _get_observation {{{ # 
+        """
+        Returns:
+            np.ndarray: ndarray with shape (H, W, 3) of uint8 as the screenshot
+            np.int64: the timestamp
+        """
+
+        response: requests.Response = self._get_response("observ")
+        response: Dict[str, Any] = response.json()
+
+        width: int
+        height: int
+        width, height = response["size"]
+        image: np.ndarray = np.frombuffer( response["img"]
+                                         , dtype=np.uint8
+                                         , count=width*height*3
+                                         )
+        image = np.reshape(image, (height, width, 3))
+
+        return [image, np.int64(response["time"])]
+        #  }}} method _get_observation # 
     #  }}} class RemoteSimulator # 
