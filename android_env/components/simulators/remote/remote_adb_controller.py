@@ -18,7 +18,6 @@ from android_env.components.adb_controller import AdbController
 from android_env.components.simulators.remote import remote_base
 
 import requests
-
 from typing import Optional
 from typing import List
 
@@ -48,7 +47,7 @@ class RemoteAdbController( AdbController
         self._port: int = port
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
 
-        self._session: Optional[requests.Session] = session
+        self._session: requests.Session = session
         self._remote_id: int = remote_id
         #  }}} method __init__ # 
 

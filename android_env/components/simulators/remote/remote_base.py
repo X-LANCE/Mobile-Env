@@ -22,15 +22,20 @@ from typing import Dict
 from absl import logging
 
 class RemoteBase(abc.ABC):
-    _session: Optional[requests.Session] = None
+    _session: requests.Session
 
-    def _get_response(self, action: str, args: Optional[Dict[str, Any]] = None) -> requests.Response:
+    def _get_response( self
+                     , action: str
+                     , args: Optional[Dict[str, Any]] = None
+                     , stream: bool = False
+                     ) -> requests.Response:
         #  method _get_response {{{ # 
         for i in range(self._retry):
             response: requests.Response =\
                     self._session.post( self._url_base + action
                                       , json=args
                                       , timeout=self._timeout
+                                      , stream=stream
                                       )
             if response.status_code==200:
                 return response

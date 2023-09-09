@@ -17,12 +17,13 @@
 from android_env.components.simulators import base_simulator
 from android_env.components.adb_controller import AdbController
 from android_env.components.log_stream import LogStream
-from android_env.components.simulators.remote import remote_base, remote_adb_controller
+from android_env.components.simulators.remote import remote_base\
+                                                   , remote_adb_controller\
+                                                   , remote_log_stream
 
 import requests
-
 from typing import Dict, List
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 
 from absl import logging
@@ -48,6 +49,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
             "name": str
             "id": int
           }
+      + create_logs
+        + text line stream
     - queries, with both payloads and expectations:
       + adb
         + sends {
@@ -79,7 +82,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
         self._timeout: float = 5.
         self._retry: int = 3
 
-        self._session: Optional[requests.Session] = None
+        self._session: requests.Session = requests.Session()
         self._adb_device_name: str = "remote-device"
         #  }}} method __init__ # 
 
@@ -87,7 +90,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
     def _restart_impl(self):
         self._get_response("restart")
     def _launch_impl(self):
-        self._session = requests.Session()
+        #self._session = requests.Session()
         self._get_response("launch")
     def close(self):
         try:
@@ -119,8 +122,12 @@ class RemoteSimulator( base_simulator.BaseSimulator
                                                         )
         #  }}} method create_adb_controller # 
     def _create_log_stream(self) -> LogStream:
-        # TODO
-        pass
+        #  method _create_log_stream {{{ # 
+        return remote_log_stream.RemoteLogStream( self._address
+                                                , self._port
+                                                , self._session
+                                                )
+        #  }}} method _create_log_stream # 
 
     def send_action(self, action: Dict[str, np.ndarray]):
         # TODO
