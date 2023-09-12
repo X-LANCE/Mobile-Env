@@ -20,6 +20,7 @@ from android_env.components.simulators.remote import remote_base
 import requests
 from typing import Optional
 from typing import List, Dict
+import base64
 
 from absl import logging
 
@@ -74,14 +75,18 @@ class RemoteAdbController( AdbController
                                         }
                                       )
         response: Dict[str, Optional[bytes]] = response.json()
+
+        output: Optional[str] = response["output"]
+        if isinstance(output, str):
+            output: Optional[bytes] = base64.b64decode(output.encode())
         logging.debug( "Remote ADB response for %d from %d: %s"
                      , self._remote_id, response["id"]
-                     , response["output"]
+                     , output
                      )
         assert self._remote_id==response["id"]\
              , "Request Id: {:d}, Response Id: {:d}"\
                 .format(self._remote_id, response["id"])
 
-        return response["output"]
+        return output
         #  }}} method _execute_command # 
     #  }}} class RemoteAdbController # 

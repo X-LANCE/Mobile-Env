@@ -26,6 +26,7 @@ import requests
 from typing import Dict, List
 from typing import Optional, Union, Any
 import numpy as np
+import base64
 
 from absl import logging
 import traceback
@@ -45,7 +46,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
       + close
     - adb
       + create_adbc
-        + sends {
+        + receives {
             "name": str
             "id": int
           }
@@ -57,7 +58,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
           }
         + receives {
             "id": int
-            "output": bytes or none
+            "output": base64 or none
           }
     - log
       + create_logs
@@ -72,7 +73,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
           }
       + observ
         + receives {
-            "img": bytes
+            "img": base64
             "size": [int, int] # W, H
             "time": int
           }
@@ -98,6 +99,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
 
         self._session: requests.Session = requests.Session()
         self._adb_device_name: str = "remote-device"
+
+        self._adb_controller: AdbController = self.create_adb_controller()
         #  }}} method __init__ # 
 
     #  Setup and Clear Methods {{{ # 
@@ -169,7 +172,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
         width: int
         height: int
         width, height = response["size"]
-        image: np.ndarray = np.frombuffer( response["img"]
+        img_buffer: bytes = base64.b64decode(response["img"].encode())
+        image: np.ndarray = np.frombuffer( img_buffer
                                          , dtype=np.uint8
                                          , count=width*height*3
                                          )
