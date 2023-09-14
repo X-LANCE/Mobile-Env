@@ -11,6 +11,7 @@
   deployment of Mobile-Env. Even I feel that it is too complicated to set up an
   Android environment before install Mobile-Env. However, a docker won't help
   KVM configuration, either. Under consideration.
+* (Icon Model): The embedded icon model.
 
 ---
 
