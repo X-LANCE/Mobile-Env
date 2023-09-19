@@ -41,6 +41,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
     """
     Protocol:
     - launching
+      + init
       + launch
       + start
       + close
@@ -83,10 +84,21 @@ class RemoteSimulator( base_simulator.BaseSimulator
                 , address: str
                 , port: int
                 , timeout: float = 5.
+                , launch_timeout: float = 2.
                 , retry: int = 3
                 , **kwargs
                 ):
         #  method __init__ {{{ # 
+        """
+        Args:
+            address (str): IP address of remote daemon
+            port (int): listening port of remote daemone
+            timeout (float): timeout for regular commands in secondes
+            launch_timeout (float): timeout for commands `launch`, `start`, and
+              `close` in **minutes**
+            retry (int): retry times
+        """
+
         super(RemoteSimulator, self).__init__(**kwargs)
         #super(base_simulator.BaseSimulator, self).__init__()
 
@@ -94,24 +106,26 @@ class RemoteSimulator( base_simulator.BaseSimulator
         self._port: int = port
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
 
-        self._timeout: float = 5.
-        self._retry: int = 3
+        self._timeout: float = timeout
+        self._launch_timeout: float = launch_timeout*60.
+        self._retry: int = retry
 
         self._session: requests.Session = requests.Session()
         self._adb_device_name: str = "remote-device"
 
+        self._get_response("init")
         self._adb_controller: AdbController = self.create_adb_controller()
         #  }}} method __init__ # 
 
     #  Setup and Clear Methods {{{ # 
     def _restart_impl(self):
-        self._get_response("restart")
+        self._get_response("restart", timeout=self._launch_timeout)
     def _launch_impl(self):
         #self._session = requests.Session()
-        self._get_response("launch")
+        self._get_response("launch", timeout=self._launch_timeout)
     def close(self):
         try:
-            self._get_response("close")
+            self._get_response("close", timeout=self._launch_timeout)
         except:
             logging.exception("Response Error During Closing RemoteSimulator")
             traceback.print_exc()
@@ -134,6 +148,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
         return remote_adb_controller.RemoteAdbController( self._address
                                                         , self._port
                                                         , self._session
+                                                        , self._timeout
+                                                        , self._retry
                                                         , remote_id
                                                         , self._adb_device_name
                                                         )
@@ -143,6 +159,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
         return remote_log_stream.RemoteLogStream( self._address
                                                 , self._port
                                                 , self._session
+                                                , self._timeout
+                                                , self._retry
                                                 )
         #  }}} method _create_log_stream # 
 
@@ -182,3 +200,16 @@ class RemoteSimulator( base_simulator.BaseSimulator
         return [image, np.int64(response["time"])]
         #  }}} method _get_observation # 
     #  }}} class RemoteSimulator # 
+
+if __name__ == "__main__":
+    simulator = RemoteSimulator("127.0.0.1", 5000)
+    simulator.launch()
+    #simulator.restart()
+
+    input("Press ENTER to continue on ADB test")
+
+    adb_controller: AdbController = simulator.create_adb_controller()
+    adb_controller.install_apk("apps/wikihow/wikiHow：万事指南_2.9.6_apkcombo.com.apk")
+    adb_controller.start_activity("com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity") # TODO: args error
+
+    input("Press ENTER to continue on ...")

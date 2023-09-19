@@ -23,18 +23,22 @@ from absl import logging
 
 class RemoteBase(abc.ABC):
     _session: requests.Session
+    _timeout: float
+    _retry: int
+    _url_base: str
 
     def _get_response( self
                      , action: str
                      , args: Optional[Dict[str, Any]] = None
                      , stream: bool = False
+                     , timeout: Optional[float] = None
                      ) -> requests.Response:
         #  method _get_response {{{ # 
         for i in range(self._retry):
             response: requests.Response =\
                     self._session.post( self._url_base + action
                                       , json=args
-                                      , timeout=self._timeout
+                                      , timeout=(timeout or self._timeout)
                                       , stream=stream
                                       )
             if response.status_code==200:

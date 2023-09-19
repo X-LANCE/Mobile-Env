@@ -35,6 +35,8 @@ class RemoteAdbController( AdbController
                 , address: str
                 , port: int
                 , session: requests.Session
+                , timeout: float
+                , retry: int
                 , remote_id: int
                 , device_name: str
                 ):
@@ -47,8 +49,10 @@ class RemoteAdbController( AdbController
         self._address: str = address
         self._port: int = port
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
-
         self._session: requests.Session = session
+        self._timeout: float = timeout
+        self._retry: int = retry
+
         self._remote_id: int = remote_id
         #  }}} method __init__ # 
 

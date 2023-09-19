@@ -66,17 +66,21 @@ logger.addHandler(stdout_handler)
 with open("android-envd.conf.yaml") as f:
     config: Dict[str, Any] = yaml.load(f, Loader=yaml.Loader)
 
-# session dict:
+# session/manager dict:
 # {
-#   "simulator": EmulatorSimulator
+#   //"simulator": EmulatorSimulator
 #   "is_launched": optional bool, defaults to False
-#   "adb_controller": list of AdbController
-#   "lock": threading.Lock
-#  }
+#   //"adb_controller": list of AdbController
+#   //"lock": threading.Lock
+#   "sid": int
+# }
 
-@app.route("/launch", methods=["POST"])
-def launch() -> str:
-    #  function launch {{{ # 
+manager: List[Dict[str, Any]] = []
+glock = threading.Lock()
+
+@app.route("/init", methods=["POST"])
+def init() -> str:
+    #  function init {{{ # 
     if not session.get("is_launched", False):
         session["is_launched"] = True
 
@@ -116,39 +120,55 @@ def launch() -> str:
                                      , frida_server=frida_server
                                      )
 
-        session["lock"] = threading.Lock()
-        with session["lock"]:
-            session["simulator"] = simulator
-    with session["lock"]:
-        session["simulator"].launch()
+        with glock:
+            session["sid"] = len(manager)
+            manager.append({})
+        sid: int = session["sid"]
+        manager[sid]["lock"] = threading.Lock()
+        with manager[sid]["lock"]:
+            manager[sid]["simulator"] = simulator
+    return "OK"
+    #  }}} function init # 
+
+@app.route("/launch", methods=["POST"])
+def launch() -> str:
+    #  function launch {{{ # 
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].launch()
     return "OK"
     #  }}} function launch # 
 
 @app.route("/start", methods=["POST"])
 def start() -> str:
     #  function start {{{ # 
-    with session["lock"]:
-        session["simulator"].restart()
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].restart()
     return "OK"
     #  }}} function start # 
 
 @app.route("/close", methods=["POST"])
 def close() -> str:
     #  function close {{{ # 
-    with session["lock"]:
-        session["simulator"].close()
-        if "adb_controller" in session:
-            for adb_ctrl in session["adb_controller"]:
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].close()
+        if "adb_controller" in manager[sid]:
+            for adb_ctrl in manager[sid]["adb_controller"]:
                 adb_ctrl.close()
     #  }}} function close # 
 
 @app.route("/create_adbc", methods=["POST"])
 def create_adb_controller() -> Dict[str, Union[str, int]]:
     #  function create_adb_controller {{{ # 
-    with session["lock"]:
-        adbc_id: int = len(session["adb_controller"])
-        session["adb_controller"].append(session["simulator"].create_adb_controller())
-    return { "name": session["simulator"].adb_device_name()
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        if not "adb_controller" in manager[sid]:
+            manager[sid]["adb_controller"] = []
+        adbc_id: int = len(manager[sid]["adb_controller"])
+        manager[sid]["adb_controller"].append(manager[sid]["simulator"].create_adb_controller())
+    return { "name": manager[sid]["simulator"].adb_device_name()
            , "id": adbc_id
            }
     #  }}} function create_adb_controller # 
@@ -168,7 +188,8 @@ def adb() -> Dict[str, Union[int, Optional[str]]]:
     args: Dict[str, Union[int, List[str], Optional[float]]] =\
             request.json
 
-    adb_controller: AdbController = session["adb_controller"][args["id"]]
+    sid: int = session["sid"]
+    adb_controller: AdbController = manager[sid]["adb_controller"][args["id"]]
     output: Optional[bytes] = adb_controller._execute_command(args["cmd"], timeout=args["timeout"])
     if isinstance(output, bytes):
         output: Optional[str] = base64.b64encode(output).decode()
@@ -180,7 +201,8 @@ def adb() -> Dict[str, Union[int, Optional[str]]]:
 @app.route("/create_logs", methods=["POST"])
 def create_log_stream() -> Iterator[str]:
     #  function create_log_stream {{{ # 
-    log_stream: AdbLogStream = session["simulator"].get_log_stream()
+    sid: int = session["sid"]
+    log_stream: AdbLogStream = manager[sid]["simulator"].get_log_stream()
     return log_stream.get_stream_output()
     #  }}} function create_log_stream # 
 
@@ -199,8 +221,9 @@ def action() -> str:
     if "response" in args:
         action_dict["response"] = np.array(args["response"], dtype=np.object_)
 
-    with session["lock"]:
-        session["simulator"].send_action(action_dict)
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].send_action(action_dict)
     return "OK"
     #  }}} function action # 
 
@@ -216,10 +239,12 @@ def observation() -> Dict[str, Union[str, List[int], int]]:
             "time": int as the timestamp
           }
     """
-    with session["lock"]:
+
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
         observation: np.ndarray
         timestamp: np.int64
-        observation, timestamp = session["simulator"]._get_observation()
+        observation, timestamp = manager[sid]["simulator"]._get_observation()
 
     width: int
     height: int

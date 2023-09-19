@@ -28,6 +28,8 @@ class RemoteLogStream( log_stream.LogStream
                 , address: str
                 , port: int
                 , session: requests.Session
+                , timeout: float
+                , retry: int
                 ):
         #  method __init__ {{{ # 
         super(RemoteLogStream, self).__init__()
@@ -36,6 +38,8 @@ class RemoteLogStream( log_stream.LogStream
         self._port: int = port
         self._url_base = "http://{:}:{:}/".format(self._address, self._port)
         self._session: requests.Session = session
+        self._timeout: float = timeout
+        self._retry: int = retry
 
         self._response: Optional[requests.Response] = None
         #  }}} method __init__ # 
