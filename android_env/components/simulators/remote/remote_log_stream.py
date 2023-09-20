@@ -19,6 +19,7 @@ from android_env.components.simulators.remote import remote_base
 
 import requests
 from typing import Iterable, Optional
+from typing import List
 
 class RemoteLogStream( log_stream.LogStream
                      , remote_base.RemoteBase
@@ -47,9 +48,18 @@ class RemoteLogStream( log_stream.LogStream
     def _get_stream_output(self) -> Iterable[str]:
         self._response: requests.Response = self._get_response( "create_logs"
                                                               , stream=True
+                                                              , method="GET"
                                                               )
-        return self._response.iter_lines()
+        return map(bytes.decode, self._response.iter_lines())
 
     def stop_stream(self):
         self._response.close()
+
+    def set_log_filters(self, log_filters: List[str]):
+        super(RemoteLogStream, self).set_log_filters(log_filters)
+
+        self._get_response( "set_filts"
+                          , { "filts": log_filters
+                            }
+                          )
     #  }}} class RemoteLogStream # 

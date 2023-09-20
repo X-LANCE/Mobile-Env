@@ -40,7 +40,7 @@ app.secret_key = secrets.token_bytes()
 flask_compress.Compress(app)
 
 #  Logger Configs {{{ # 
-logger: logging.Logger = app.logger
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 datetime_str: str = datetime.datetime.now().strftime("%Y%m%d@%H%M%S")
@@ -58,9 +58,13 @@ file_handler.setFormatter(formatter)
 debug_handler.setFormatter(formatter)
 stdout_handler.setFormatter(formatter)
 
+#stdout_handler.addFilter(logging.Filter(app.logger.name))
+
 logger.addHandler(file_handler)
 logger.addHandler(debug_handler)
 logger.addHandler(stdout_handler)
+
+logger: logging.Logger = app.logger
 #  }}} Logger Configs # 
 
 with open("android-envd.conf.yaml") as f:
@@ -157,6 +161,7 @@ def close() -> str:
         if "adb_controller" in manager[sid]:
             for adb_ctrl in manager[sid]["adb_controller"]:
                 adb_ctrl.close()
+    return "OK"
     #  }}} function close # 
 
 @app.route("/create_adbc", methods=["POST"])
@@ -198,13 +203,24 @@ def adb() -> Dict[str, Union[int, Optional[str]]]:
            }
     #  }}} function adb # 
 
-@app.route("/create_logs", methods=["POST"])
+@app.route("/create_logs", methods=["GET"])
 def create_log_stream() -> Iterator[str]:
     #  function create_log_stream {{{ # 
     sid: int = session["sid"]
     log_stream: AdbLogStream = manager[sid]["simulator"].get_log_stream()
-    return log_stream.get_stream_output()
+    return log_stream.get_stream_output(), {"Content-Type": "text/event-stream"}
     #  }}} function create_log_stream # 
+
+@app.route("/set_filts", methods=["POST"])
+def set_log_filters() -> str:
+    #  function set_log_filters {{{ # 
+    args: Dict[str, List[str]] = request.json
+
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].get_log_stream().set_log_filters(args["filts"])
+    return "OK"
+    #  }}} function set_log_filters # 
 
 @app.route("/act", methods=["POST"])
 def action() -> str:

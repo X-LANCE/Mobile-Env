@@ -32,15 +32,17 @@ class RemoteBase(abc.ABC):
                      , args: Optional[Dict[str, Any]] = None
                      , stream: bool = False
                      , timeout: Optional[float] = None
+                     , method: str = "POST"
                      ) -> requests.Response:
         #  method _get_response {{{ # 
         for i in range(self._retry):
             response: requests.Response =\
-                    self._session.post( self._url_base + action
-                                      , json=args
-                                      , timeout=(timeout or self._timeout)
-                                      , stream=stream
-                                      )
+                    self._session.request( method
+                                         , self._url_base + action
+                                         , json=args
+                                         , timeout=(timeout or self._timeout)
+                                         , stream=stream
+                                         )
             if response.status_code==200:
                 return response
             logging.debug( "Remote Simulator Response Error %d: %d"
