@@ -213,7 +213,7 @@ if __name__ == "__main__":
     simulator.launch()
     #simulator.restart()
 
-    input("Press ENTER to continue on ADB test.")
+    input("\x1b[31mPress ENTER to continue on ADB test.\x1b[0m")
 
     adb_controller: AdbController = simulator.create_adb_controller()
     adb_controller.install_apk("apps/wikihow/wikiHow：万事指南_2.9.6_apkcombo.com.apk")
@@ -221,7 +221,7 @@ if __name__ == "__main__":
                                  , extra_args=None
                                  )
 
-    input("Press ENTER to continue on log stream test.")
+    input("\x1b[31mPress ENTER to continue on log stream test.\x1b[0m")
 
     log_stream: LogStream = simulator.get_log_stream()
     log_stream.set_log_filters(["jd:D"])
@@ -231,6 +231,14 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         log_stream.stop_stream()
 
-    input("Press ENTER to continue on ...")
+    input("\x1b[31mPress ENTER to continue on action test.\x1b[0m")
+
+    pass
+
+    input("\x1b[31mPress ENTER to continue on observation test.\x1b[0m")
+
+    pass
+
+    input("\x1b[31mPress ENTER to continue on ...\x1b[0m")
     adb_controller.close()
     simulator.close()

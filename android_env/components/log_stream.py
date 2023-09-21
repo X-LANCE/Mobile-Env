@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +31,8 @@ class LogStream(metaclass=abc.ABCMeta):
   def get_stream_output(self):
     """Starts log process and returns the stream of logs."""
     for line in self._get_stream_output():
-      if self._verbose:
+        #if self._verbose:
+      if True:
         logging.info('line: %r', line)
       yield line
 

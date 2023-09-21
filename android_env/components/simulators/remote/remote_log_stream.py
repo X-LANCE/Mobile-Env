@@ -48,6 +48,7 @@ class RemoteLogStream( log_stream.LogStream
     def _get_stream_output(self) -> Iterable[str]:
         self._response: requests.Response = self._get_response( "create_logs"
                                                               , stream=True
+                                                              , timeout=(self._timeout, None)
                                                               , method="GET"
                                                               )
         return map(bytes.decode, self._response.iter_lines())

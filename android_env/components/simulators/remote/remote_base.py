@@ -16,8 +16,8 @@
 
 import abc
 import requests
-from typing import Optional, Any
-from typing import Dict
+from typing import Optional, Any, Union
+from typing import Dict, Tuple
 
 from absl import logging
 
@@ -31,7 +31,11 @@ class RemoteBase(abc.ABC):
                      , action: str
                      , args: Optional[Dict[str, Any]] = None
                      , stream: bool = False
-                     , timeout: Optional[float] = None
+                     , timeout: Union[ Optional[float]
+                                     , Tuple[ Optional[float]
+                                            , Optional[float]
+                                            ]
+                                     ] = None
                      , method: str = "POST"
                      ) -> requests.Response:
         #  method _get_response {{{ # 
