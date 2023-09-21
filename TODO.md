@@ -2,7 +2,7 @@
 
 ### Main Branch
 
-* (Remote environment like OpenAI Universe): Support interaction with
+* ✓ (Remote environment like OpenAI Universe): Support interaction with
   environment hosted on a remote server. To enable training RL agents on GPU
   servers without KVM enabled.
 * (Repeatability control for event slots): I find it useful to control

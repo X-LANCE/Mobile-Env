@@ -1,3 +1,22 @@
+2023-09-21 Danyang Zhang <zdy004007@126.com>
+
+	Added RemoteSimulator to support place Android Simulator to another remote
+	machine with KVM enabled.
+
+	Remote versions of simulator, adb controller, and log stream:
+
+	* android_env/components/simulators/remote/remote_simulator.py
+	* android_env/components/simulators/remote/remote_adb_controller.py
+	* android_env/components/simulators/remote/remote_log_stream.py
+
+	Daemon running on the remote simulator machine:
+
+	* android_env/components/simulators/remote/daemon.py
+
+	Remote version of load function:
+
+	* android_env/loader.py: added load_remote function.
+
 2023-08-22 Danyang Zhang <zdy004007@126.com>
 
 	Document update
