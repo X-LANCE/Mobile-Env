@@ -54,7 +54,8 @@ class RemoteLogStream( log_stream.LogStream
         return map(bytes.decode, self._response.iter_lines())
 
     def stop_stream(self):
-        self._response.close()
+        #self._response.close()
+        pass
 
     def set_log_filters(self, log_filters: List[str]):
         super(RemoteLogStream, self).set_log_filters(log_filters)

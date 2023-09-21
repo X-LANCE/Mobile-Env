@@ -31,8 +31,7 @@ class LogStream(metaclass=abc.ABCMeta):
   def get_stream_output(self):
     """Starts log process and returns the stream of logs."""
     for line in self._get_stream_output():
-        #if self._verbose:
-      if True:
+      if self._verbose:
         logging.info('line: %r', line)
       yield line
 
