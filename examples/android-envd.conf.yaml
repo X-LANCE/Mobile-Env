@@ -1,0 +1,8 @@
+adb_path: ~/Android/Sdk/platform-tools/adb
+avd_name: Pixel_2_API_30_ga_x64
+android_avd_home: ~/.android/avd
+android_sdk_root: ~/Android/Sdk
+emulator_path: ~/Android/Sdk/emulator/emulator
+run_headless: true
+mitm_config:
+  method: syscert

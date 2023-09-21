@@ -25,6 +25,8 @@ gradlew
 gradlew.bat
 
 apps/searchwikihow/window_dump.xml
+/android-envd.conf.yaml
+simu_daemon_logs
 
 tools/*.apk
 tools/frida-server-14.2.2-android-x86_64

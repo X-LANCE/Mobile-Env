@@ -18,3 +18,4 @@
 from android_env import loader
 
 load = loader.load
+load_remote = loader.load_remote
