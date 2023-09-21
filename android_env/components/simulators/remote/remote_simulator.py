@@ -206,8 +206,10 @@ class RemoteSimulator( base_simulator.BaseSimulator
     #  }}} class RemoteSimulator # 
 
 if __name__ == "__main__":
-    #import time
+    import time
     #from typing import Iterator
+    from android_env.components.action_type import ActionType
+    from PIL import Image
 
     simulator = RemoteSimulator("127.0.0.1", 5000)
     simulator.launch()
@@ -233,11 +235,22 @@ if __name__ == "__main__":
 
     input("\x1b[31mPress ENTER to continue on action test.\x1b[0m")
 
-    pass
+    simulator.send_action( { "action_type": np.array(ActionType.TOUCH)
+                           , "touch_position": np.array([0.17, 0.90])
+                           }
+                         )
+    time.sleep(.005)
+    simulator.send_action( { "action_type": np.array(ActionType.LIFT)
+                           , "touch_position": np.empty((2,))
+                           }
+                         )
 
     input("\x1b[31mPress ENTER to continue on observation test.\x1b[0m")
 
-    pass
+    observation: Dict[str, np.ndarray] = simulator.get_observation()
+    print("TD: @{:}, OT: {:}".format(observation["timedelta"], np.argmax(observation["orientation"])))
+    screen = Image.fromarray(observation["pixels"])
+    screen.save("a.png")
 
     input("\x1b[31mPress ENTER to continue on ...\x1b[0m")
     adb_controller.close()
