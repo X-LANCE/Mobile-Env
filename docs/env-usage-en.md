@@ -3,6 +3,22 @@
 
 ## Evaluating and Training Agents on Mobile-Env
 
+### Choose the Simulator Type
+
+Mobile-Env now supports two types of Android simulators: local simulator and
+remote simulator. If a local simulator is used, the simulator should be on the
+same host machine with Mobile-Env environment interface. If a remote simulator
+is used, the simulator can be launched alone on a remote machine and be
+accessed remotely through Mobile-Env. Mobile-Env provides consistent interfaces
+for both local and remote simulators and the internal implementation is
+completely transparent to the agent. You won't need to further modify your
+agent to switch the simulator type. Considering to launch an Android emulator
+requires hardware-based acceleration like KVM (Kernel-Based Virtual Machine),
+which is usually invalid on GPU clusters, the remote simulator will be helpful.
+
+Once the simulator type is chosen, you can follow the guidelines below to
+configure Android Emulator and create Android Virtual Device.
+
 ### Create an Android Virtual Device
 
 An Android Virtual Device (AVD) running on [Android

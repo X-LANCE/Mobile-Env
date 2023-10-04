@@ -4,6 +4,12 @@
 
 ## 利用Mobile-Env验证、验证智能体
 
+### 确定模拟器类型
+
+Mobile-Env现支持两种类型的安卓模拟器：本地模拟器与远程模拟器。若使用本地模拟器，则Mobile-Env环境接口需与安卓模拟器位于同一台宿主机上；若采用远程模拟器，则可以将安卓模拟器单独放置在远程机器上，然后通过Mobile-Env远程访问之。无论采用本地模拟器还是远程模拟器，Mobile-Env都对外提供一致的接口，其内部实现对智能体程序完全透明，不需要对智能体做额外改动。考虑到采用模拟器运行安卓系统，需要宿主机启用诸如KVM（Kernel-Based Virtual Machine，内核虚拟机）的硬件加速，这在许多显卡集群上可能是不可用的，在这种情况下，远程模拟器会比较方便。
+
+确定要采用的模拟器类型后，可参照后文，在需要运行模拟器的机器上配置安卓模拟器并创建虚拟机。
+
 ### 创建安卓虚拟机
 
 使用Mobile-Env需要使用一台运行于[Android Emulator](https://developer.android.com/about)上的安卓虚拟机。虚拟机可以通过[Android Studio](https://developer.android.com/studio)创建，也可以通过[安卓命令行工具](https://developer.android.com/studio)创建。
