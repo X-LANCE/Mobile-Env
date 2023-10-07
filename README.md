@@ -1,6 +1,21 @@
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```bibtex', '```', 'bib', 'NonText'): -->
 
+## NEWS!!
+
+* (2023-09-21 v2.1) Added *REMOTE SIMULATOR* to solve the problem that
+  hardware-based acceleration for virtualization is note enabled on many GPU clusters
+
+Please see our [Change Log](Changelog) and [document](docs/env-usage-en.md).
+
+* (2023-06-30 v2.0) New type of event "response to human user" (RHU,
+  `ResponseEvent`). New enables the agent to generate response to human user
+  and parses episode signales from it. This will enable interaction tasks like
+  question-answering, retrieval, *etc*.
+
+Please see our [Change Log](Changelog), [usage document](docs/env-usage-en.md),
+and [task definition document](docs/task-definition-en.md).
+
 # Mobile-Env: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era 
 
 Mobile-Env is a interaction platform for evaluation and training of the

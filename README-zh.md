@@ -2,6 +2,16 @@
 <!-- vimc: call SyntaxRange#Include('```bibtex', '```', 'bib', 'NonText'): -->
 <!-- vim: set nospell iminsert=2: -->
 
+## 最近更新
+
+* （2023-09-21 v2.1）增加了“远程模拟器”，用以应对许多显卡集群上未启用对虚拟化的硬件加速的问题
+
+具体信息请查看[更新日志](Changelog)和[文档](docs/env-usage-zh.md)。
+
+* （2023-06-30 v2.0）增加了新事件类型“给人类用户的回复”（`ResponseEvent`），允许智能体给人类用户产生回复，并从中解析历程信号，用来支持问答、检索类型的交互任务
+
+具体信息请查看[更新日志](Changelog)、[使用文档](docs/env-usage-zh.md)、[任务定义文档](docs/task-definition-zh.md)。
+
 # Mobile-Env：大模型时代的交互智能体评测平台与基准
 
 Mobile-Env是针对信息用户界面交互设计的验证、训练平台，论文现公开于[arXiv](https://arxiv.org/abs/2305.08144)。
