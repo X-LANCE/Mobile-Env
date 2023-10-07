@@ -133,6 +133,8 @@ Pinning Problem & Solutions](docs/dynamic-app-en.md).
 
 ### Launch the Interaction Environment
 
+#### Launch an Interaction Environment with Local Simulator
+
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
@@ -334,6 +336,69 @@ def icon_matcher( screen: torch.Tensor
 ```
 </details>
 <!-- }}} Icon Interface Declaration -->
+
+#### Launch an Interaction Environment with Remote Simulator
+
+##### Launch Remote Simulator Daemon
+
+To launch an environment with remote simulator, you need to first launch a
+simulator daemon on the remote machine. The daemon program is implemented with
+[Flask](https://flask.palletsprojects.com/en/2.3.x/) framework and you can
+launch the daemon with:
+
+```sh
+flask --app android_env.components.simulators.remote.daemon run -h <a.b.c.d> -p <ppp>
+```
+
+The daemon process will read simulator configuration from
+`android-envd.conf.yaml` under the current working path. The config parameters
+are the same with those of the aforementioned `android_env.load` function. An
+example of configuration is provided as `examples/android-envd.conf.yaml`.
+
+Currently, HTTPS protocol is not supported. You can establish the connection
+through a secure channel like SSH.
+
+##### Launch Interaction Environment to Connect to Remote Simulator
+
+Then you can launch an environment with the remote simulator daemon through the
+function below:
+
+```python
+import android_env
+from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+
+env = android_env.load_remote( task_path
+                             , address
+                             , port
+                             , timeout=5. # in seconds
+                             , launch_timeout=2. # in minutes
+                             , retry=3
+                             , mitm_config=None
+                             , start_token_mark=""
+                             , non_start_token_mark="##"
+                             , special_token_pattern: str = r"\[\w+\]"
+                             , unify_vocabulary="vocab.txt"
+                             , text_model=EasyOCRWrapper()
+                             , icon_model=ResNet()
+                             , with_view_hierarchy=False
+                             )
+```
+
+Several parameters:
+
+* `address` specifies the IP address the remote simulator daemon listens to. A
+  string is expected.
+* `port` specifies the port the remote daemon listens to. An interger is
+  expected.
+* `timeout` specifies the timeout for common revocation in seconds.
+* `launch_timeout` specifies the timeout for launch revocation in minutes. This
+  parameter is specified individually for the launch of a simulator instance
+  takes much longer time.
+* `retry` specifies the total number of attempts when timeouts or other network
+  errors occur.
+
+The other parameters are the same with those of the aforementioned
+`android_env.load` function.
 
 ### Interact with the Environment
 

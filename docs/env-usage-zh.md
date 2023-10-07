@@ -90,6 +90,8 @@ sed -i.bak -e 's#^\(image\.sysdir\.1[[:space:]]*=[[:space:]]*\)Sdk/#\1#g' ~/.and
 
 ### 创建交互环境
 
+#### 利用本地模拟器创建交互环境
+
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
@@ -251,6 +253,55 @@ def icon_matcher( screen: torch.Tensor
 ```
 </details>
 <!-- }}} 图标接口声明 -->
+
+#### 利用远程模拟器创建交互环境
+
+##### 启动远程模拟器服务
+
+要使用远程模拟器来创建交互环境，首先需要在一台远程机器上启动远程模拟器服务。远程模拟器服务程序采用[Flask](https://flask.palletsprojects.com/en/2.3.x/)框架实现，可以用以下命令启动服务进程。
+
+```sh
+flask --app android_env.components.simulators.remote.daemon run -h <a.b.c.d> -p <ppp>
+```
+
+服务进程启动时，会从当前所在目录下的`android-envd.conf.yaml`中读取模拟器配置。配置参数同前述`android_env.load`函数中的模拟器参数相同。`examples/android-envd.conf.yaml`提供了一份配置范例。
+
+当前没有实现HTTPS协议，作为替代，可以采用基于SSH等的安全信道建立通信。
+
+##### 启动交互环境连接远程模拟器
+
+使用以下函数启动一个交互环境连接远程模拟器。
+
+```python
+import android_env
+from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+
+env = android_env.load_remote( task_path
+                             , address
+                             , port
+                             , timeout=5. # 单位：秒
+                             , launch_timeout=2. # 单位：分钟
+                             , retry=3
+                             , mitm_config=None
+                             , start_token_mark=""
+                             , non_start_token_mark="##"
+                             , special_token_pattern: str = r"\[\w+\]"
+                             , unify_vocabulary="vocab.txt"
+                             , text_model=EasyOCRWrapper()
+                             , icon_model=ResNet()
+                             , with_view_hierarchy=False
+                             )
+```
+
+其中
+
+* `address`参数为远程模拟器服务监听的网络地址，需要传入一个字符串
+* `port`参数为远程模拟器服务监听的端口，需要传入一个整数
+* `timeout`参数指定调用一般远程命令的等待超时时间，以“秒”为单位
+* `launch_timeout`参数指定调用启动命令时的等待超时时间；模拟器启动耗时较长，因此将该参数单独列出；该参数以“分钟”为单位
+* `retry`参数指定超时或发成其他网络错误时，总的尝试次数
+
+其余参数均与前述`android_env.load`函数的参数相同。
 
 ### 与环境交互
 

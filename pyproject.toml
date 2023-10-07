@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-env-rl"
-version = "2.1"
+version = "2.1.1"
 authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
 license = {file = "LICENSE"}
 description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
@@ -23,7 +23,10 @@ dependencies = [
 	"lxml",
 	"torch",
 	"torchvision",
-	"transformers"
+	"transformers",
+	"requests",
+	"Flask",
+	"Flask-Compress"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

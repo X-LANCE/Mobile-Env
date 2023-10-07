@@ -112,7 +112,7 @@ class _BuildPy(build_py):
 
 setup(
     name='mobile-env-rl',
-    version='2.1',
+    version='2.1.1',
     description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
     author='Danyang Zhang @X-Lance',
@@ -136,7 +136,10 @@ setup(
         'lxml',
         'torch',
         'torchvision',
-        'transformers'
+        'transformers',
+        'requests',
+        'Flask',
+        'Flask-Compress'
     ],
     extras_require={
         #'acme': ['dm-acme'],
