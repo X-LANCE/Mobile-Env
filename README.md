@@ -10,7 +10,7 @@
 Please see our [Change Log](Changelog) and [Document](docs/env-usage-en.md).
 
 * (2023-06-30 v2.0) New type of event "response to human user" (RHU,
-  `ResponseEvent`). New enables the agent to generate response to human user
+  `ResponseEvent`). Now enables the agent to generate response to human user
   and parses episode signales from it. This will enable interaction tasks like
   question-answering, retrieval, *etc*.
 
