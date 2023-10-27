@@ -1,0 +1,4 @@
+emulator
+platform-tools
+platforms;android-30
+system-images;android-30;google_apis;x86_64

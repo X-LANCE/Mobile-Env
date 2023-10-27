@@ -1,4 +1,4 @@
-# zdy023/avd
+# zdy023/mobile-env:v2.1.a30_ga.base
 
 FROM pytorch/pytorch:1.12.0-cuda11.3-cudnn8-runtime
 
@@ -21,14 +21,11 @@ RUN mkdir -p $ANDROID_HOME &&\
     echo 'export PATH='$ANDROID_HOME'/platform-tools:$PATH' >>/root/.bashrc
 
 # configure python environment
-COPY ./android-env-web-small.txt ./
+#COPY ./android-env-web-small.txt ./
 COPY ./android_env/ ./android_env/
-COPY ./backend/ ./backend/
-COPY ./mitmscripts/ ./mitmscripts/
-RUN pip config set global.index-url https://mirrors.bfsu.edu.cn/pypi/web/simple &&\
-	pip install --upgrade pip && \
-    pip install -r android-env-web-small.txt &&\
-    pip install --upgrade protobuf &&\
-    cd android_env && pip install .
+#COPY ./backend/ ./backend/
+#COPY ./mitmscripts/ ./mitmscripts/
+#RUN pip config set global.index-url https://mirrors.bfsu.edu.cn/pypi/web/simple &&\
+RUN cd android_env && pip install .
 
-COPY ./syscert_setup.exp ./setup_image.sh ./
+#COPY ./syscert_setup.exp ./setup_image.sh ./
