@@ -16,13 +16,13 @@
 
 # zdy023/mobile-env-rl:v2.1.a30_ga.base
 
-FROM pytorch/pytorch:1.12.0-cuda11.3-cudnn8-runtime
+FROM pytorch/pytorch:1.13.0-cuda11.6-cudnn8-runtime
 
 WORKDIR /root
 
 # install JRE and expect
 RUN apt update -y &&\
-    apt install -y openjdk-17-jre expect
+    apt install -y openjdk-17-jre expect unzip
 
 ENV ANDROID_HOME="/root/Android/Sdk"
 ENV AVD_NAME="Pixel_2_API_30_ga_x64"

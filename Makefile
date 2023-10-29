@@ -35,8 +35,17 @@ frida:
 	rsync -ruvth --delete tools/frida_setup.sh $(docker_dir)/
 	docker build --tag $(itag_frida) --file $(docker_dir)/frida.dockerfile $(docker_dir)/
 
-
 rmiB:
 	docker ps -a --filter "ancestor=$(itag_base)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
 	docker rmi $(itag_base)
+	docker images
+
+rmiS:
+	docker ps -a --filter "ancestor=$(itag_syscert)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
+	docker rmi $(itag_syscert)
+	docker images
+
+rmiF:
+	docker ps -a --filter "ancestor=$(itag_frida)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
+	docker rmi $(itag_frida)
 	docker images

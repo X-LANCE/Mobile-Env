@@ -20,11 +20,11 @@ FROM zdy023/mobile-env-rl:v2.1.a30_ga.base
 
 WORKDIR /root
 
-RUN pip install mitmproxy==8.0.0 &&\
-	pip install --upgrade protobuf\
-	mkdir -p /root/mitmscripts
-
 COPY ./syscert_setup.exp ./setup_image.sh ./
+
+RUN pip install mitmproxy==8.0.0 Werkzeug==2.2.2 &&\
+	pip install --upgrade protobuf &&\
+	mkdir -p /root/mitmscripts
 
 # /root/mitmscripts/replay.py will be used as replay script
 #VOLUME /root/mitmscripts
