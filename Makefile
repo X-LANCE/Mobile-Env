@@ -21,7 +21,9 @@ docker_dir := build-docker
 
 itag_base := zdy023/mobile-env-rl:v2.1.a30_ga.base
 itag_syscert := zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0.part
+itag_syscert_full := zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0
 itag_frida := zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2.part
+itag_frida_full := zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2
 
 base:
 	rsync -ruvth --delete --exclude=__pycache__ android_env setup.py pyproject.toml LICENSE $(docker_dir)/android_env/
@@ -43,9 +45,13 @@ rmiB:
 rmiS:
 	docker ps -a --filter "ancestor=$(itag_syscert)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
 	docker rmi $(itag_syscert)
+	docker ps -a --filter "ancestor=$(itag_syscert_full)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
+	docker rmi $(itag_syscert_full)
 	docker images
 
 rmiF:
 	docker ps -a --filter "ancestor=$(itag_frida)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
 	docker rmi $(itag_frida)
+	docker ps -a --filter "ancestor=$(itag_frida_full)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
+	docker rmi $(itag_frida_full)
 	docker images
