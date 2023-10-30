@@ -39,7 +39,8 @@ import subprocess
 import sys
 import threading
 import time
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Tuple, Dict
+from typing import Optional, Sequence
 import lxml.etree
 
 from absl import logging
@@ -148,13 +149,12 @@ class AdbController():
 
     #self._execute_command(["shell", frida_server, "&"])
     #time.sleep(0.2)
-    self._frida_server = subprocess.Popen(
-        [
-          "adb",
-          "shell",
-          frida_server
-        ],
-        stdin=subprocess.DEVNULL)
+    self._frida_server = subprocess.Popen( self.command_prefix()\
+                                         + [ "shell"
+                                           , frida_server
+                                           ]
+                                         , stdin=subprocess.DEVNULL
+                                         )
 
   def close(self) -> None:
     """Closes internal threads and processes."""
