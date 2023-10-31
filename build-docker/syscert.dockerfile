@@ -23,8 +23,7 @@ WORKDIR /root
 COPY ./syscert_setup.exp ./setup_image.sh ./
 
 RUN pip install mitmproxy==8.0.0 Werkzeug==2.2.2 &&\
-	pip install --upgrade protobuf &&\
-	mkdir -p /root/mitmscripts
+	pip install --upgrade protobuf
 
 # /root/mitmscripts/replay.py will be used as replay script
 #VOLUME /root/mitmscripts

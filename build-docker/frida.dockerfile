@@ -16,6 +16,8 @@
 
 # NOTE: frida-server seems not to work on amd64 Android images in container. I
 # have to leave it on the shelf temporarily.
+#
+# Related issue: https://github.com/remote-android/redroid-doc/issues/286
 
 # zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2.part
 
