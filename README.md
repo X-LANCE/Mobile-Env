@@ -84,6 +84,9 @@ cd Mobile-Env
 pip install .
 ```
 
+Several [Docker images](https://hub.docker.com/r/zdy023/mobile-env-rl) with
+well-configured Android AVD are also available.
+
 ### Load and Run Mobile-Env for Evaluation or Training
 
 Before loading the Mobile-Env environment, you will need to set up an [Android
