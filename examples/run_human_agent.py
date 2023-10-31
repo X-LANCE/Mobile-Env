@@ -240,6 +240,20 @@ class Recorder():
 def main(_):
 
   pygame.init()
+
+  #print('display init ...')
+  #pygame.display.init()
+  #print('cdrom init ...')
+  #pygame.cdrom.init()
+  #print('joystick init ...')
+  #pygame.joystick.init()
+  #print('font init ...')
+  #pygame.font.init()
+  #print('mixer init ...')
+  #pygame.mixer.init()
+
+  #pygame.quit()
+
   pygame.display.set_caption('android_human_agent')
 
   if FLAGS.mitm=="none":

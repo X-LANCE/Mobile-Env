@@ -283,6 +283,8 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
 
         self._repeatability: Repeatability = repeatability
         self._last_set: bool = False
+        self._set: bool = False
+        self._new_step: bool = True
 
         self._ever_set: bool = False
         self._prerequisites: List[Event] = []
@@ -324,21 +326,31 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     def _satisfies_prerequisites(self) -> bool:
         return all(map(lambda evt: evt.is_ever_set(), self._prerequisites))
 
-    def is_set(self) -> bool:
+    def set_new_step(self):
+        self._new_step = True
+        for evt in self._sources:
+            if hasattr(evt, "set_new_step"):
+                evt.set_new_step()
+
+    def is_set(self):
         #  method `is_set` {{{ # 
-        if not self._satisfies_prerequisites():
-            return False
-        if self._is_set():
-            if self._repeatability==Repeatability.UNLIMITED:
-                set_: bool = True
-            elif self._repeatability==Repeatability.LAST:
-                set_: bool = not self._last_set
+        if self._new_step:
+            if not self._satisfies_prerequisites():
+                self._set = False
+            elif self._is_set():
+                if self._repeatability==Repeatability.UNLIMITED:
+                    set_: bool = True
+                elif self._repeatability==Repeatability.LAST:
+                    set_: bool = not self._last_set
+                else:
+                    set_: bool = not self._ever_set
+                self._ever_set = True
+                self._last_set = True
+                self._set = set_
             else:
-                set_: bool = not self._ever_set
-            self._ever_set = True
-            self._last_set = True
-            return set_
-        return False
+                self._set = False
+        self._new_step = False
+        return self._set
         #  }}} method `is_set` # 
     @abc.abstractclassmethod
     def _is_set(self) -> bool:
@@ -367,10 +379,10 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     def reset(self):
         #  method `reset` {{{ # 
         self._ever_set = False
+        self._last_set = False
+        self._set = False
         for evt in self._sources:
             evt.reset()
-        #for evt in self._prerequisites:
-            #evt.reset()
         #  }}} method `reset` # 
     #  }}} abstract class `EventSlot` # 
 

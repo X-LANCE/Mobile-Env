@@ -259,7 +259,7 @@ message EventSlot {
 	enum Repeatability {
 		UNLIMITED = 0;
 		LAST = 1;
-		NONE = 0;
+		NONE = 2;
 	}
 
     Type type = 1;

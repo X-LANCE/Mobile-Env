@@ -786,6 +786,14 @@ class TaskManager():
                                 , self._response_events
                                 ):
         evt.snapshot()
+      for evt in [ self._score_event
+                 , self._reward_event
+                 , self._episode_end_event
+                 , self._extra_event
+                 , self._json_extra_event
+                 , self._instruction_event
+                 ]:
+        evt.set_new_step()
     #  }}} method `snapshot_events` # 
 
   def clear_events(self):
