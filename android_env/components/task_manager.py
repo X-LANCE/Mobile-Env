@@ -409,14 +409,22 @@ class TaskManager():
 
     # create event object
     if event_definition.type==task_pb2.EventSlot.Type.SINGLE:
-      event = event_listeners.DefaultEvent([sub_events[0]],
-          transformation=transformation, wrap=wrap, update=update)
+      event = event_listeners.DefaultEvent( [sub_events[0]]
+                                          , transformation=transformation
+                                          , wrap=wrap
+                                          , update=update
+                                          , repeatability=2-event_definition.repeatability
+                                          )
       if len(late_source_ids)>0:
         late_source_ids = [late_source_ids[0]]
     elif event_definition.type==task_pb2.EventSlot.Type.OR:
-      event = event_listeners.Or(sub_events, transformation, wrap, update)
+      event = event_listeners.Or( sub_events, transformation, wrap, update
+                                , repeatability=2-event_definition.repeatability
+                                )
     elif event_definition.type==task_pb2.EventSlot.Type.AND:
-      event = event_listeners.And(sub_events, transformation, wrap)
+      event = event_listeners.And( sub_events, transformation, wrap
+                                 , repeatability=2-event_definition.repeatability
+                                 )
 
     # handle late sources
     if len(late_source_ids)>0:

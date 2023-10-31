@@ -127,13 +127,13 @@ class Event(abc.ABC, Generic[W]):
         #raise NotImplementedError()
     #  }}} abstract class `Event` # 
 
+class Repeatability(enum.IntEnum):
+    NONE = 0
+    LAST = 1
+    UNLIMITED = 2
+
 class EventSource(Event[V], abc.ABC, Generic[I, V]):
     #  abstract class `EventSource` {{{ # 
-    class Repeatability(enum.IntEnum):
-        NONE = 0
-        LAST = 1
-        UNLIMITED = 2
-
     def __init__(self,
             #transformation: Optional[str] = None,
             #cast: Optional[Callable[[V], C]] = None,
@@ -154,12 +154,12 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         super(EventSource, self).__init__()
 
-        self._repeatability: EventSource.Repeatability = repeatability
+        self._repeatability: Repeatability = repeatability
         self._last_input: I = None # the last input, both activating and not activating
         self._input_history: List[I] = [] # history list of the activating inputs
 
@@ -181,8 +181,8 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
         #if any(map(lambda evt: not evt.is_ever_set(), self._prerequisites)):
             #return
 
-        if self._repeatability==EventSource.Repeatability.NONE and value in self._input_history or\
-                self._repeatability==EventSource.Repeatability.LAST and value == self._last_input:
+        if self._repeatability==Repeatability.NONE and value in self._input_history or\
+                self._repeatability==Repeatability.LAST and value == self._last_input:
             return
         self._last_input = value
 
@@ -247,24 +247,25 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
 
 class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     #  abstract class `EventSlot` {{{ # 
-    def __init__(self,
-            sources: Iterable[Event[V]],
-            #cast: Optional[Callable[[V], C]] = None,
-            transformation: Optional[List[str]] = None,
-            wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+    def __init__( self
+                , sources: Iterable[Event[V]]
+                , transformation: Optional[List[str]] = None
+                , wrap: Optional[Callable[[T], W]] = None
+                , update: Optional[Callable[[W, W], W]] = None
+                , repeatability: Repeatability = Repeatability.UNLIMITED
+                ):
         #  method `__init__` {{{ # 
         """
-        sources - iterable of Event
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        transformation - list of str or None
-        wrap - callable accepting the transformed type returning the wrapped
-          type or None
-        update - callable accepting
-          + the wrapped type
-          + the wrapped type
-          and returning the wrapped type
+        Args:
+            sources: iterable of Event
+            transformation: list of str or None
+            wrap: callable accepting the transformed type returning the wrapped
+              type or None
+            update: callable accepting
+              + the wrapped type
+              + the wrapped type
+              and returning the wrapped type
+            repeatability (Repeatability): repeatability
         """
 
         super(EventSlot, self).__init__()
@@ -279,6 +280,9 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         update = update or (lambda x, y: y)
         #self._update: Callable[[Optional[W], W], W] = lambda x, y: update(x, y) if x is not None else y
         self._update: Callable[[W, W], W] = update
+
+        self._repeatability: Repeatability = repeatability
+        self._last_set: bool = False
 
         self._ever_set: bool = False
         self._prerequisites: List[Event] = []
@@ -325,8 +329,15 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         if not self._satisfies_prerequisites():
             return False
         if self._is_set():
+            if self._repeatability==Repeatability.UNLIMITED:
+                set_: bool = True
+            elif self._repeatability==Repeatability.LAST:
+                set_: bool = not self._last_set
+            else:
+                set_: bool = not self._ever_set
             self._ever_set = True
-            return True
+            self._last_set = True
+            return set_
         return False
         #  }}} method `is_set` # 
     @abc.abstractclassmethod
@@ -375,27 +386,28 @@ class EmptyEvent(EventSlot[None, None, None]):
 
 class DefaultEvent(EventSlot[V, T, W]):
     #  class `DefaultEvent` {{{ # 
-    def __init__(self,
-            sources: List[Event[V]],
-            #cast: Optional[Callable[[V], C]] = None,
-            transformation: Optional[List[str]] = None,
-            wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+    def __init__( self
+                , sources: List[Event[V]]
+                , transformation: Optional[List[str]] = None
+                , wrap: Optional[Callable[[T], W]] = None
+                , update: Optional[Callable[[W, W], W]] = None
+                , repeatability: Repeatability = Repeatability.UNLIMITED
+                ):
         #  method `__init__` {{{ # 
         """
-        sources - list of Event
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        transformation - list of str or None
-        wrap - callable accepting the transformed type returning the wrapped
-          type or None
-        update - callable accepting
-          + the wrapped type
-          + the wrapped type
-          and returning the wrapped type
+        Args:
+            sources: iterable of Event
+            transformation: list of str or None
+            wrap: callable accepting the transformed type returning the wrapped
+              type or None
+            update: callable accepting
+              + the wrapped type
+              + the wrapped type
+              and returning the wrapped type
+            repeatability (Repeatability): repeatability
         """
 
-        super(DefaultEvent, self).__init__(sources, transformation, wrap, update)
+        super(DefaultEvent, self).__init__(sources, transformation, wrap, update, repeatability)
         #  }}} method `__init__` # 
 
     def _is_set(self) -> bool:
@@ -417,28 +429,29 @@ class DefaultEvent(EventSlot[V, T, W]):
 
 class Or(EventSlot[V, T, W]):
     #  class `Or` {{{ # 
-    def __init__(self,
-            events: Iterable[Event[V]],
-            transformation: Optional[List[str]] = None,
-            #cast: Optional[Callable[[V], C]] = None,
-            wrap: Optional[Callable[[T], W]] = None,
-            update: Optional[Callable[[W, W], W]] = None):
+    def __init__( self
+                , events: Iterable[Event[V]]
+                , transformation: Optional[List[str]] = None
+                , wrap: Optional[Callable[[T], W]] = None
+                , update: Optional[Callable[[W, W], W]] = None
+                , repeatability: Repeatability = Repeatability.UNLIMITED
+                ):
         #  method `__init__` {{{ # 
         """
-        events - iterable of Event
-        transformation - list of str or None
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        wrap - callable accepting the transformed type returning the wrapped
-          type or None
-        update - callable accepting
-          + the wrapped type
-          + the wrapped type
-          and returning the wrapped type
+        Args:
+            sources: iterable of Event
+            transformation: list of str or None
+            wrap: callable accepting the transformed type returning the wrapped
+              type or None
+            update: callable accepting
+              + the wrapped type
+              + the wrapped type
+              and returning the wrapped type
+            repeatability (Repeatability): repeatability
         """
 
         #update = update or (lambda x, y: x)
-        super(Or, self).__init__(events, transformation, wrap, update)
+        super(Or, self).__init__(events, transformation, wrap, update, repeatability)
 
         #self._events: List[Event[Any, Any, Any, Any, V]] = list(events)
         #  }}} method `__init__` # 
@@ -477,27 +490,27 @@ class Or(EventSlot[V, T, W]):
 
 class And(EventSlot[V, T, W]):
     #  class `And` {{{ # 
-    def __init__(self,
-            events: Iterable[Event[V]],
-            transformation: Optional[List[str]] = None,
-            #cast: Optional[Callable[[V], C]] = None,
-            wrap: Optional[Callable[[T], W]] = None):
-            #update: Optional[Callable[[W, W], W]] = None):
+    def __init__( self
+                , events: Iterable[Event[V]]
+                , transformation: Optional[List[str]] = None
+                , wrap: Optional[Callable[[T], W]] = None
+                , repeatability: Repeatability = Repeatability.UNLIMITED
+                ):
         #  method `__init__` {{{ # 
         """
-        events - iterable of Event
-        transformation - list of str of None
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        wrap - callable accepting the transformed type returning the wrapped
-          type or None
-        #update - callable accepting
-          #+ the wrapped type
-          #+ the wrapped type
-          #and returning the wrapped type
+        Args:
+            sources: iterable of Event
+            transformation: list of str or None
+            wrap: callable accepting the transformed type returning the wrapped
+              type or None
+            update: callable accepting
+              + the wrapped type
+              + the wrapped type
+              and returning the wrapped type
+            repeatability (Repeatability): repeatability
         """
 
-        super(And, self).__init__(events, transformation, wrap)
+        super(And, self).__init__(events, transformation, wrap, repeatability)
 
         #self._events: List[Event[Any, Any, Any, Any, V]] = list(events)
         #  }}} method `__init__` # 
@@ -534,7 +547,7 @@ class RegionEvent(EventSource[I, V], abc.ABC):
             #cast: Optional[Callable[[V], C]] = None,
             #wrap: Optional[Callable[[T], W]] = None,
             #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+            repeatability: Repeatability = Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         region - iterable of four floats as [x0, y0, x1, y1]
@@ -548,7 +561,7 @@ class RegionEvent(EventSource[I, V], abc.ABC):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         #super(RegionEvent, self).__init__(transformation, cast, wrap, update, repeatability)
@@ -573,7 +586,7 @@ class TextEvent(RegionEvent[Optional[str], str]):
             #cast: Optional[Callable[[str], C]] = None,
             #wrap: Optional[Callable[[T], W]] = None,
             #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+            repeatability: Repeatability = Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         expect - str
@@ -588,7 +601,7 @@ class TextEvent(RegionEvent[Optional[str], str]):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         #super(TextEvent, self).__init__(region, needs_detection, transformation, cast, wrap, update, repeatability)
@@ -621,7 +634,7 @@ class IconRecogEvent(RegionEvent[str, bool]):
             #transformation: Optional[str] = None,
             #wrap: Optional[Callable[[T], W]] = None,
             #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+            repeatability: Repeatability = Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         icon_class - str
@@ -634,7 +647,7 @@ class IconRecogEvent(RegionEvent[str, bool]):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         #super(IconRecogEvent, self).__init__(region, needs_detection, transformation, None, wrap, update, repeatability)
@@ -663,7 +676,7 @@ class IconMatchEvent(RegionEvent[bool, bool]):
             #transformation: Optional[str] = None,
             #wrap: Optional[Callable[[T], W]] = None,
             #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+            repeatability: Repeatability = Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         path - str
@@ -676,7 +689,7 @@ class IconMatchEvent(RegionEvent[bool, bool]):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         #super(IconMatchEvent, self).__init__(region, needs_detection, transformation, None, wrap, update, repeatability)
@@ -848,7 +861,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
                 #, cast: Optional[Callable[[V], C]] = None
                 #, wrap: Optional[Callable[[T], W]] = None
                 #, update: Optional[Callable[[W, W], W]] = None
-                , repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE
+                , repeatability: Repeatability = Repeatability.NONE
                 ):
         #  method `__init__` {{{ # 
         """
@@ -856,7 +869,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
             vh_path (Iterable[str]): a group of Mobile-Env-customized css
               selectors
             vh_property (Iterable[Property]): iterable of Property
-            repeatability (EventSource.Repeatability): defines the
+            repeatability (Repeatability): defines the
               repeatability of the event source
         """
 
@@ -904,7 +917,7 @@ class LogEvent(EventSource[str, str]):
             #cast: Optional[Callable[[V], C]] = None,
             #wrap: Optional[Callable[[T], W]] = None,
             #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+            repeatability: Repeatability = Repeatability.NONE):
         #  method `__init__` {{{ # 
         """
         filters - iterable of str
@@ -917,7 +930,7 @@ class LogEvent(EventSource[str, str]):
           #+ the wrapped type
           #+ the wrapped type
           #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        repeatability - Repeatability
         """
 
         super(LogEvent, self).__init__(repeatability)
@@ -953,7 +966,7 @@ class ResponseEvent(EventSource[str, str]):
     #  class ResponseEvent {{{ # 
     def __init__( self
                 , pattern: str
-                , repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE
+                , repeatability: Repeatability = Repeatability.NONE
                 ):
         #  method __init__ {{{ # 
         self._pattern: Pattern[str] = re.compile(pattern)

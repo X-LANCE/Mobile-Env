@@ -173,11 +173,11 @@ message EventSource {
 		//
 		// multiple strings will be concatenated by ", ", i.e.,
 		//
-		// selector: ["abc", "def", ".\"class\">@3"]
+		// selector: ["abc", "def", '."class">@3']
 		//
 		// is the same as a group of css selectors
 		//
-		// selector: "abc, def, .\"class\">@3"
+		// selector: 'abc, def, ."class">@3'
 		repeated string selector = 3;
 
         enum Sign {
@@ -256,6 +256,12 @@ message EventSlot {
         }
     }
 
+	enum Repeatability {
+		UNLIMITED = 0;
+		LAST = 1;
+		NONE = 0;
+	}
+
     Type type = 1;
     int32 id = 2;
     repeated FakeSource events = 3;
@@ -270,6 +276,7 @@ message EventSlot {
     // NOTE: for `or`, use `x` to represent the input from the exclusive active
     // event
     repeated string transformation = 5;
+	Repeatability repeatability = 6;
 }
 // }}} message `EventSlot` -
 
