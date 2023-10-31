@@ -338,7 +338,7 @@ class TaskManager():
           property_ = event_listeners.ViewHierarchyEvent.ScalarProperty(prpt.property_name,
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
-      event = event_listeners.ViewHierarchyEvent(event_source.view_hierarchy_event.view_hierarchy_path,
+      event = event_listeners.ViewHierarchyEvent(event_source.view_hierarchy_event.selector,
           properties, repeatability=event_source.repeatability)
       self._view_hierarchy_events.append(event)
     elif event_source.HasField("log_event"):

@@ -329,22 +329,26 @@ class AppScreenChecker():
 
     for evnt in self._event_listeners:
       # 1. match the path
-      matches, leaf_node = match_path2(view_hierarchy, evnt.path)
-      if not matches:
+      #matches, leaf_node = match_path2(view_hierarchy, evnt.path)
+      #if not matches:
+        #continue
+      leaf_nodes: List[lxml.etree.Element] = evnt.selector(view_hierarchy)
+      if len(leaf_nodes)==0:
         continue
 
       # 2. match the property value
-      values = []
-      for prpt in evnt.property_names:
-        if prpt in ["left", "top", "right", "bottom"]:
-          matches = AppScreenChecker.bbox_regex.fullmatch(leaf_node.get("bounds"))
-          normalization = self._adb_controller.get_screen_dimensions()[1]\
-              if prpt[0]=="l" or prpt[0]=="r"\
-              else self._adb_controller.get_screen_dimensions()[0]
-          values.append(float(matches[prpt])/normalization)
-        else:
-          values.append(leaf_node.get(prpt))
-      with lock:
-        evnt.set(values)
+      for l in leaf_nodes:
+        values = []
+        for prpt in evnt.property_names:
+          if prpt in ["left", "top", "right", "bottom"]:
+            matches = AppScreenChecker.bbox_regex.fullmatch(l.get("bounds"))
+            normalization = self._adb_controller.get_screen_dimensions()[1]\
+                if prpt[0]=="l" or prpt[0]=="r"\
+                else self._adb_controller.get_screen_dimensions()[0]
+            values.append(float(matches[prpt])/normalization)
+          else:
+            values.append(l.get(prpt))
+        with lock:
+          evnt.set(values)
     #  }}} method `match_events` # 
   #  }}} For VH Events Listening # 

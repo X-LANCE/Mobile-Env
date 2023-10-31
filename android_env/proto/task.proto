@@ -159,7 +159,26 @@ message EventSource {
         // Specified as (EBNF)
         // path = class-regex [ "@" id-regex ] ;
         // If there is "@" in the regex literal, escape it by "\@".
-        repeated string view_hierarchy_path = 1;
+        //repeated string view_hierarchy_path = 1;
+
+		// Mobile-Env-customized CSS selector
+		// several customized syntax:
+		//
+    	// * #"com.wikihow.wikihowapp:id/search_src_text" -> [resource-id="com.wikihow.wikihowapp:id/search_src_text"]
+    	// * #$"search_src_text" -> [resource-id$=search_src_text]
+    	// * ."android.widget.EditText" -> [class="android.widget.EditText"]
+    	// * .$"EditText" -> [class$=EditText]
+    	// * $"com.wikihow.wikihowapp" -> [package="com.wikihow.wikihowapp"]
+    	// * @2 -> [index="2"], somewhat the same as :nth-child(3) (index attribute starts from 0)
+		//
+		// multiple strings will be concatenated by ", ", i.e.,
+		//
+		// selector: ["abc", "def", ".\"class\">@3"]
+		//
+		// is the same as a group of css selectors
+		//
+		// selector: "abc, def, .\"class\">@3"
+		repeated string selector = 3;
 
         enum Sign {
             EQ = 0;

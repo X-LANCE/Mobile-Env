@@ -21,10 +21,11 @@ import re
 import itertools
 import functools
 import enum
+import lxml.cssselect as cssselect
 
 from typing import Generic, TypeVar, Callable, Optional, Any, Union
-from typing import Tuple, List, Pattern
-from typing import Iterable
+from typing import Tuple, List, Pattern, Dict, Match
+from typing import Iterable, ClassVar
 
 from absl import logging
 
@@ -797,38 +798,83 @@ class ViewHierarchyEvent(EventSource[List, Any]):
             #  }}} method `match` # 
         #  }}} class `StringProperty` # 
 
-    def __init__(self, vh_path: Iterable[str], vh_properties: Iterable[Property],
-            #transformation: Optional[str] = None,
-            #cast: Optional[Callable[[V], C]] = None,
-            #wrap: Optional[Callable[[T], W]] = None,
-            #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE):
+    _css_quick_pattern: ClassVar[Pattern[str]] = re.compile(r'(?P<type>[#.$@])(?P<oprt>[$^*]?)(?P<val>"[^"]+"|\d+)')
+    _css_quick_type: ClassVar[Dict[str, str]] = { "#": "resource-id"
+                                                , ".": "class"
+                                                , "$": "package"
+                                                , "@": "index"
+                                                }
+
+    @staticmethod
+    def _css_quick_replace(me_selector: Match[str]) -> str:
+        #  function _css_quick_replace {{{ # 
+        value: str = me_selector.group("val")
+        if value.isdigit():
+            value = "\"" + value + "\""
+        return '[{:}{:}={:}]'.format( ViewHierarchyEvent._css_quick_type[me_selector.group("type")]
+                                      , me_selector.group("oprt")
+                                      , value
+                                      )
+        #  }}} function _css_quick_replace # 
+    @staticmethod
+    def transform_selector(me_selector: str) -> str:
+        #  function transform_selector {{{ # 
+        """
+        Transforms Mobile-Env-customized CSS selector into standard CSS selector.
+        The syntax is defined as follows:
+
+        * #"com.wikihow.wikihowapp:id/search_src_text" -> [resource-id="com.wikihow.wikihowapp:id/search_src_text"]
+        * #$"search_src_text" -> [resource-id$=search_src_text]
+        * ."android.widget.EditText" -> [class="android.widget.EditText"]
+        * .$"EditText" -> [class$=EditText]
+        * $"com.wikihow.wikihowapp" -> [package="com.wikihow.wikihowapp"]
+        * @2 -> [index="2"], somewhat the same as :nth-child(3) (index attribute starts from 0)
+
+        Args:
+            me_selector (str): Mobile-Env-customized CSS selector
+
+        Returns:
+            str: transformed standard CSS selector
+        """
+
+        return ViewHierarchyEvent._css_quick_pattern\
+                .sub( ViewHierarchyEvent._css_quick_replace
+                    , me_selector
+                    )
+        #  }}} function transform_selector # 
+
+    def __init__( self, vh_path: Iterable[str], vh_properties: Iterable[Property]
+                #, transformation: Optional[str] = None
+                #, cast: Optional[Callable[[V], C]] = None
+                #, wrap: Optional[Callable[[T], W]] = None
+                #, update: Optional[Callable[[W, W], W]] = None
+                , repeatability: EventSource.Repeatability = EventSource.Repeatability.NONE
+                ):
         #  method `__init__` {{{ # 
         """
-        vh_path - iterable of str
-        vh_property - iterable of Property
-        #transformation - str or None
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        #wrap - callable accepting the transformed type returning the wrapped
-          #type or None
-        #update - callable accepting
-          #+ the wrapped type
-          #+ the wrapped type
-          #and returning the wrapped type
-        repeatability - EventSource.Repeatability
+        Args:
+            vh_path (Iterable[str]): a group of Mobile-Env-customized css
+              selectors
+            vh_property (Iterable[Property]): iterable of Property
+            repeatability (EventSource.Repeatability): defines the
+              repeatability of the event source
         """
 
         super(ViewHierarchyEvent, self).__init__(repeatability)
 
-        self._vh_path: List[str] = list(vh_path)
+        #self._vh_path: List[str] = list(vh_path)
+        self._selector_str: str = ViewHierarchyEvent.transform_selector(", ".join(vh_path))
+        self._selector: cssselect.CSSSelector = cssselect.CSSSelector(self._selector_str)
         self._vh_properties: List[ViewHierarchyEvent.Property] = list(vh_properties)
         self._property_names: List[str] = list(map(lambda prpt: prpt.name, vh_properties))
         #  }}} method `__init__` # 
 
+    #@property
+    #def path(self) -> List[str]:
+        #return self._vh_path
     @property
-    def path(self) -> List[str]:
-        return self._vh_path
+    def selector(self) -> cssselect.CSSSelector:
+        return self._selector
     @property
     def property_names(self) -> List[str]:
         return self._property_names

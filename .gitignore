@@ -36,3 +36,4 @@ tools-backup/
 backup-configs/
 
 sphinx/
+tests
