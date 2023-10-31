@@ -30,8 +30,8 @@ simu_daemon_logs
 
 tools/*.apk
 tools/frida-server-14.2.2-android-x86_64
-tools/frida-script.js
 tools/frida-server-14.2.2-android-x86_64.xz
+tools/frida-script.js
 tools-backup/
 backup-configs/
 

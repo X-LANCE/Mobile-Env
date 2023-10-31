@@ -1,5 +1,5 @@
 commandlinetools-linux-*latest.zip
-frida-server-14.2.2-android-x86_64.xz
+frida-server-*.*.*-android-x86_64.xz
 
 android_env
 frida_setup.sh

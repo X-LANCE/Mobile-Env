@@ -14,6 +14,9 @@
 
 # Created by Danyang Zhang @X-Lance.
 
+# NOTE: frida-server seems not to work on amd64 Android images in container. I
+# have to leave it on the shelf temporarily.
+
 # zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2.part
 
 FROM zdy023/mobile-env-rl:v2.1.a30_ga.base
