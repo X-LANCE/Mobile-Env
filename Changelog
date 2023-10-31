@@ -1,3 +1,12 @@
+2023-10-31 Danyang Zhang <zdy004007@126.com>
+
+	v3.0
+
+	* (VH node specification): Migrated VH node specification to
+	Mobile-Env-customized CSS selector (me-selector).
+	* (Repeatability control for event slots): Added repeatability control to
+	event slots.
+
 2023-09-21 Danyang Zhang <zdy004007@126.com>
 
 	v2.1

@@ -9,9 +9,9 @@
   the deployment of Mobile-Env. Even I feel that it is too complicated to set
   up an Android environment before install Mobile-Env. However, a docker won't
   help KVM configuration, either. Under consideration.
-* (VH Node Specification): Using CSS selector to locate a VH node should be
+* ✓ (VH Node Specification): Using CSS selector to locate a VH node should be
   easier than the current way
-* (Repeatability control for event slots): I find it useful to control
+* ✓ (Repeatability control for event slots): I find it useful to control
   repeatability of an event slot. Will implement it when I have the time.
 * (Icon Model): The embedded icon model.
 
