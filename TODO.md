@@ -14,6 +14,8 @@
 * ✓ (Repeatability control for event slots): I find it useful to control
   repeatability of an event slot. Will implement it when I have the time.
 * (Icon Model): The embedded icon model.
+* (FileSystem Events): Events arising from changes in Android file system. Just
+  a conceptual idea.
 
 ---
 
