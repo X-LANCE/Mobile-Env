@@ -3,6 +3,15 @@
 
 ## NEWS!!
 
+* (2023-10-31 v3.0) Migrated VH node specification from the original VH path to
+  Mobile-Env-customized CSS selector (me-selector) and added repeatability
+  control to EventSlots. Repeatability control for EventSlots may be useful to
+  prevent repetitive triggering of an `OR`-type virtual event combining
+  multiple types of event sources.
+
+Please see our [Change Log](Changelog) and
+[Document](docs/task-definition-en.md).
+
 * (2023-09-21 v2.1) Added *REMOTE SIMULATOR* to solve the problem that
   hardware-based acceleration for virtualization is not enabled on many GPU
   clusters

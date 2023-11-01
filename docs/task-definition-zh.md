@@ -2,6 +2,8 @@
 <!-- vimc: call SyntaxRange#Include('```ebnf', '```', 'ebnf', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```proto', '```', 'proto', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```css', '```', 'css', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```xml', '```', 'xml', 'NonText'): -->
 
 ## 基于Mobile-Env扩展新环境（手机应用）或新任务
 
@@ -126,7 +128,7 @@ max_num_steps: 500
 
 event_sources: {
   text_recognize: {
-    expect: "\\b\\(bake\\|lobster\\|tails\\)\\b"
+    expect: "\\b(bake|lobster|tails)\\b"
     rect: {
       x0: 0.2439
       y0: 0.0354
@@ -138,17 +140,10 @@ event_sources: {
 }
 event_sources: {
   view_hierarchy_event: {
-    view_hierarchy_path: "android.widget.FrameLayout"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root"
-    view_hierarchy_path: "android.widget.FrameLayout@android:id/content"
-    view_hierarchy_path: "androidx.appcompat.widget.LinearLayoutCompat@com.wikihow.wikihowapp:id/action_search"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_bar"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_edit_frame"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_plate"
-    view_hierarchy_path: "android.widget.EditText@com.wikihow.wikihowapp:id/search_src_text"
+    selector: '#$"search_plate">#$"search_src_text"'
     properties: {
       property_name: "text"
-      pattern: "\\b\\(bake\\|lobster\\|tails\\)\\b"
+      pattern: "\\b(bake|lobster|tails)\\b"
     }
     properties: {
       property_name: "clickable"
@@ -185,17 +180,7 @@ event_sources: {
 }
 event_sources: {
   view_hierarchy_event: {
-    view_hierarchy_path: "android.widget.FrameLayout"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root"
-    view_hierarchy_path: "android.widget.FrameLayout@android:id/content"
-    view_hierarchy_path: "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout"
-    view_hierarchy_path: "android.webkit.WebView"
-    view_hierarchy_path: "android.view.View@mw-mf-viewport"
-    view_hierarchy_path: "android.view.View@mw-mf-page-center"
-    view_hierarchy_path: "android.view.View@content_wrapper"
-    view_hierarchy_path: "android.view.View@content_inner"
-    view_hierarchy_path: "android.view.View@section_0"
-    view_hierarchy_path: "android.widget.TextView"
+    selector: '."android.view.View"#"section_0">.$"TextView"'
     properties: {
       property_name: "text"
       pattern: "How to Bake Lobster Tails"
@@ -632,7 +617,7 @@ $$
   + `path` - 参考图像的路径，可采用相对于该定义文件的路径，也可以采用绝对路径（不推荐）
   + `rect` - 同上
 + `view_hierarchy_event` - 识别视图框架中的内容，需要提供
-  + `view_hierarchy_path` - 视图框架路径，以指定到某个视图框架节点；格式相比`AppScreen`中的更加易读，将在下文具体说明
+  + `selector` - ；定义一组CSS选择器来指定要检查的视图框架节点；使用一套Mobile-Env定制的选择器语法，该语法将在下文详述；如果定义了多个选择器，则这些选择器会自动用`, `连接，来构成一个选择器组
   + `properties` - `view_hierarchy_path`指定的视图框架节点中要检查的属性列表，每个属性检查要提供
     - `property_name` - 属性名；视图框架事件源采用`adb shell uiautomator dump`命令获取视图框架，此处指定的属性名应当为该命令获取的XML中节点的属性名；此外，方便起见，Mobile-Env定义了四个虚拟属性：`left`、`top`、`right`、`bottom`，对应于视图框架XML中`bounds`属性中的四个坐标值（左边界、上边界、右边界、下边界）
     - `sign` - 仅当要将属性值作为数值比较时有用，规定参考值与运行中实际读到的值比较的方式，注意，任务定义中的参考值是算符的第一个参数；支持的比较算符包括：`EQ`（相等）、`LE`（小于等于）、`LT`（小于）、`GE`（大于等于）、`GT`（大于）、`NE`（不等于）
@@ -646,7 +631,46 @@ $$
 + `response_event` - 识别智能体给人类用户的回复
   - `pattern` - 提供要与回复文本匹配的正则表达式
 
-定义视图框架事件源时，指定视图框架节点采用这样的格式：`类别模式@编号模式`，其中`@`前后需要分别提供两个正则表达式，`类别模式`匹配视图框架节点的`class`属性，一般是该节点的Java类名；`编号模式`匹配该节点的`resource-id`属性。`@`及之后的`编号模式`可以省略。若正则表达式中出现了`@`字符，可使用`\`将其转义。
+##### 如何指定视图框架节点
+
+`adb shell uiautomator`命令获得的视图框架XML节点如下所示：
+
+```xml
+<node index="0" text="Do ruby rose hair " resource-id="com.wikihow.wikihowapp:id/search_src_text" class="android.widget.EditText" package="com.wikihow.wikihowapp" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="true" password="false" selected="false" bounds="[261,88][954,183]"/>
+```
+
+视图框架事件源中的节点由Mobile-Env定制的CSS选择器语法（me-selector）指定。该语法中，属性选择器、伪类等[标准的CSS选择器](https://www.w3.org/TR/2011/REC-css3-selectors-20110929/)仍完全支持，如：
+
+```css
+[class$=EditText][text~=rose]
+```
+
+不过，请注意，针对HTML定义的类选择器`.`与标号选择器`#`不能直接应用于视图框架的XML文档。考虑到指定节点时，`resource-id`、`class`、`package`、`index`等视图框架属性很常用，仿照着HTML类选择器与标准CSS标号选择器，补充定义了几类辅助选择器。这几类辅助选择器与等价的标准选择器对比如下表：
+
+| 辅助选择器                                     | 标注选择器                                                  |
+|------------------------------------------------|-------------------------------------------------------------|
+| `#"com.wikihow.wikihowapp:id/search_src_text"` | `[resource-id="com.wikihow.wikihowapp:id/search_src_text"]` |
+| `#$"search_src_text"`                          | `[resource-id$=search_src_text]`                            |
+| `."android.widget.EditText"`                   | `[class="android.widget.EditText"]`                         |
+| `.$"EditText"`                                 | `[class$=EditText]`                                         |
+| `$"com.wikihow.wikihowapp"`                    | `[package="com.wikihow.wikihowapp"]`                        |
+| `@2`                                           | `[index="2"]`/`:nth-child(3)`                               |
+
+这些辅助选择器均已`#`、`.`、`$`或`@`开头，后面可选地接以一个`$`、`^`或`*`，再后面则是具体的属性值。除了`index`属性所需的整数值之外，其余指定的属性值一定要用`"`括住。
+
+更多例子：
+
+```css
+#"com.wikihow.wikihowapp:id/search_src_text"
+#$"search_src_text"[text~="rose"].$"EditText"
+#$"search_src_text"$"com.wikihow.wikihowapp"
+$"com.wikihow.wikihowapp"
+#$"search_plate">.$"ImageView"@1
+#$"search_plate">.$"ImageView":nth-child(2)
+#$"search_src_text", #$"search_plate">.$"ImageView":last-child
+```
+
+一个CSS选择器可能选中多个节点。这些节点中任意一个满足了事件源定义中的属性条件，事件源就会触发。
 
 #### 通过`event_slots`字段为各事件槽定义触发函数
 
@@ -659,6 +683,10 @@ $$
 + `events` - 数组，依次定义该节点的子节点；对`SINGLE`类型的节点来说，只有数组的第一项有用
 + `prerequisite` - 32位整数数组，通过事件编号（`id`字段）索引其他虚拟事件，作为该事件的前置条件；在一次交互历程中，仅所有作为前置条件的事件都已触发过后，该事件才可以触发；可留空
 + `transformation` - 字符串数组，提供一系列Python语句，定义变换函数来处理子节点呈递上来的信号；若留空，则默认为恒同变换
++ `repeatability` - 枚举值，可选项有`UNLIMITED`、`LAST`、`NONE`，确定该虚拟事件节点的可重复触发性，默认为`UNLIMITED`
+  + `UNLIMITED` - 对重复触发无限制
+  + `LAST` - 不能连续触发。虚拟事件的触发为每交互步后检查，故不连续触发指，触发条件持续满足时，仅识别到的第一个交互步触发该事件
+  + `NONE` - 一次交互历程内，该虚拟事件仅可触发一次
 
 ##### 定义子事件节点
 

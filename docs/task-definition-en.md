@@ -1,6 +1,8 @@
 <!-- vimc: call SyntaxRange#Include('```ebnf', '```', 'ebnf', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```proto', '```', 'proto', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```css', '```', 'css', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```xml', '```', 'xml', 'NonText'): -->
 
 ## Extending a New Environment (App) or a New Task Based on Mobile-Env
 
@@ -174,7 +176,7 @@ max_num_steps: 500
 
 event_sources: {
   text_recognize: {
-    expect: "\\b\\(bake\\|lobster\\|tails\\)\\b"
+    expect: "\\b(bake|lobster|tails)\\b"
     rect: {
       x0: 0.2439
       y0: 0.0354
@@ -186,17 +188,10 @@ event_sources: {
 }
 event_sources: {
   view_hierarchy_event: {
-    view_hierarchy_path: "android.widget.FrameLayout"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root"
-    view_hierarchy_path: "android.widget.FrameLayout@android:id/content"
-    view_hierarchy_path: "androidx.appcompat.widget.LinearLayoutCompat@com.wikihow.wikihowapp:id/action_search"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_bar"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_edit_frame"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/search_plate"
-    view_hierarchy_path: "android.widget.EditText@com.wikihow.wikihowapp:id/search_src_text"
+    selector: '#$"search_plate">#$"search_src_text"'
     properties: {
       property_name: "text"
-      pattern: "\\b\\(bake\\|lobster\\|tails\\)\\b"
+      pattern: "\\b(bake|lobster|tails)\\b"
     }
     properties: {
       property_name: "clickable"
@@ -233,17 +228,7 @@ event_sources: {
 }
 event_sources: {
   view_hierarchy_event: {
-    view_hierarchy_path: "android.widget.FrameLayout"
-    view_hierarchy_path: "android.widget.LinearLayout@com.wikihow.wikihowapp:id/action_bar_root"
-    view_hierarchy_path: "android.widget.FrameLayout@android:id/content"
-    view_hierarchy_path: "android.drawerlayout.widget.DrawerLayout@com.wikihow.wikihowapp:id/drawer_layout"
-    view_hierarchy_path: "android.webkit.WebView"
-    view_hierarchy_path: "android.view.View@mw-mf-viewport"
-    view_hierarchy_path: "android.view.View@mw-mf-page-center"
-    view_hierarchy_path: "android.view.View@content_wrapper"
-    view_hierarchy_path: "android.view.View@content_inner"
-    view_hierarchy_path: "android.view.View@section_0"
-    view_hierarchy_path: "android.widget.TextView"
+    selector: '."android.view.View"#"section_0">.$"TextView"'
     properties: {
       property_name: "text"
       pattern: "How to Bake Lobster Tails"
@@ -867,9 +852,10 @@ The options of `event` is the aforementioned event sources:
     recommended.)
   + `rect` - The same with the events above.
 + `view_hierarchy_event` - Matches the contents in the VH and expects:
-  + `view_hierarchy_path` - The VH path to a specific VH node. The format is
-    fairly more readable compared to that in `AppScreen`, which will be
-    detailed below.
+  + `selector` - A group of CSS selectors to specify the VH node to be
+    inspected. This property adopts a Mobile-Env-customized CSS selector
+    syntax, which is detailed below. Multiple selectors will be concatenated
+    with `, ` to form a selector group.
   + `properties` - The list of the properties to check of the VH node indicated
     by `view_hierarchy_path`. To check a property, you need to provide:
     - `property_name` - The property name. The property name is the name of the
@@ -898,12 +884,60 @@ The options of `event` is the aforementioned event sources:
 + `response_event` - Matches the response to human user.
   - `pattern` - The regex for the response.
 
-The VH node in the definition of the VH event sources is specified as
-`class_pattern@id_pattern`. Here two regexes are expected before and after the
-`@`. `class_pattern` matches `class` property of the node, which is commonly
-the Java class name of the node. `id_pattern` matches `resource-id` property of
-the node. `id_pattern` together with the preceding `@` can be ignored. If an
-`@` appears in the regexes, it should be escaped by `\`.
+##### Specification of View Hierarchy Node
+
+An VH node in XML return by `adb shell uiautomator` is like:
+
+```xml
+<node index="0" text="Do ruby rose hair " resource-id="com.wikihow.wikihowapp:id/search_src_text" class="android.widget.EditText" package="com.wikihow.wikihowapp" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="true" password="false" selected="false" bounds="[261,88][954,183]"/>
+```
+
+The VH node in the definition of the VH event sources is specified with a
+Mobile-Env-customized CSS selector syntax (abbrev. me-selector). The [standard
+syntax of CSS
+selector](https://www.w3.org/TR/2011/REC-css3-selectors-20110929/) like
+attribute selector and pseudo-class is completely supported. For example:
+
+```css
+[class$=EditText][text~=rose]
+```
+
+However, note that HTML class selector "." and id selector "#" can not be
+directly applied to VH XML. Considering that several VH properties (*i.e.*,
+`resource-id`, `class`, `package`, and `index`) are commonly useful to specify
+a particular node, several auxiliary selectors are defined as an imitation of
+HTML class selector and standard CSS id selector. The auxiliary selectors and
+the equivalent standard selectors are compared in the table:
+
+| Auxiliary Selector                             | Standard Selector                                           |
+|------------------------------------------------|-------------------------------------------------------------|
+| `#"com.wikihow.wikihowapp:id/search_src_text"` | `[resource-id="com.wikihow.wikihowapp:id/search_src_text"]` |
+| `#$"search_src_text"`                          | `[resource-id$=search_src_text]`                            |
+| `."android.widget.EditText"`                   | `[class="android.widget.EditText"]`                         |
+| `.$"EditText"`                                 | `[class$=EditText]`                                         |
+| `$"com.wikihow.wikihowapp"`                    | `[package="com.wikihow.wikihowapp"]`                        |
+| `@2`                                           | `[index="2"]`/`:nth-child(3)`                               |
+
+The auxiliary selector starts from a `#`, `.`, `$`, or `@`, followed by an
+optional `$`, `^`, or `*`. Then follows the particular attribute value. Except
+the numerical value for `index` property, the attribute value in the auxiliary
+selector must be quoted by `"`.
+
+More examples:
+
+```css
+#"com.wikihow.wikihowapp:id/search_src_text"
+#$"search_src_text"[text~="rose"].$"EditText"
+#$"search_src_text"$"com.wikihow.wikihowapp"
+$"com.wikihow.wikihowapp"
+#$"search_plate">.$"ImageView"@1
+#$"search_plate">.$"ImageView":nth-child(2)
+#$"search_src_text", #$"search_plate">.$"ImageView":last-child
+```
+
+A CSS selector may return multiple instances of node. If any one in the
+returned nodes satisfies the property restrictions in the event source
+definition, the event source will be triggered.
 
 #### Define Triggering Function for the Event Slots through `event_slots`
 
@@ -934,6 +968,16 @@ following properties:
   defining a transformation to handle the signals applied by the child nodes.
   If this field is ignored, then the transformation will be regared as an
   identity transformation.
++ `repeatability` - an enum from `UNLIMITED`, `LAST`, and `NONE`. This field
+  defines repeatability of this virtual event. The value defaults to
+  `UNLIMITED`.
+  + `UNLIMITED` performs no restrictions to the repeatability
+  + `LAST` means no to trigger continuously. As triggering of the virtual
+    events is checked after each step of interaction, here "no to trigger
+    continuously" indicates that the event will be only triggered at the first
+    step if the triggering condition persists.
+  + `NONE` indicates that this virtual event can only be triggered once in an
+    episode.
 
 ##### Definition of the Child Event Nodes
 
