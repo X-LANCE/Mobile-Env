@@ -16,6 +16,8 @@
 * (Icon Model): The embedded icon model.
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
+* (Non-ASCII character input): I found that clipboard synching can copy UTF-8
+  strings. This may be an idea to enable non-ASCII character input.
 
 ---
 
