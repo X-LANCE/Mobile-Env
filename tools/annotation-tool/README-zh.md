@@ -3,6 +3,13 @@
 
 # 人类演示标注工具
 
+### 初始化NPM
+
+```sh
+cd frontend
+npm install
+```
+
 ### 构建前端
 
 ```sh

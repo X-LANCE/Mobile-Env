@@ -2,6 +2,13 @@
 
 # Annotation Tool for Human Demonstration
 
+### Initiate NPM
+
+```sh
+cd frontend
+npm install
+```
+
 ### Build the Frontend
 
 ```sh

@@ -19,12 +19,12 @@
 from flask import Flask, request, send_file
 from flask_compress import Compress
 
-import time
-import random
-import json
+#import time
+#import random
+#import json
 import os.path
 import numpy as np
-import lxml.etree
+#import lxml.etree
 import dm_env
 from typing import Dict
 from typing import Any
@@ -38,6 +38,7 @@ import threading
 import android_env
 from android_env.components import action_type
 from android_env.wrappers import RecorderWrapper
+from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wikihow'
@@ -55,10 +56,13 @@ task_list = list(
                     os.listdir(task_path)))))
 init_task = 0
 task_dict = {0: 0}
-android = android_env.load(os.path.join(task_path, task_list[0] + ".textproto"),
-        avd_name="Pixel_2_API_30_ga_x64",
-        run_headless=True,
-        mitm_config={"method": "syscert"})
+android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
+                          , avd_name="Pixel_2_API_30_ga_x64_1"
+                          , run_headless=True
+                          , mitm_config={"method": "syscert"}
+                          , text_model=EasyOCRWrapper()
+                          , with_view_hierarchy=True
+                          )
 android = RecorderWrapper(android, dump_file=dump_file)
 
 def timestep_to_json(timestep: dm_env.TimeStep) -> Dict[str, Any]:
