@@ -18,11 +18,6 @@
   a conceptual idea.
 * (Non-ASCII character input): I found that clipboard synching can copy UTF-8
   strings. This may be an idea to enable non-ASCII character input.
-
----
-
-### Annotation Tool Branch
-
 * (About new event source RHU): Update the annotation tool to support the new
   type of event source.
 
