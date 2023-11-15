@@ -144,8 +144,10 @@ backend/data/
 backend/trace/
 temp.py
 
-test_dump.pkl
-backend/dump-zdy.pkl
+#test_dump.pkl
+/*.pkl
+#backend/dump-zdy.pkl
+backend/*.pkl
 data
 action_annotation
 wikihow-action-yfw51.tar.xz
