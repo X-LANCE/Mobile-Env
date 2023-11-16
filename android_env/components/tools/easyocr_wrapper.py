@@ -26,6 +26,10 @@ import threading
 import torch
 import numpy as np
 
+from absl import logging
+import traceback
+import io
+
 def in_bbox(bbox0: torch.Tensor, bbox1: torch.Tensor) -> torch.Tensor:
     """
     Test if `bbox0` is contained in `bbox1`.
@@ -78,7 +82,7 @@ class EasyOCRWrapper(TextModel):
         self._lock: threading.Lock = threading.Lock()
         #  }}} method __init__ # 
 
-    def _convert_screen(screen: torch.Tensor) -> np.ndarray:
+    def _convert_screen(self, screen: torch.Tensor) -> np.ndarray:
         """
         Args:
             screen: torch.Tensor of float32 with shape (3, height, width) as
@@ -108,29 +112,35 @@ class EasyOCRWrapper(TextModel):
             list with length nb_bboxes of list of str
         """
 
-        screen = self._convert_screen(screen) # (H, W, 3)
-        with self._lock:
-            results = self._reader.readtext(screen) # get all results
+        try:
+            screen = self._convert_screen(screen) # (H, W, 3)
+            with self._lock:
+                results = self._reader.readtext(screen) # get all results
 
-        # check the bboxes
-        target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
-        result_bboxes = torch.tensor(
-                            list( map( lambda bb: [bb[0][0], bb[0][1], bb[1][0], bb[2][1]]
-                                     , map( lambda rst: rst[0]
-                                          , results
-                                          )
-                                     )
-                                )
-                            ) # (M, 4); M is the number of results
-        region_mask = in_bbox(result_bboxes, target_bboxes) # (N, M)
+            # check the bboxes
+            target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
+            result_bboxes = torch.tensor(
+                                list( map( lambda bb: [bb[0][0], bb[0][1], bb[1][0], bb[2][1]]
+                                         , map( lambda rst: rst[0]
+                                              , results
+                                              )
+                                         )
+                                    )
+                                ) # (M, 4); M is the number of results
+            region_mask = in_bbox(result_bboxes, target_bboxes) # (N, M)
 
-        result_texts = list( map( lambda rst: rst[1]
-                                , results
-                                )
-                           )
-        final_returns = []
-        for m in region_mask:
-            final_returns.append([t for t, m_ in zip(result_texts, m) if m_])
+            result_texts = list( map( lambda rst: rst[1]
+                                    , results
+                                    )
+                               )
+            final_returns = []
+            for m in region_mask:
+                final_returns.append([t for t, m_ in zip(result_texts, m) if m_])
+        except Exception as e:
+            with io.StringIO() as bfr:
+                traceback.print_exc(file=bfr)
+                logging.debug("%s", bfr.getvalue())
+            raise e
         return final_returns
         #  }}} method text_detector # 
 

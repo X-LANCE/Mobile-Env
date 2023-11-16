@@ -209,7 +209,9 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                     y1*height
                 ])[None, :])
         if len(bboxes)>0:
+            #logging.debug("Invoking Detector")
             results = self._text_detector(screen, bboxes)
+            #logging.debug("Invoked Detector")
             with self._lock:
                 for lstn, rslts in zip(self._text_detect_event_listeners, results):
                     for cddt in rslts:

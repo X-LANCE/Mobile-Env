@@ -40,6 +40,9 @@ from android_env.components import action_type
 from android_env.wrappers import RecorderWrapper
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
 
+import logging
+import datetime
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wikihow'
 Compress(app)
@@ -48,6 +51,30 @@ lock = threading.Lock()
 
 dump_file = sys.argv[1] if len(sys.argv)>1 else "../test_dump.pkl"
 task_path = sys.argv[2] if len(sys.argv)>2 else "../../android_env/apps/wikihow/templates.miniout"
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+datetime_str: str = datetime.datetime.now().strftime("%Y%m%d@%H%M%S")
+
+file_handler = logging.FileHandler(os.path.join("logs", "normal-{:}.log".format(datetime_str)))
+debug_handler = logging.FileHandler(os.path.join("logs", "debug-{:}.log".format(datetime_str)))
+stdout_handler = logging.StreamHandler(sys.stdout)
+
+file_handler.setLevel(logging.INFO)
+debug_handler.setLevel(logging.DEBUG)
+stdout_handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter(fmt="\x1b[1;33m[%(asctime)s \x1b[31m%(levelname)s \x1b[32m%(module)s/%(lineno)d-%(processName)s\x1b[1;33m] \x1b[0m%(message)s")
+file_handler.setFormatter(formatter)
+debug_handler.setFormatter(formatter)
+stdout_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(debug_handler)
+logger.addHandler(stdout_handler)
+
+logger: logging.Logger = app.logger
 
 task_list = list(
         sorted(

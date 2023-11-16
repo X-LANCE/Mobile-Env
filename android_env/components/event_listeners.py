@@ -634,6 +634,7 @@ class TextEvent(RegionEvent[Optional[str], str]):
             return False, None
         match_ = self._expect.search(text)
         if match_ is not None:
+            logging.debug("\x1b[5;31mText Matched: %s for %s\x1b[0m", text, self._expect.pattern)
             return True, match_.groups()
         return False, None
         #  }}} method `_verify` # 
@@ -916,7 +917,11 @@ class ViewHierarchyEvent(EventSource[List, Any]):
 
         if all(map(lambda p: p[0].match(p[1]),
                 itertools.zip_longest(self._vh_properties, values))):
-            logging.info("\x1b[5;31mVH Event\x1b[0m")
+            logging.debug( "\x1b[5;31mVH Event\x1b[0m: %s for %s.%s"
+                         , str(values)
+                         , self._selector_str
+                         , str(self._property_names)
+                         )
             return True, values
         return False, None
         #  }}} method `_verify` # 
@@ -968,7 +973,10 @@ class LogEvent(EventSource[str, str]):
 
         match_ = self._pattern.search(line)
         if match_ is not None:
-            logging.info("\x1b[5;31mLog Event\x1b[0m")
+            logging.debug( "\x1b[5;31mLog Event\x1b[0m: %s for %s"
+                         , line
+                         , self._pattern.pattern
+                         )
             return True, match_.groups()
         return False, None
         #  }}} method `_verify` # 
