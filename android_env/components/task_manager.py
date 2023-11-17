@@ -558,11 +558,15 @@ class TaskManager():
 
   def pause_task(self) -> None:
     self._stop_dumpsys_thread()
+    logging.debug("## Stopped dumpsys ##")
     self._stop_screen_analyzer_thread() # zdy
+    logging.debug("## Stopped screen analyzer ##")
 
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
+    logging.debug("## Started dumpsys ##")
     self._start_screen_analyzer_thread() # zdy
+    logging.debug("## Started screen analyzer ##")
 
   def setup_flag(self) -> bool:
     return self._setup_flag

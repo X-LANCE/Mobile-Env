@@ -20,7 +20,7 @@ import easyocr
 from android_env.components.tools.types import TextModel
 
 from typing import Union, Optional
-from typing import List
+from typing import List, Tuple
 import threading
 
 import torch
@@ -115,12 +115,25 @@ class EasyOCRWrapper(TextModel):
         try:
             screen = self._convert_screen(screen) # (H, W, 3)
             with self._lock:
-                results = self._reader.readtext(screen) # get all results
+                results: List[ Tuple[ List[List[float]] # [x1, y1], [x2, y1], [x2, y2], [x1, y2]
+                                    , str
+                                    , float
+                                    ]
+                             ] = self._reader.readtext(screen) # get all results
+
+            logging.debug("Screen begins")
+            for bbox, t, _ in results:
+                logging.debug( "[%.2f, %.2f, %.2f, %.2f]: %s"
+                             , bbox[0][0], bbox[0][1]
+                             , bbox[1][0], bbox[2][1]
+                             , t
+                             )
+            logging.debug("Screen ends")
 
             # check the bboxes
             target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
             result_bboxes = torch.tensor(
-                                list( map( lambda bb: [bb[0][0], bb[0][1], bb[1][0], bb[2][1]]
+                                list( map( lambda bb: [bb[0][0], bb[0][1], bb[1][0], bb[2][1]] # [x1, y1, x2, y2]
                                          , map( lambda rst: rst[0]
                                               , results
                                               )
