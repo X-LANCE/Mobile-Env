@@ -113,6 +113,8 @@ class EasyOCRWrapper(TextModel):
         """
 
         try:
+            logging.debug("EasyOCR Starts.")
+
             screen = self._convert_screen(screen) # (H, W, 3)
             with self._lock:
                 results: List[ Tuple[ List[List[float]] # [x1, y1], [x2, y1], [x2, y2], [x1, y2]
@@ -149,6 +151,8 @@ class EasyOCRWrapper(TextModel):
             final_returns = []
             for m in region_mask:
                 final_returns.append([t for t, m_ in zip(result_texts, m) if m_])
+
+            logging.debug("EasyOCR Ends.")
         except Exception as e:
             with io.StringIO() as bfr:
                 traceback.print_exc(file=bfr)
