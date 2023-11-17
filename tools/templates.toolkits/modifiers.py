@@ -73,6 +73,6 @@ def filter_comma(x: str) -> str:
 def remove_howto(x: str) -> str:
     if len(x)<7:
         return x
-    if x[:7]=="how to ":
+    if x[:7].lower()=="how to ":
         return x[7:]
     return x
