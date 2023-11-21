@@ -112,7 +112,7 @@ class AndroidEnv(dm_env.Environment):
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
 
-  def add_task(self, task_path: str):
+  def add_task(self, task_path: str, **kwargs: Dict[str, Any]):
     #  method `add_task` {{{ # 
     task = task_pb2.Task()
     with open(task_path, 'r') as f:
@@ -129,7 +129,7 @@ class AndroidEnv(dm_env.Environment):
               #os.path.join(os.path.dirname(task_path),
                 #apk_path))
 
-    task_manager = task_manager_lib.TaskManager(task)
+    task_manager = task_manager_lib.TaskManager(task, **kwargs)
     self._coordinator.add_task_manager(task_manager)
     #  }}} method `add_task` # 
 

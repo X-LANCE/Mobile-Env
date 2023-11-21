@@ -39,6 +39,7 @@ import android_env
 from android_env.components import action_type
 from android_env.wrappers import RecorderWrapper
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+from android_env.components.coordinator import EventCheckControl
 
 import logging
 import datetime
@@ -83,12 +84,18 @@ task_list = list(
                     os.listdir(task_path)))))
 init_task = 0
 task_dict = {0: 0}
+task_manager_args: Dict[str, Any] = {"text_model": EasyOCRWrapper()}
 android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
                           , avd_name="Pixel_2_API_30_ga_x64_1"
                           , run_headless=True
                           , mitm_config={"method": "syscert"}
-                          , text_model=EasyOCRWrapper()
+                           #, text_model=EasyOCRWrapper()
                           , with_view_hierarchy=True
+                          , coordinator_args={ "vh_check_control_method": EventCheckControl.TIME
+                                             , "screen_check_control_method": EventCheckControl.TIME
+                                             , "screen_check_control_value": 3.
+                                             }
+                          , **task_manager_args
                           )
 android = RecorderWrapper(android, dump_file=dump_file)
 
@@ -144,7 +151,9 @@ def switch_task():
     if task_index not in task_dict:
         task_id = len(task_dict)
         task_dict[task_index] = task_id
-        android.add_task(os.path.join(task_path, task_list[task_index] + ".textproto"))
+        android.add_task( os.path.join(task_path, task_list[task_index] + ".textproto")
+                        , **task_manager_args
+                        )
     with lock:
         timestep = android.switch_task(task_dict[task_index])
 
