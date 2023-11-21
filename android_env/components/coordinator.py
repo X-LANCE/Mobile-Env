@@ -151,8 +151,8 @@ class Coordinator():
 
     self._last_screen_check_time: Optional[float] = None
     self._last_vh_check_time: Optional[float] = None
-    self._elapsed_step_from_screen_check: Optional[int] = None
-    self._elapsed_step_from_vh_check: Optional[int] = None
+    self._elapsed_step_from_screen_check: int = -1
+    self._elapsed_step_from_vh_check: int = -1
 
     logging.info('Starting the simulator...')
     self._restart_simulator()
@@ -220,8 +220,8 @@ class Coordinator():
     self._latest_observation_time = None
     self._last_screen_check_time = None
     self._last_vh_check_time = None
-    self._elapsed_step_from_screen_check = None
-    self._elapsed_step_from_vh_check = None
+    self._elapsed_step_from_screen_check = -1
+    self._elapsed_step_from_vh_check = -1
     for key in self._log_dict:
       if key.startswith('episode'):
         self._log_dict[key] = 0.0
@@ -358,7 +358,10 @@ class Coordinator():
   #  }}} Reset Interfaces # 
 
   def execute_action( self
-                    , action: Optional[Dict[str, np.ndarray]]
+                    , action: Optional[ Dict[ str
+                                            , Optional[Union[np.ndarray, str]]
+                                            ]
+                                      ]
                     ) -> Tuple[ Optional[ Dict[ str
                                               , Union[ np.ndarray
                                                      , Optional[lxml.etree.Element]
@@ -374,13 +377,32 @@ class Coordinator():
     """Executes the selected action and returns transition info.
 
     Args:
-      action: Selected action to perform on the simulated Android device.
+      action (Optional[Dict[str, Optional[Union[np.ndarray, str]]]]): Selected
+        action to perform on the simulated Android device. dict like
+          {
+            "action_type": action_type_lib.ActionType
+            "touch_position": np.ndarray with shape (2,) of float32 as [x, y]
+              from [0, 1], optional for TEXT
+            "input_token": np.ndarray with shape () of int32, required only for
+              TEXT
+            "response": str, optional response to human user
+          }
+
     Returns:
-      observation: Pixel observations as displayed on the screen.
-      reward: Total reward collected since the last call.
-      extras: Task extras observed since the last call.
-      instructions: Task instructions received since the last call.
-      episode_end: Boolean indicating if the RL episode should be terminated.
+      Optional[Dict[str, Union[np.ndarray, Optional[lxml.etree.Element]]]]:
+        observation, dict like
+          {
+            "observation": np.ndarray with shape (H, W, 3) of uint8, Pixel
+              observations as displayed on the screen.
+            "orientation": np.ndarray with shape (4,) of uint8
+            "timedelta": np.ndarray with shape () of int64
+            "view_hierarchy": optional lxml.etree.Element, present if
+              `self._with_view_hierarchy`
+          }
+      float: reward, Total reward collected since the last call.
+      Dict[str, Any]: extras, Task extras observed since the last call.
+      List[str]: instructions, Task instructions received since the last call.
+      bool: episode end, Boolean indicating if the RL episode should be terminated.
     """
 
     # Increment counters.
@@ -445,17 +467,22 @@ class Coordinator():
       if check_vh:
         self._last_vh_check_time = time.time()
         self._elapsed_step_from_vh_check = 0
-      self._task_manager.snapshot_events( observation["pixels"] if check_screen else None
-                                        , get_vh, check_vh
-                                        )
-      reward, view_hierarchy = self._task_manager.get_current_reward() # zdy
+      view_hierarchy: Optional[lxml.etree.Element] =\
+          self._task_manager.snapshot_events( observation["pixels"]
+                                            , check_screen, get_vh, check_vh
+                                            )
       if self._with_view_hierarchy:
         observation["view_hierarchy"] = view_hierarchy
+
+      reward = self._task_manager.get_current_reward() # zdy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
       episode_end = self._task_manager.check_if_episode_ended(self._with_view_hierarchy)
+
       self._task_manager.clear_events()
+
       return observation, reward, task_extras, instructions, episode_end
+
     except (errors.ReadObservationError, socket.error):
       logging.exception('Unable to fetch observation. Restarting simulator.')
       self._log_dict['restart_count_fetch_observation'] += 1
@@ -541,7 +568,7 @@ class Coordinator():
                   , value: Number
                   , last_action: Optional[action_type_lib.ActionType]
                   , last_time: Optional[float]
-                  , elapsed_step: Optional[int]
+                  , elapsed_step: int
                   ) -> bool:
     #  method _check_check {{{ # 
     """
@@ -551,7 +578,7 @@ class Coordinator():
 
         last_action (Optional[action_type_lib.ActionType]): last action type
         last_time (Optional[float]): last check time
-        elapsed_step (Optional[int]): elapsed steps since last check
+        elapsed_step (int): elapsed steps since last check
 
     Returns:
         bool: to check or not
@@ -560,7 +587,7 @@ class Coordinator():
     check: bool = EventCheckControl.LIFT in method and last_action==action_type_lib.ActionType.LIFT\
                or EventCheckControl.TEXT in method and last_action==action_type_lib.ActionType.TEXT\
                or ( last_time is None or time.time()-last_time>=value if EventCheckControl.TIME in method\
-               else EventCheckControl.STEP in method and (elapsed_step is None or elapsed_step>=value)
+               else EventCheckControl.STEP in method and (elapsed_step==0 or elapsed_step>=value)
                   )
     return check
     #  }}} method _check_check # 

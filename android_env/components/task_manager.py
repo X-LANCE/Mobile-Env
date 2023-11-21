@@ -772,6 +772,7 @@ class TaskManager():
 
   def snapshot_events( self
                      , screen: Optional[np.ndarray] = None
+                     , check_screen: bool = False
                      , get_vh: bool = False
                      , check_vh: bool = False
                      ) -> Optional[lxml.etree.Element]:
@@ -780,6 +781,7 @@ class TaskManager():
     Args:
       screen (Optional[np.ndarray]): array of uint8 with shape (height, width, 3)
         or None. None for not invoking screen analyzer
+      check_screen (bool): whether to invoke the screen analyzer
       get_vh (bool): whether to get VH in the main thread
       check_vh (bool): whether to invoke vh analyzer
 
@@ -788,12 +790,9 @@ class TaskManager():
     """
 
     # zdy
-    if screen is not None:
-      self._run_screen_analyzer( np.transpose(screen, axes=(2, 0, 1))
-                               , check=True
-                               )
-    else:
-      self._run_screen_analyzer(None, check=False)
+    self._run_screen_analyzer( np.transpose(screen, axes=(2, 0, 1))
+                             , check=check_screen
+                             )
 
     view_hierarchy: Optional[lxml.etree.Element] = self._adb_controller.get_view_hierarchy()\
                                                 if get_vh\
@@ -822,6 +821,8 @@ class TaskManager():
                  , self._instruction_event
                  ]:
         evt.set_new_step()
+
+    return view_hierarchy
     #  }}} method `snapshot_events` # 
 
   def clear_events(self):
