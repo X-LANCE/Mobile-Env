@@ -35,14 +35,14 @@
 import enum
 import re
 from typing import Callable, Optional, Sequence
-from typing import List, Pattern, Tuple
+from typing import List, Pattern
 
 from absl import logging
 
 from android_env.components import adb_controller as adb_control
 from android_env.proto import task_pb2
 
-import lxml.etree
+#import lxml.etree
 
 class DumpsysNode():
   """A node in a dumpsys tree."""
@@ -186,69 +186,69 @@ def matches_path(dumpsys_activity_output: str,
       current_node = child
   return True
 
-def find_children(node: lxml.etree.Element,
-    class_regex: str, id_regex: str) -> List[lxml.etree.Element]:
-  #  function `find_children` {{{ # 
-  """
-  node - lxml.etree.Element
-  class_regex - str
-  id_regex - str
-
-  return list of lxml.etree.Element
-  """
-
-  children = []
-  for ch in node.iterdescendants():
-    #if class_regex.match(ch.get("class")) is not None and\
-        #id_regex.match(ch.get("resource-id")) is not None:
-    if class_regex==ch.get("class") and\
-        (id_regex=="" or id_regex==ch.get("resource-id")):
-      children.append(ch)
-  return children
-  #  }}} function `find_children` # 
-
-_separator_pattern = re.compile(r"(?<!\\)@")
-_fake_separator_pattern = re.compile(r"\\@")
-def match_path2(node: lxml.etree.Element, vh_path: List[str])\
-    -> Tuple[bool, Optional[lxml.etree.Element]]:
-  #  function `match_path2` {{{ # 
-  """
-  node - lxml.etree.Element
-  vh_path - list of str
-  
-  return
-  - bool
-  - lxml.etree.Element or None
-  """
-
-  if len(vh_path)==0:
-    return True, node
-
-  head = vh_path[0]
-  tail = vh_path[1:]
-
-  patterns = _separator_pattern.split(head, maxsplit=1)
-  class_pattern_str = _fake_separator_pattern.sub("@", patterns[0])
-  #class_regex = re.compile(class_regex)
-  class_regex = class_pattern_str
-  id_pattern_str = _fake_separator_pattern.sub("@", patterns[1]) if len(patterns)>=2\
-      else ""
-      #else r".*"
-  #id_regex = re.compile(id_pattern_str)
-  id_regex = id_pattern_str
-
-  matched_children = find_children(node, class_regex, id_regex)
-  for ch in matched_children:
-    matches, leaf = match_path2(ch, tail)
-    if matches:
-      return True, leaf
-  return False, None
-  #  }}} function `match_path2` # 
+#def find_children(node: lxml.etree.Element,
+    #class_regex: str, id_regex: str) -> List[lxml.etree.Element]:
+  ##  function `find_children` {{{ # 
+  #"""
+  #node - lxml.etree.Element
+  #class_regex - str
+  #id_regex - str
+#
+  #return list of lxml.etree.Element
+  #"""
+#
+  #children = []
+  #for ch in node.iterdescendants():
+    ##if class_regex.match(ch.get("class")) is not None and\
+        ##id_regex.match(ch.get("resource-id")) is not None:
+    #if class_regex==ch.get("class") and\
+        #(id_regex=="" or id_regex==ch.get("resource-id")):
+      #children.append(ch)
+  #return children
+  ##  }}} function `find_children` # 
+#
+#_separator_pattern = re.compile(r"(?<!\\)@")
+#_fake_separator_pattern = re.compile(r"\\@")
+#def match_path2(node: lxml.etree.Element, vh_path: List[str])\
+    #-> Tuple[bool, Optional[lxml.etree.Element]]:
+  ##  function `match_path2` {{{ # 
+  #"""
+  #node - lxml.etree.Element
+  #vh_path - list of str
+  #
+  #return
+  #- bool
+  #- lxml.etree.Element or None
+  #"""
+#
+  #if len(vh_path)==0:
+    #return True, node
+#
+  #head = vh_path[0]
+  #tail = vh_path[1:]
+#
+  #patterns = _separator_pattern.split(head, maxsplit=1)
+  #class_pattern_str = _fake_separator_pattern.sub("@", patterns[0])
+  ##class_regex = re.compile(class_regex)
+  #class_regex = class_pattern_str
+  #id_pattern_str = _fake_separator_pattern.sub("@", patterns[1]) if len(patterns)>=2\
+      #else ""
+      ##else r".*"
+  ##id_regex = re.compile(id_pattern_str)
+  #id_regex = id_pattern_str
+#
+  #matched_children = find_children(node, class_regex, id_regex)
+  #for ch in matched_children:
+    #matches, leaf = match_path2(ch, tail)
+    #if matches:
+      #return True, leaf
+  #return False, None
+  ##  }}} function `match_path2` # 
 
 class AppScreenChecker():
   """Checks that the current app screen matches an expected screen."""
 
-  bbox_regex = re.compile(r"\[(?P<left>\d+),(?P<top>\d+)\]\[(?P<right>\d+),(?P<bottom>\d+)\]")
+  #bbox_regex = re.compile(r"\[(?P<left>\d+),(?P<top>\d+)\]\[(?P<right>\d+),(?P<bottom>\d+)\]")
 
   class Outcome(enum.IntEnum):
     """Possible return vales from checking the current app screen."""
@@ -273,7 +273,7 @@ class AppScreenChecker():
         re.compile(regex) for regex in expected_app_screen.view_hierarchy_path
     ]
 
-    self._event_listeners = [] # zdy
+    #self._event_listeners = [] # zdy
 
   # Return type is AppScreenChecker.Outcome, but pytype doesn't understand that.
   def matches_current_app_screen(self) -> enum.IntEnum:
@@ -308,47 +308,47 @@ class AppScreenChecker():
     return AppScreenChecker.Outcome.SUCCESS
 
   #  For VH Events Listening {{{ # 
-  def add_event_listeners(self, *event_listeners):
-    #  method `add_event_listeners` {{{ # 
-    """
-    event_listeners - list of event_listeners.ViewHierarchyEvent
-    """
-
-    self._event_listeners += event_listeners
-    #  }}} method `add_event_listeners` # 
-
-  def match_events(self, lock):
-    #  method `match_events` {{{ # 
-    """
-    lock - threading.Lock
-    """
-
-    view_hierarchy = self._adb_controller.get_view_hierarchy()
-    if view_hierarchy is None:
-      return
-
-    for evnt in self._event_listeners:
-      # 1. match the path
-      #matches, leaf_node = match_path2(view_hierarchy, evnt.path)
-      #if not matches:
+  #def add_event_listeners(self, *event_listeners):
+    ##  method `add_event_listeners` {{{ # 
+    #"""
+    #event_listeners - list of event_listeners.ViewHierarchyEvent
+    #"""
+#
+    #self._event_listeners += event_listeners
+    ##  }}} method `add_event_listeners` # 
+#
+  #def match_events(self, lock):
+    ##  method `match_events` {{{ # 
+    #"""
+    #lock - threading.Lock
+    #"""
+#
+    #view_hierarchy = self._adb_controller.get_view_hierarchy()
+    #if view_hierarchy is None:
+      #return
+#
+    #for evnt in self._event_listeners:
+      ## 1. match the path
+      ##matches, leaf_node = match_path2(view_hierarchy, evnt.path)
+      ##if not matches:
+        ##continue
+      #leaf_nodes: List[lxml.etree.Element] = evnt.selector(view_hierarchy)
+      #if len(leaf_nodes)==0:
         #continue
-      leaf_nodes: List[lxml.etree.Element] = evnt.selector(view_hierarchy)
-      if len(leaf_nodes)==0:
-        continue
-
-      # 2. match the property value
-      for l in leaf_nodes:
-        values = []
-        for prpt in evnt.property_names:
-          if prpt in ["left", "top", "right", "bottom"]:
-            matches = AppScreenChecker.bbox_regex.fullmatch(l.get("bounds"))
-            normalization = self._adb_controller.get_screen_dimensions()[1]\
-                if prpt[0]=="l" or prpt[0]=="r"\
-                else self._adb_controller.get_screen_dimensions()[0]
-            values.append(float(matches[prpt])/normalization)
-          else:
-            values.append(l.get(prpt))
-        with lock:
-          evnt.set(values)
-    #  }}} method `match_events` # 
+#
+      ## 2. match the property value
+      #for l in leaf_nodes:
+        #values = []
+        #for prpt in evnt.property_names:
+          #if prpt in ["left", "top", "right", "bottom"]:
+            #matches = AppScreenChecker.bbox_regex.fullmatch(l.get("bounds"))
+            #normalization = self._adb_controller.get_screen_dimensions()[1]\
+                #if prpt[0]=="l" or prpt[0]=="r"\
+                #else self._adb_controller.get_screen_dimensions()[0]
+            #values.append(float(matches[prpt])/normalization)
+          #else:
+            #values.append(l.get(prpt))
+        #with lock:
+          #evnt.set(values)
+    ##  }}} method `match_events` # 
   #  }}} For VH Events Listening # 

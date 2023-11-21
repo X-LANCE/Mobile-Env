@@ -39,7 +39,7 @@ from absl import logging
 
 from android_env.components import app_screen_checker as screen_checker
 from android_env.components import thread_function
-from android_env.components import event_listeners
+#from android_env.components import event_listeners
 
 AppScreenChecker = screen_checker.AppScreenChecker
 # ZDY_COMMENT: check match according to the view hierarchy path
@@ -125,7 +125,8 @@ class DumpsysThread(thread_function.ThreadFunction):
 
     # The reward signals should be checked anyway, I think.
     # However, it's too slow, so I moved it here.
-    self._app_screen_checker.match_events(self._lock)
+    # This should be moved to a seperate thread
+    #self._app_screen_checker.match_events(self._lock)
 
     outcome = self._app_screen_checker.matches_current_app_screen()
 

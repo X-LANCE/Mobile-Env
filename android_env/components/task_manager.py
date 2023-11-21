@@ -61,6 +61,7 @@ from android_env.components.tools.types import TextModel, IconModel
 #from android_env.proto import emulator_controller_pb2
 #from android_env.proto import emulator_controller_pb2_grpc
 from android_env.components import screen_analyzer_thread
+from android_env.components import vh_analyzer_thread
 
 from android_env.components import setup_step_interpreter
 from android_env.proto import task_pb2
@@ -561,12 +562,16 @@ class TaskManager():
     logging.debug("## Stopped dumpsys ##")
     self._stop_screen_analyzer_thread() # zdy
     logging.debug("## Stopped screen analyzer ##")
+    self._stop_vh_analyzer_thread()
+    logging.debug("## Stopped vh analyzer ##")
 
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
     logging.debug("## Started dumpsys ##")
     self._start_screen_analyzer_thread() # zdy
     logging.debug("## Started screen analyzer ##")
+    self._start_vh_analyzer_thread()
+    logging.debug("## Started vh analyzer ##")
 
   def setup_flag(self) -> bool:
     return self._setup_flag
@@ -628,20 +633,18 @@ class TaskManager():
     self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
-  def get_current_reward(self, vh: bool) -> Tuple[ float
-                                                 , Optional[lxml.etree.Element]
-                                                 ]:
+  def get_current_reward(self) -> float:
     #  method `get_current_reward` {{{ # 
     """
     Returns total reward accumulated since the last step.
 
-    Args:
-        vh (bool): if view hierarchy should be obtained
+    #Args:
+        #vh (bool): if view hierarchy should be obtained
 
     Returns:
         float: reward
         #str: view hierarchy serialization
-        Optional[lxml.etree.Element]: view hierarchy
+        #Optional[lxml.etree.Element]: view hierarchy
     """
 
     #with self._lock:
@@ -660,15 +663,15 @@ class TaskManager():
     reward += self._reward_event.get()[0] if self._reward_event.is_set() else 0 # zdy
     #self._reward_event.clear() # zdy
 
-    if vh:
-      view_hierarchy = self._adb_controller.get_view_hierarchy()
-    else:
-      view_hierarchy = None
+    #if vh:
+      #view_hierarchy = self._adb_controller.get_view_hierarchy()
+    #else:
+      #view_hierarchy = None
     #view_hierarchy = lxml.etree.tostring(view_hierarchy, encoding="unicode")\
         #if view_hierarchy is not None\
         #else ""
 
-    return reward, view_hierarchy
+    return reward#, view_hierarchy
     #  }}} method `get_current_reward` # 
 
   def get_current_extras(self) -> Dict[str, Any]:
@@ -767,15 +770,36 @@ class TaskManager():
     return False
     #  }}} method `check_if_episode_ended` # 
 
-  def snapshot_events(self, screen: np.ndarray):
+  def snapshot_events( self
+                     , screen: Optional[np.ndarray] = None
+                     , get_vh: bool = False
+                     , check_vh: bool = False
+                     ) -> Optional[lxml.etree.Element]:
     #  method `snapshot_events` {{{ # 
     """
     Args:
-      screen: array of uint8 with shape (height, width, 3)
+      screen (Optional[np.ndarray]): array of uint8 with shape (height, width, 3)
+        or None. None for not invoking screen analyzer
+      get_vh (bool): whether to get VH in the main thread
+      check_vh (bool): whether to invoke vh analyzer
+
+    Returns:
+      Optional[lxml.etree.Element]: if should `get_vh`, returns the VH tree
     """
 
     # zdy
-    self._run_screen_analyzer(np.transpose(screen, axes=(2, 0, 1)))
+    if screen is not None:
+      self._run_screen_analyzer( np.transpose(screen, axes=(2, 0, 1))
+                               , check=True
+                               )
+    else:
+      self._run_screen_analyzer(None, check=False)
+
+    view_hierarchy: Optional[lxml.etree.Element] = self._adb_controller.get_view_hierarchy()\
+                                                if get_vh\
+                                              else None
+    self._run_vh_analyzer(view_hierarchy, screen.shape[:2], check_vh)
+
     try:
       self._run_dumpsys()
     except errors.NotAllowedError:
@@ -848,28 +872,71 @@ class TaskManager():
     #  }}} method `_run_dumpsys` # 
 
   # zdy
-  def _run_screen_analyzer(self, screen: np.ndarray):
+  def _run_screen_analyzer( self
+                          , screen: Optional[np.ndarray]
+                          , check: bool = True
+                          ):
     #  method `_run_screen_analyzer` {{{ # 
     """
-    screen - array of uint8 with shape (3, height, width)
+    Args:
+      screen (Optional[np.ndarray]): array of uint8 with shape (3, height, width)
+      check (bool): if check should be really performed
     """
 
     if not hasattr(self, "_screen_analyzer_thread"):
       return
 
-    self._screen_analyzer_thread.write(
-      screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_SCREEN)
-    self._screen_analyzer_thread.write(screen)
+    if check:
+      self._screen_analyzer_thread.write(
+        screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_SCREEN)
+      self._screen_analyzer_thread.write(screen)
 
     try:
-      status = self._screen_analyzer_thread.read(block=True, timeout=0.05) # TODO: maybe a better timeout value could be tuned to
+      status = self._screen_analyzer_thread.read(block=False, timeout=0.05) # TODO: maybe a better timeout value could be tuned to
       if status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_ERROR:
         logging.error("Screen Analyzer Error!")
       elif status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.DID_NOT_CHECK:
         logging.info("Screen Analyzer did not check, maybe owing to the kill signal.")
     except queue.Empty:
-      logging.warning("Screen Analyzer exceeds time limit!")
+      #logging.warning("Screen Analyzer exceeds time limit!")
+      pass
     #  }}} method `_run_screen_analyzer` # 
+
+  def _run_vh_analyzer( self
+                      , view_hierarchy: Optional[lxml.etree.Element]
+                      , screen_dimension: Tuple[int, int]
+                      , check: bool = True
+                      ):
+    #  method _run_vh_analyzer {{{ # 
+    """
+    Args:
+        view_hierarchy (Optional[lxml.etree.Element]): view hierarchy to
+          analyze
+        screen_dimension (Tuple[int, int]): screen dimension as (height, width)
+        check (bool): if check should be really performed
+    """
+
+    if not hasattr(self, "_vh_analyzer_thread"):
+      return
+
+    if check:
+      self._vh_analyzer_thread.write(
+          vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal.CHECK_VH_EVENT
+        )
+      self._vh_analyzer_thread.write(view_hierarchy)
+      self._vh_analyzer_thread.write(screen_dimension)
+
+    try:
+      status: vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal\
+          = self._vh_analyzer_thread.read(block=False, timeout=0.05) # TODO: maybe non-block
+      if status==vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal.CHECK_ERROR:
+        logging.error("VH Analyzer Error!")
+      elif status==vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal.DID_NOT_CHECK:
+        logging.error("VH Analyzer did not check.")
+    except queue.Empty:
+      #logging.warning("VH Analyzer exceeds time limit!")
+      pass
+    #  }}} method _run_vh_analyzer # 
   #  }}} Interaction Methods # 
 
   #  Methods to Start and Stop the Assistant Threads {{{ # 
@@ -895,7 +962,7 @@ class TaskManager():
   def _start_dumpsys_thread(self):
     app_screen_checker_ = app_screen_checker.AppScreenChecker(
         self._adb_controller, self._task.expected_app_screen)
-    app_screen_checker_.add_event_listeners(*self._view_hierarchy_events)
+    #app_screen_checker_.add_event_listeners(*self._view_hierarchy_events)
     self._dumpsys_thread = dumpsys_thread.DumpsysThread(
         app_screen_checker=app_screen_checker_,
         check_frequency=self._dumpsys_check_frequency,
@@ -933,6 +1000,18 @@ class TaskManager():
 
     #  }}} method `_start_screen_analyzer_thread` # 
 
+  def _start_vh_analyzer_thread(self):
+    #  method _start_vh_analyzer_thread {{{ # 
+    self._vh_analyzer_thread: vh_analyzer_thread.ViewHierarchyAnalyzerThread\
+        = vh_analyzer_thread.ViewHierarchyAnalyzerThread(
+            adb_controller=self._adb_controller
+          , lock=self._lock
+          , block_input=True
+          , block_output=True
+          )
+    self._vh_analyzer_thread.add_event_listeners(*self._view_hierarchy_events)
+    #  }}} method _start_vh_analyzer_thread # 
+
   def _stop_logcat_thread(self):
     if hasattr(self, '_logcat_thread'):
       self._logcat_thread.kill()
@@ -945,6 +1024,10 @@ class TaskManager():
   def _stop_screen_analyzer_thread(self):
     if hasattr(self, "_screen_analyzer_thread"):
       self._screen_analyzer_thread.kill()
+
+  def _stop_vh_analyzer_thread(self):
+    if hasattr(self, "_vh_analyzer_thread"):
+      self._vh_analyzer_thread.kill()
   #  }}} Methods to Start and Stop the Assistant Threads # 
 
   def _increment_bad_state(self) -> None:

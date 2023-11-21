@@ -48,6 +48,21 @@ import dm_env
 import numpy as np
 import lxml.etree
 
+import enum
+from numbers import Number
+
+class EventCheckControl(enum.Flag):
+  # Checks after each LIFT
+  LIFT = enum.auto()
+
+  # Checks after each TEXT
+  TEXT = enum.auto()
+
+  # Checks every t seconds; prior to STEP
+  TIME = enum.auto()
+
+  # Checks every n steps
+  STEP = enum.auto()
 
 class Coordinator():
   """Handles interaction between internal components of AndroidEnv."""
@@ -60,27 +75,42 @@ class Coordinator():
               , periodic_restart_time_min: float = 0.0
               , force_simulator_launch: bool = True
               , with_view_hierarchy: bool = False
+              , vh_check_control_method: EventCheckControl = EventCheckControl.LIFT
+              , vh_check_control_value: Optional[Union[float, int]] = 3.
+              , screen_check_control_method: EventCheckControl = EventCheckControl.LIFT
+              , screen_check_control_value: Optional[Union[float, int]] = 1.
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
 
     Args:
-      simulator: A BaseSimulator instance.
-      task_managers: iterable of task_manager_lib.TaskManager as the
-        TaskManagers, responsible for coordinating RL tasks.
-      step_timeout_sec: Timeout in seconds between steps. If step is not called
-        within that time, the episode will reset at the next step. Set to 0 to
-        disable.
-      max_steps_per_sec: Maximum steps per second. If the simulator is
-        faster, the Coordinator will wait before returning an observation.
-        If <=0.0, this functionality is turned off.
-      periodic_restart_time_min: Time between periodic restarts in minutes.
-        If > 0.0, will trigger a simulator restart at the end of the next
-        episode once the time has been reached.
-      force_simulator_launch: Forces the simulator to relaunch even if it is
-        already launched.
+      simulator (base_simulator.BaseSimulator): A BaseSimulator instance.
+      task_managers (Iterable[task_manager_lib.TaskManager]): iterable of
+        task_manager_lib.TaskManager as the TaskManagers, responsible for
+        coordinating RL tasks.
+
+      step_timeout_sec (int): Timeout in seconds between steps. If step is not
+        called within that time, the episode will reset at the next step. Set
+        to 0 to disable.
+      max_steps_per_sec (float): Maximum steps per second. If the simulator is
+        faster, the Coordinator will wait before returning an observation.  If
+        <=0.0, this functionality is turned off.
+      periodic_restart_time_min (float): Time between periodic restarts in
+        minutes.  If > 0.0, will trigger a simulator restart at the end of the
+        next episode once the time has been reached.
+      force_simulator_launch (bool): Forces the simulator to relaunch even if
+        it is already launched.
+
       with_view_hierarchy (bool): if the view hierarchy should be included in
         the observation
+      vh_check_control_method (EventCheckControl): control method
+      vh_check_control_value (Optional[Union[float, int]]): only required for
+        method TIME or STEP. for TIME, specifies the gap seconds as float. for
+        STEP, specifies the gap steps as interger.
+
+      screen_check_control_method (EventCheckControl): control method
+      screen_check_control_value (Optional[Union[float, int]]): the seconds or
+        steps of check gap for TIME and STEP
     """
 
     self._simulator: base_simulator.BaseSimulator = simulator
@@ -92,7 +122,12 @@ class Coordinator():
     self._max_steps_per_sec = max_steps_per_sec
     self._periodic_restart_time_min = periodic_restart_time_min
     self._force_simulator_launch = force_simulator_launch
+
     self._with_view_hierarchy: bool = with_view_hierarchy
+    self._vh_check_control_method: EventCheckControl = vh_check_control_method
+    self._vh_check_control_value: Number = vh_check_control_value or 0
+    self._screen_check_control_method: EventCheckControl = screen_check_control_method
+    self._screen_check_control_value: Number = screen_check_control_value or 0
 
     # Logging settings.
     self._log_dict = {
@@ -110,9 +145,14 @@ class Coordinator():
     }
 
     # Initialize counters.
-    self._should_restart = False
-    self._latest_observation_time = None
-    self._simulator_start_time = None
+    self._should_restart: bool = False
+    self._latest_observation_time: Optional[float] = None
+    self._simulator_start_time: Optional[float] = None
+
+    self._last_screen_check_time: Optional[float] = None
+    self._last_vh_check_time: Optional[float] = None
+    self._elapsed_step_from_screen_check: Optional[int] = None
+    self._elapsed_step_from_vh_check: Optional[int] = None
 
     logging.info('Starting the simulator...')
     self._restart_simulator()
@@ -178,6 +218,10 @@ class Coordinator():
 
     # Reset counters.
     self._latest_observation_time = None
+    self._last_screen_check_time = None
+    self._last_vh_check_time = None
+    self._elapsed_step_from_screen_check = None
+    self._elapsed_step_from_vh_check = None
     for key in self._log_dict:
       if key.startswith('episode'):
         self._log_dict[key] = 0.0
@@ -326,6 +370,7 @@ class Coordinator():
                               , List[str]
                               , bool
                               ]:
+    #  method execute_action {{{ # 
     """Executes the selected action and returns transition info.
 
     Args:
@@ -360,10 +405,29 @@ class Coordinator():
         self._send_action_to_taskmanager(action)
       elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
         self._send_action_to_simulator(action)
-      vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
+
+      get_vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
+
     else:
-      vh: bool = True
-    vh = vh and self._with_view_hierarchy
+      get_vh: bool = True
+
+    get_vh = get_vh and self._with_view_hierarchy
+
+    self._elapsed_step_from_screen_check += 1
+    self._elapsed_step_from_vh_check += 1
+
+    check_vh: bool = self._check_check( self._vh_check_control_method
+                                      , self._vh_check_control_value
+                                      , last_action=action["action_type"] if action is not None else None
+                                      , last_time=self._last_vh_check_time
+                                      , elapsed_step=self._elapsed_step_from_vh_check
+                                      )
+    check_screen: bool = self._check_check( self._screen_check_control_method
+                                          , self._screen_check_control_value
+                                          , last_action=action["action_type"] if action is not None else None
+                                          , last_time=self._last_screen_check_time
+                                          , elapsed_step=self._elapsed_step_from_screen_check
+                                          )
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:
@@ -375,8 +439,16 @@ class Coordinator():
       self._latest_observation_time = time.time()
       observation = self._simulator.get_observation()
 
-      self._task_manager.snapshot_events(observation["pixels"])
-      reward, view_hierarchy = self._task_manager.get_current_reward(vh) # zdy
+      if check_screen:
+        self._last_screen_check_time = time.time()
+        self._elapsed_step_from_screen_check = 0
+      if check_vh:
+        self._last_vh_check_time = time.time()
+        self._elapsed_step_from_vh_check = 0
+      self._task_manager.snapshot_events( observation["pixels"] if check_screen else None
+                                        , get_vh, check_vh
+                                        )
+      reward, view_hierarchy = self._task_manager.get_current_reward() # zdy
       if self._with_view_hierarchy:
         observation["view_hierarchy"] = view_hierarchy
       task_extras = self._task_manager.get_current_extras()
@@ -389,6 +461,7 @@ class Coordinator():
       self._log_dict['restart_count_fetch_observation'] += 1
       self._should_restart = True
       return None, 0.0, {}, [], True
+    #  }}} method execute_action # 
 
   def _send_action_to_taskmanager(self, action: Dict[str, np.ndarray]):
     #  method `_send_action_to_taskmanager` {{{ # 
@@ -404,6 +477,7 @@ class Coordinator():
     #  }}} method `_send_action_to_taskmanager` # 
 
   def _send_action_to_simulator(self, action: Dict[str, np.ndarray]) -> None:
+    #  method _send_action_to_simulator {{{ # 
     """Sends the selected action to the simulator.
 
     The simulator will interpret the action as a touchscreen event and perform
@@ -420,8 +494,10 @@ class Coordinator():
       logging.exception('Unable to execute action. Restarting simulator.')
       self._log_dict['restart_count_execute_action'] += 1
       self._should_restart = True
+    #  }}} method _send_action_to_simulator # 
 
   def _check_timeout(self) -> bool:
+    #  method _check_timeout {{{ # 
     """Checks if timeout between steps have exceeded.
 
     If too much time has passed since the last step was performed, it is assumed
@@ -442,6 +518,7 @@ class Coordinator():
         self._should_restart = True
         return True
     return False
+    #  }}} method _check_timeout # 
 
   def _wait_for_next_frame(self) -> None:
     """Pauses the environment so that the interaction is around 1/FPS."""
@@ -458,6 +535,35 @@ class Coordinator():
       return time.time() - self._latest_observation_time
     else:
       return np.inf
+
+  def _check_check( self
+                  , method: EventCheckControl
+                  , value: Number
+                  , last_action: Optional[action_type_lib.ActionType]
+                  , last_time: Optional[float]
+                  , elapsed_step: Optional[int]
+                  ) -> bool:
+    #  method _check_check {{{ # 
+    """
+    Args:
+        method (EventCheckControl): control method
+        value (Number): corresponding setting value
+
+        last_action (Optional[action_type_lib.ActionType]): last action type
+        last_time (Optional[float]): last check time
+        elapsed_step (Optional[int]): elapsed steps since last check
+
+    Returns:
+        bool: to check or not
+    """
+
+    check: bool = EventCheckControl.LIFT in method and last_action==action_type_lib.ActionType.LIFT\
+               or EventCheckControl.TEXT in method and last_action==action_type_lib.ActionType.TEXT\
+               or ( last_time is None or time.time()-last_time>=value if EventCheckControl.TIME in method\
+               else EventCheckControl.STEP in method and (elapsed_step is None or elapsed_step>=value)
+                  )
+    return check
+    #  }}} method _check_check # 
 
   def get_logs(self) -> Dict[str, Any]:
     """Returns internal counter values."""
