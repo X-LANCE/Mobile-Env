@@ -47,7 +47,7 @@ from android_env.utils import fix_path
 
 from google.protobuf import text_format
 
-from typing import Optional
+from typing import Optional, Any
 from typing import Dict
 import functools
 
@@ -66,6 +66,7 @@ def load( task_path: str
         , text_model: TextModel = naive_functions
         , icon_model: IconModel = naive_functions
         , with_view_hierarchy: bool = False
+        , coordinator_args: Optional[Dict[str, Any]] = None
         ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
@@ -118,6 +119,9 @@ def load( task_path: str
     with_view_hierarchy (bool): if the view hierarchy should be included in the
       observation
 
+    coordinator_args (Optional[Dict[str, Any]]): overrides several default
+      arguments of Coordinator
+
   Returns:
     env: An AndroidEnv instance.
   """
@@ -134,6 +138,7 @@ def load( task_path: str
       run_headless=run_headless,
       gpu_mode='swiftshader_indirect',
       writable_system=False)
+  coordinator_args: Dict[str, Any] = coordinator_args or {}
 
   # Prepare task.
   task_list = []
@@ -223,6 +228,7 @@ def load( task_path: str
                       )
   coordinator = coordinator_lib.Coordinator( simulator, task_managers
                                            , with_view_hierarchy=with_view_hierarchy
+                                           , **coordinator_args
                                            )
 
   # Load environment.
@@ -242,6 +248,7 @@ def load_remote( task_path: str
                , text_model: TextModel = naive_functions
                , icon_model: IconModel = naive_functions
                , with_view_hierarchy: bool = False
+               , coordinator_args: Optional[Dict[str, Any]] = None
                ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
@@ -295,9 +302,14 @@ def load_remote( task_path: str
     with_view_hierarchy (bool): if the view hierarchy should be included in the
       observation
 
+    coordinator_args (Optional[Dict[str, Any]]): overrides several default
+      arguments of Coordinator
+
   Returns:
     env: An AndroidEnv instance.
   """
+
+  coordinator_args: Dict[str, Any] = coordinator_args or {}
 
   # Prepare task.
   task_list = []
@@ -363,6 +375,7 @@ def load_remote( task_path: str
                       )
   coordinator = coordinator_lib.Coordinator( simulator, task_managers
                                            , with_view_hierarchy=with_view_hierarchy
+                                           , **coordinator_args
                                            )
 
   # Load environment.
