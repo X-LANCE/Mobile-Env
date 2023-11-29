@@ -359,7 +359,7 @@ class Coordinator():
 
   def execute_action( self
                     , action: Optional[ Dict[ str
-                                            , Optional[Union[np.ndarray, str]]
+                                            , np.ndarray
                                             ]
                                       ]
                     ) -> Tuple[ Optional[ Dict[ str
@@ -385,7 +385,8 @@ class Coordinator():
               from [0, 1], optional for TEXT
             "input_token": np.ndarray with shape () of int32, required only for
               TEXT
-            "response": str, optional response to human user
+            "response": np.ndarray with shape () of object (str), optional
+              response to human user
           }
 
     Returns:
@@ -420,7 +421,7 @@ class Coordinator():
       if "response" in action\
           and action["response"] is not None\
           and action["response"] != "":
-        self._task_manager.receive_response(action["response"])
+        self._task_manager.receive_response(action["response"].item())
         pass
 
       if action["action_type"].item() == action_type_lib.ActionType.TEXT:
