@@ -68,6 +68,7 @@ from android_env.proto import task_pb2
 from android_env.components import event_listeners # zdy
 import numpy as np
 import lxml.etree
+from sentence_transformers import SentenceTransformer
 
 class TaskManager():
   """Handles all events and information related to the task."""
@@ -324,15 +325,15 @@ class TaskManager():
         if prpt.HasField("pattern"):
           property_ = event_listeners.ViewHierarchyEvent.StringProperty(prpt.property_name, prpt.pattern)
         else:
-          if prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.EQ:
+          if prpt.sign==task_pb2.EventSource.ViewHierarchyEvent.Sign.EQ:
             comparator = operator.eq
-          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.LE:
+          elif prpt.sign==task_pb2.EventSource.ViewHierarchyEvent.Sign.LE:
             comparator = operator.le
-          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.LT:
+          elif prpt.sign==task_pb2.EventSource.ViewHierarchyEvent.Sign.LT:
             comparator = operator.lt
-          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.GE:
+          elif prpt.sign==task_pb2.EventSource.ViewHierarchyEvent.Sign.GE:
             comparator = operator.ge
-          elif prpt.sign==task_pb2.Event.ViewHierarchyEvent.Sign.GT:
+          elif prpt.sign==task_pb2.EventSource.ViewHierarchyEvent.Sign.GT:
             comparator = operator.gt
           else:
             comparator = operator.ne
@@ -348,7 +349,12 @@ class TaskManager():
           repeatability=event_source.repeatability)
       self._log_events.append(event)
     elif event_source.HasField("response_event"):
+      needs_sbert = event_source.response_event.mode==task_pb2.EventSource.ResponseEvent.Mode.SBERT
+      if needs_sbert and not hasattr(self, "_sbert"):
+        self._sbert: SentenceTransformer = SentenceTransformer("all-MiniLM-L12-v2")
       event = event_listeners.ResponseEvent( event_source.response_event.pattern
+                                           , event_source.response_event.mode
+                                           , self._sbert if needs_sbert else None
                                            , repeatability=event_source.repeatability
                                            )
       self._response_events.append(event)

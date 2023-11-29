@@ -21,7 +21,13 @@ import re
 import itertools
 import functools
 import enum
+
 import lxml.cssselect as cssselect
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import dot_score
+from rapidfuzz import fuzz
+from difflib import SequenceMatcher
+import torch
 
 from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern, Dict, Match
@@ -199,7 +205,7 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
             self._ever_set = True
         #  }}} method `set` # 
     @abc.abstractmethod
-    def _verify(self, value: I) -> Tuple[bool, Optional[Union[V, List[V]]]]:
+    def _verify(self, value: I) -> Tuple[bool, Optional[V]]:
         #  abstract method `_verify` {{{ # 
         """
         This is a hook function for the extenders to implement.
@@ -590,7 +596,7 @@ class RegionEvent(EventSource[I, V], abc.ABC):
         return self._needs_detection
     #  }}} abstract class `RegionEvent` # 
 
-class TextEvent(RegionEvent[Optional[str], str]):
+class TextEvent(RegionEvent[Optional[str], List[str]]):
     #  class `TextEvent` {{{ # 
     def __init__(self, expect: str,
             region: Iterable[float], needs_detection: bool = False,
@@ -729,7 +735,7 @@ class IconMatchEvent(RegionEvent[bool, bool]):
 
 P = TypeVar("Property")
 
-class ViewHierarchyEvent(EventSource[List, Any]):
+class ViewHierarchyEvent(EventSource[List, List[Any]]):
     #  class `ViewHierarchyEvent` {{{ # 
     class Property(abc.ABC, Generic[P]):
         #  class `Property` {{{ # 
@@ -927,7 +933,7 @@ class ViewHierarchyEvent(EventSource[List, Any]):
         #  }}} method `_verify` # 
     #  }}} class `ViewHierarchyEvent` # 
 
-class LogEvent(EventSource[str, str]):
+class LogEvent(EventSource[str, List[str]]):
     #  class `LogEvent` {{{ # 
     def __init__(self, filters: Iterable[str], pattern: str,
             #transformation: Optional[str] = None,
@@ -982,22 +988,89 @@ class LogEvent(EventSource[str, str]):
         #  }}} method `_verify` # 
     #  }}} class `LogEvent` # 
 
-class ResponseEvent(EventSource[str, str]):
+class ResponseEvent(EventSource[str, Union[List[str], float]]):
     #  class ResponseEvent {{{ # 
+    class ResponseCheckMode(enum.IntEnum):
+        REGEX = 0
+        DIFFLIB = 1
+        FUZZ = 2
+        SBERT = 3
+
     def __init__( self
                 , pattern: str
+                , mode: ResponseCheckMode
+                , sbert: Optional[SentenceTransformer] = None
                 , repeatability: Repeatability = Repeatability.NONE
                 ):
         #  method __init__ {{{ # 
-        self._pattern: Pattern[str] = re.compile(pattern)
+        """
+        Args:
+            pattern (str): the reference for ResponseEvent
+            mode (ResponseCheckMode): the match mode. relies on the following
+              modules:
+              * re
+              * difflib
+              * rapidfuzz
+              * sentence-transformers
+            sbert (Optional[SentenceTransformer]): sentence transformer used
+              in SBERT mode
+            repeatability (Repeatability): repeatability mode
+        """
+
+        super(ResponseEvent, self).__init__(repeatability)
+
+        self._pattern: str = pattern
+        self._sbert: Optional[SentenceTransformer] = sbert
+
+        self._mode: ResponseEvent.ResponseCheckMode = mode
+        if mode==ResponseEvent.ResponseCheckMode.REGEX:
+            matcher: Pattern[str] = re.compile(self._pattern)
+            self._match: Callable[[str], Match[str]] = matcher.search
+        elif mode==ResponseEvent.ResponseCheckMode.DIFFLIB:
+            matcher: SequenceMatcher = SequenceMatcher( b=self._pattern
+                                                            , autojunk=False
+                                                            )
+            def match_(a: str) -> float:
+                matcher.set_seq1(a)
+                return matcher.ratio()
+            self._match: Callable[[str], float] = match_
+        elif mode==ResponseEvent.ResponseCheckMode.FUZZ:
+            self._match: Callable[[str], float] = functools.partial( fuzz.ratio
+                                                                   , self._pattern
+                                                                   )
+        elif mode==ResponseEvent.ResponseCheckMode.SBERT:
+            # (1, D)
+            encoding: torch.Tensor = self._sbert.encode( [self._pattern]
+                                                       , show_progress_bar=False
+                                                       , convert_to_tensor=True
+                                                       , normalize_embeddings=True
+                                                       )
+            def match_(a: str) -> float:
+                # (1, D)
+                a_encoding: torch.Tensor = self._sbert.encode( [a]
+                                                             , show_progress_bar=False
+                                                             , convert_to_tensor=True
+                                                             , normalize_embeddings=True
+                                                             )
+                return dot_score(encoding, a_encoding).squeeze().cpu().item()
+            self._match: Callable[[str], float] = match_
         #  }}} method __init__ # 
 
-    def _verify(self, response: str) -> Tuple[bool, Optional[List[str]]]:
+    def _verify(self, response: str) -> Tuple[bool, Optional[Union[List[str], float]]]:
         #  method _verify {{{ # 
-        match_ = self._pattern.search(response)
-        if match_ is not None:
-            logging.info("\x1b[5;31mResponse Event\x1b[0m")
-            return True, match_.groups()
-        return False, None
+        if self._mode==ResponseEvent.ResponseCheckMode.REGEX:
+            match_: Match[str] = self._match(response)
+            if match_ is not None:
+                logging.info( "\x1b[5;31mResponse Event: %s for REGEX %s\x1b[0m"
+                            , response, self._pattern
+                            )
+                return True, match_.groups()
+            return False, None
+        score: float = self._match(response)
+        logging.info( "\x1b[5;31mResponse Score: %.4f @ %s for %s %s\x1b[0m"
+                    , score, response
+                    , self._mode.name, self._pattern
+                    )
+        return score
         #  }}} method _verify # 
     #  }}} class ResponseEvent # 

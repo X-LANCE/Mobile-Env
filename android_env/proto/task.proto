@@ -210,7 +210,15 @@ message EventSource {
     //}
 
 	message ResponseEvent {
-		repeated string pattern = 1;
+		enum Mode {
+			REGEX = 0;
+			DIFFLIB = 1;
+			FUZZ = 2;
+			SBERT = 3;
+		}
+
+		string pattern = 1;
+		Mode mode = 2;
 	}
 
     enum Repeatability {

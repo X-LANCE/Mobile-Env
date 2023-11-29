@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-env-rl"
-version = "3.0"
+version = "3.1"
 authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
 license = {file = "LICENSE"}
 description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
@@ -27,7 +27,9 @@ dependencies = [
 	"requests",
 	"Flask",
 	"Flask-Compress",
-	"cssselect"
+	"cssselect",
+	"rapidfuzz",
+	"sentence_transformers"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

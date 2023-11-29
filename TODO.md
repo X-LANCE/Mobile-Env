@@ -18,11 +18,14 @@
   one.
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
-* (Fuzzy Match): Maybe fuzzy match in text event sources will help.
+* (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
+  through rapidfuzz library.
 * (Non-ASCII character input): I found that clipboard synching can copy UTF-8
   strings. This may be an idea to enable non-ASCII character input.
 * (About new event source RHU): Update the annotation tool to support the new
   type of event source.
+* (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym to
+  gymnasium.
 
 ---
 
