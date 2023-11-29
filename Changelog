@@ -1,3 +1,39 @@
+2023-11-29 Danyang Zhang <zdy004007@126.com>
+
+	v3.1
+
+	Optimized management of VH check and screen check.
+
+	* (Dedicated thread): Separated VH check from DumpsysThread into a
+	dedicated ViewHierarchyAnalyzerThread
+	  * android_env/components/vh_analyzer_thread.py
+	  * android_env/components/dumpsys_thread.py
+	  * android_env/components/app_screen_checker.py
+	* (Flexible control of invocation): Enabled several methods to control
+	invocation for time-consuming screen check and VH check. Updated new
+	parameters of load and load_remote functions.
+	  * android_env/components/task_manager.py
+	  * android_env/components/coordinator.py
+	  * android_env/loader.py
+
+	Migrated the branch of annotation tool to the master branch. The original
+	annotation tool branch is deprecated.
+
+	* android_env/wrappers/__init__.py
+	* android_env/wrappers/recorder_wrapper.py
+	* tools/annotation-tool/backend/server.py
+
+	Fixed bugs w.r.t. EasyOCRWrapper, screen check, template tool, etc.
+
+	* android_env/components/tools/easyocr_wrapper.py: Fixed bugs.
+	* tools/templates.toolkits/modifiers.py: Fixed error of remove_howto modifier.
+	* (Fixed bugs of AndroidEnv.add_task)
+	  * android_env/environment.py
+	  * tools/annotation-tool/backend/server.py
+	* android_env/components/coordinator.py: Fixed type error of response
+	component in the action dict.
+	* (Supplemented several logging lines)
+
 2023-10-31 Danyang Zhang <zdy004007@126.com>
 
 	v3.0

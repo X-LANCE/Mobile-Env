@@ -13,7 +13,9 @@
   easier than the current way
 * ✓ (Repeatability control for event slots): I find it useful to control
   repeatability of an event slot. Will implement it when I have the time.
-* (Icon Model): The embedded icon model. Maybe I can just use IconNet.
+* (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
+  didn't find a ready-to-use IconNet implementation. Still need to train an own
+  one.
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
 * (Fuzzy Match): Maybe fuzzy match in text event sources will help.
