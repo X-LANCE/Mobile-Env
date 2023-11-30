@@ -34,6 +34,7 @@ import io
 import base64
 import sys
 import threading
+import argparse
 
 import android_env
 from android_env.components import action_type
@@ -50,8 +51,15 @@ Compress(app)
 
 lock = threading.Lock()
 
-dump_file = sys.argv[1] if len(sys.argv)>1 else "../test_dump.pkl"
-task_path = sys.argv[2] if len(sys.argv)>2 else "../../android_env/apps/wikihow/templates.miniout"
+parser = argparse.ArgumentParser()
+parser.add_argument("dump_file", type=str)
+parser.add_argument("task_path", type=str)
+parser.add_argument("--no-dump", action="store_false", dest="dump")
+args: argparse.Namespace = parser.parse_args()
+#dump_file = sys.argv[1] if len(sys.argv)>1 else "../test_dump.pkl"
+#task_path = sys.argv[2] if len(sys.argv)>2 else "../../android_env/apps/wikihow/templates.miniout"
+dump_file: str = args.dump_file
+task_path: str = args.task_path
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -97,7 +105,8 @@ android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
                                              }
                           , **task_manager_args
                           )
-android = RecorderWrapper(android, dump_file=dump_file)
+if args.dump:
+    android = RecorderWrapper(android, dump_file=dump_file)
 
 def timestep_to_json(timestep: dm_env.TimeStep) -> Dict[str, Any]:
     with io.BytesIO() as bff:
@@ -127,6 +136,8 @@ def do_action():
         parsed_action["input_token"] = np.array(action["inputToken"])
     else:
         parsed_action["touch_position"] = np.array(action["touchPosition"])
+    if "response" in action:
+        parsed_action["response"] = np.array(action["response"], dtype=np.object_)
 
     with lock:
         timestep = android.step(parsed_action)

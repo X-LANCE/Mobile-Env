@@ -22,6 +22,7 @@ Created by Danyang Zhang @X-Lance.
     @touch="touch"
     @lift="lift"
     @inputToken="inputToken"
+	@response="sendResponse"
     @repeat="repeat"
     :task-list="taskList"
     ref="simulator"
@@ -85,6 +86,14 @@ export default {
                                , "inputToken": index
                                });
     },
+	sendResponse(response) {
+		this.noticeProcessing();
+		return this.sendAction( { "actionType": this.actionLift
+								, "touchPosition": [0, 0]
+								, "response": response
+								}
+                              );
+	},
     repeat() {
         return this.sendAction({ "actionType": this.actionRepeat
                                , "touchPosition": [0, 0]

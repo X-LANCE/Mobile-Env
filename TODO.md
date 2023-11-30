@@ -20,9 +20,12 @@
   a conceptual idea.
 * (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
   through rapidfuzz library.
-* (Non-ASCII character input): I found that clipboard synching can copy UTF-8
-  strings. This may be an idea to enable non-ASCII character input.
-* (About new event source RHU): Update the annotation tool to support the new
+* (Non-ASCII character input through clipboard): I found that clipboard
+  synching can copy UTF-8 strings. This may be an idea to enable non-ASCII
+  character input.  The emulator gPRC has interfaces to operate clipboard.
+* (Non-ASCII character input through emulator gPRC): sendKey interface of the
+  emulator may be explored to implement input of UTF-8 strings.
+* ✓ (About new event source RHU): Update the annotation tool to support the new
   type of event source.
 * (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym to
   gymnasium.

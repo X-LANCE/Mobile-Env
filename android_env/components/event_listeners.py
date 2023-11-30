@@ -1024,7 +1024,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
 
         self._mode: ResponseEvent.ResponseCheckMode = mode
         if mode==ResponseEvent.ResponseCheckMode.REGEX:
-            matcher: Pattern[str] = re.compile(self._pattern)
+            matcher: Pattern[str] = re.compile(self._pattern, flags=re.MULTILINE)
             self._match: Callable[[str], Match[str]] = matcher.search
         elif mode==ResponseEvent.ResponseCheckMode.DIFFLIB:
             matcher: SequenceMatcher = SequenceMatcher( b=self._pattern
@@ -1071,6 +1071,6 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
                     , score, response
                     , self._mode.name, self._pattern
                     )
-        return score
+        return True, score
         #  }}} method _verify # 
     #  }}} class ResponseEvent # 

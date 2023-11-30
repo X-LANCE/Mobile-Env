@@ -284,36 +284,36 @@ class TaskManager():
     if event_source.HasField("text_recognize"):
       event = event_listeners.TextEvent(event_source.text_recognize.expect,
           _rect_to_list(event_source.text_recognize.rect), needs_detection=False,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._text_events.append(event)
     elif event_source.HasField("text_detect"):
       event = event_listeners.TextEvent(event_source.text_detect.expect,
           _rect_to_list(event_source.text_detect.rect), needs_detection=True,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
     elif event_source.HasField("icon_recognize"):
       event = event_listeners.IconRecogEvent(getattr(event_source.icon_recognize, "class"),
           _rect_to_list(event_source.icon_recognize.rect), needs_detection=False,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._icon_events.append(event)
     elif event_source.HasField("icon_detect"):
       event = event_listeners.IconRecogEvent(getattr(event_source.icon_detect, "class"),
           _rect_to_list(event_source.icon_detect.rect), needs_detection=True,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._icon_events.append(event)
     #  }}} Icon Events # 
     #  Icon Match Events {{{ # 
     elif event_source.HasField("icon_match"):
       event = event_listeners.IconMatchEvent(event_source.icon_match.path,
           _rect_to_list(event_source.icon_match.rect), needs_detection=False,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._icon_match_events.append(event)
     elif event_source.HasField("icon_detect_match"):
       event = event_listeners.IconMatchEvent(event_source.icon_detect_match.path,
           _rect_to_list(event_source.icon_detect_match.rect), needs_detection=True,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._icon_match_events.append(event)
     #  }}} Icon Match Events # 
     #  Other Events {{{ # 
@@ -341,21 +341,21 @@ class TaskManager():
               comparator, getattr(prpt, prpt.WhichOneof("property_value")))
         properties.append(property_)
       event = event_listeners.ViewHierarchyEvent(event_source.view_hierarchy_event.selector,
-          properties, repeatability=event_source.repeatability)
+          properties, repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._view_hierarchy_events.append(event)
     elif event_source.HasField("log_event"):
       self._log_filters |= set(event_source.log_event.filters)
       event = event_listeners.LogEvent(event_source.log_event.filters, event_source.log_event.pattern,
-          repeatability=event_source.repeatability)
+          repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._log_events.append(event)
     elif event_source.HasField("response_event"):
       needs_sbert = event_source.response_event.mode==task_pb2.EventSource.ResponseEvent.Mode.SBERT
       if needs_sbert and not hasattr(self, "_sbert"):
         self._sbert: SentenceTransformer = SentenceTransformer("all-MiniLM-L12-v2")
       event = event_listeners.ResponseEvent( event_source.response_event.pattern
-                                           , event_source.response_event.mode
+                                           , event_listeners.ResponseEvent.ResponseCheckMode(event_source.response_event.mode)
                                            , self._sbert if needs_sbert else None
-                                           , repeatability=event_source.repeatability
+                                           , repeatability=event_listeners.Repeatability(event_source.repeatability)
                                            )
       self._response_events.append(event)
     #  }}} Other Events # 
@@ -420,17 +420,17 @@ class TaskManager():
                                           , transformation=transformation
                                           , wrap=wrap
                                           , update=update
-                                          , repeatability=2-event_definition.repeatability
+                                          , repeatability=event_listeners.Repeatability(2-event_definition.repeatability)
                                           )
       if len(late_source_ids)>0:
         late_source_ids = [late_source_ids[0]]
     elif event_definition.type==task_pb2.EventSlot.Type.OR:
       event = event_listeners.Or( sub_events, transformation, wrap, update
-                                , repeatability=2-event_definition.repeatability
+                                , repeatability=event_listeners.Repeatability(2-event_definition.repeatability)
                                 )
     elif event_definition.type==task_pb2.EventSlot.Type.AND:
       event = event_listeners.And( sub_events, transformation, wrap
-                                 , repeatability=2-event_definition.repeatability
+                                 , repeatability=event_listeners.Repeatability(2-event_definition.repeatability)
                                  )
 
     # handle late sources
@@ -587,9 +587,8 @@ class TaskManager():
 
   #  Interaction Methods {{{ # 
   def receive_response(self, response: str):
-    for l in response.splitlines():
-      for evt in self._response_events:
-        evt.set(l)
+    for evt in self._response_events:
+      evt.set(response)
 
   def send_token(self, token_id: int):
     #  method `send_token` {{{ # 
@@ -750,7 +749,8 @@ class TaskManager():
     # Check if episode has ended
     #with self._lock:
       #if self._latest_values['episode_end']: # zdy
-    if self._episode_end_event.is_set(): # zdy
+    if self._episode_end_event.is_set()\
+        and self._episode_end_event.get()[0]: # zdy
       self._log_dict['reset_count_episode_end'] += 1
       logging.info('End of episode from logcat! Ending episode.')
       logging.info('************* END OF EPISODE *************')

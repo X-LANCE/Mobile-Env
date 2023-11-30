@@ -83,6 +83,17 @@ Revised by Danyang Zhang @X-Lance based on a private repository at
                 <el-button :disabled="loading" @click="inputToken(index)">{{ word }}</el-button>
             </div>
         </el-card>
+		<el-card>
+			<el-input type="textarea"
+				:autosize="{minRows: 5, maxRows: 20}"
+				placeholder="请输入给用户的响应"
+				v-model="response"
+				:disabled="loading"
+				>
+			</el-input>
+			<br>
+			<el-button :disabled="loading" @click="sendResponse(response)">发送</el-button>
+		</el-card>
         <el-card>
             <div>
                 <el-select v-model="taskId"
@@ -119,6 +130,7 @@ export default {
              , image: null
              , loading: false
              , notice: ""
+             , response: ""
 
              , lastTouchTime: Date.now()
              , lastActionTime: Date.now()
@@ -144,6 +156,7 @@ export default {
            , "touch"
            , "lift"
            , "inputToken"
+           , "response"
            , "repeat"
            ],
 
@@ -280,6 +293,10 @@ export default {
             this.$emit("inputToken", index)
             this.lastActionTime = Date.now();
         },
+		sendResponse(response) {
+			this.$emit("response", response)
+			this.lastActionTime = Date.now();
+		},
         autoAction() {
             if(!this.loading && !this.touched)
             {
