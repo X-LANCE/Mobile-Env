@@ -92,6 +92,9 @@ class TaskManager():
               , max_failed_current_activity: int = 10
               , text_model: TextModel = naive_functions
               , icon_model: IconModel = naive_functions
+              , get_sbert: Callable[[], SentenceTransformer] = functools.partial( SentenceTransformer
+                                                                                , "all-MiniLM-L12-v2"
+                                                                                )
               ):
     #  method `__init__` {{{ # 
     """Controls task-relevant events and information.
@@ -117,6 +120,9 @@ class TaskManager():
 
       text_model: TextModel
       icon_model: IconModel
+
+      get_sbert (Callable[[], SentenceTransformer]): function to get a sentence
+        transformer instance
     """
     self._task: task_pb2.Task = task
 
@@ -150,6 +156,8 @@ class TaskManager():
         'reset_count_max_duration_reached': 0,
         'restart_count_max_bad_states': 0,
     }
+
+    self._get_sbert: Callable[[], SentenceTransformer] = get_sbert
 
     # zdy
     #  Event Infrastructures {{{ # 
@@ -351,7 +359,7 @@ class TaskManager():
     elif event_source.HasField("response_event"):
       needs_sbert = event_source.response_event.mode==task_pb2.EventSource.ResponseEvent.Mode.SBERT
       if needs_sbert and not hasattr(self, "_sbert"):
-        self._sbert: SentenceTransformer = SentenceTransformer("all-MiniLM-L12-v2")
+        self._sbert: SentenceTransformer = self._get_sbert()
       event = event_listeners.ResponseEvent( event_source.response_event.pattern
                                            , event_listeners.ResponseEvent.ResponseCheckMode(event_source.response_event.mode)
                                            , self._sbert if needs_sbert else None

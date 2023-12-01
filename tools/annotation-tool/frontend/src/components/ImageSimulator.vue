@@ -290,12 +290,13 @@ export default {
             this.lastActionTime = Date.now();
         },
         inputToken(index) {
-            this.$emit("inputToken", index)
+            this.$emit("inputToken", index);
             this.lastActionTime = Date.now();
         },
 		sendResponse(response) {
-			this.$emit("response", response)
+			this.$emit("response", response);
 			this.lastActionTime = Date.now();
+			this.response = "";
 		},
         autoAction() {
             if(!this.loading && !this.touched)

@@ -43,6 +43,7 @@ from android_env.components.simulators.remote import remote_simulator
 from android_env.proto import task_pb2
 from android_env.components.tools.types import TextModel, IconModel
 from android_env.components.tools import naive_functions
+from android_env.components.tools.sbert_holder import SBERTHolder
 from android_env.utils import fix_path
 
 from google.protobuf import text_format
@@ -65,6 +66,7 @@ def load( task_path: str
         , unify_vocabulary: Optional[str] = None
         , text_model: TextModel = naive_functions
         , icon_model: IconModel = naive_functions
+        , sbert_holder: Optional[SBERTHolder] = None
         , with_view_hierarchy: bool = False
         , coordinator_args: Optional[Dict[str, Any]] = None
         ) -> environment.AndroidEnv:
@@ -116,6 +118,8 @@ def load( task_path: str
       screen
     icon_model (IconModel): icon model to conduct icon recognition on the
       screen
+    sbert_holder (Optional[SBERTHolder]): an optional customer SBERT holder
+
     with_view_hierarchy (bool): if the view hierarchy should be included in the
       observation
 
@@ -222,6 +226,7 @@ def load( task_path: str
                                               , fix_vocabulary_to=vocabulary
                                               , text_model=text_model
                                               , icon_model=icon_model
+                                              , get_sbert=(sbert_holder or SBERTHolder()).get_sbert
                                               )
                            , task_list
                            )
@@ -247,6 +252,7 @@ def load_remote( task_path: str
                , unify_vocabulary: Optional[str] = None
                , text_model: TextModel = naive_functions
                , icon_model: IconModel = naive_functions
+               , sbert_holder: Optional[SBERTHolder] = None
                , with_view_hierarchy: bool = False
                , coordinator_args: Optional[Dict[str, Any]] = None
                ) -> environment.AndroidEnv:
@@ -299,6 +305,8 @@ def load_remote( task_path: str
       screen
     icon_model (IconModel): icon model to conduct icon recognition on the
       screen
+    sbert_holder (Optional[SBERTHolder]): an optional customer SBERT holder
+
     with_view_hierarchy (bool): if the view hierarchy should be included in the
       observation
 
@@ -369,6 +377,7 @@ def load_remote( task_path: str
                                               , fix_vocabulary_to=vocabulary
                                               , text_model=text_model
                                               , icon_model=icon_model
+                                              , get_sbert=(sbert_holder or SBERTHolder()).get_sbert
                                               )
                            , task_list
                            )
