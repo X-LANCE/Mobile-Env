@@ -1,3 +1,23 @@
+2023-12-01 Danyang Zhang <zdy004007@126.com>
+
+	v3.2
+
+	Enabled multiple check methods for ResponseEvent
+
+	Fixed bugs w.r.t. ResponseEvent
+
+	* android_env/proto/task.proto
+	* android_env/components/event_listeners.py
+	* android_env/components/task_manager.py
+	* android_env/components/sbert_holder.py
+	* android_env/loader.py
+
+	Updated annotation tool to support ResponseEvent
+
+	* tools/annotation-tool/backend/server.py
+	* tools/annotation-tool/frontend/src/components/ImageSimulator.vue
+	* tools/annotation-tool/frontend/src/components/Session.vue
+
 2023-11-29 Danyang Zhang <zdy004007@126.com>
 
 	v3.1
