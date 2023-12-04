@@ -347,7 +347,7 @@ Mobile-Env的环境接受的动作的形式为`dict`对象，其包含四项：
   - 1（`android_env.components.action_type.ActionType.LIFT`） - 抬起（手指）动作
   - 2（`android_env.components.action_type.ActionType.REPEAT`） - “重复”动作，即什么都不做，保持之前的触击或抬起状态，同时不输入任何词元
   - 3（`android_env.components.action_type.ActionType.TEXT`） - 输入词元动作，输入词表中的一个词元；若加载环境时指定了`unify_vocabulary`参数，则使用的是该参数指定的大词表，否则使用的是当前任务的定义文件中`vocabulary`字段提供的小词表
-+ `touch_position` - NumPy数组，数据类型为浮点数，长度为2，表示触击的坐标`(x, y)`，坐标值归一化到`[0, 1]`；仅需对`TOUCH`动作指定
++ `touch_position` - NumPy数组，数据类型为浮点数，长度为2，表示触击的坐标`(x, y)`，坐标值归一化到`[0, 1]`；对`TOUCH`、`LIFT`动作都需要提供该参数，但仅对`TOUCH`参数有作用
 + `input_token` - NumPy标量数组，数据类型为整数，指定要输入的词元在词表中的序号，从0开始；仅需对`TEXT`动作指定
 + `response` - NumPy标量数组，存储Python`str`对象，为智能体给人类用户的回复内容
 

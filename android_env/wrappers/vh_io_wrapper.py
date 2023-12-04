@@ -69,7 +69,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
     """
     Wraps the environment with view hierarchy (VH) element iteractions.
 
-    The actions are formalated as
+    The actions are formulated as
 
     ```haskell
     data Action = CLICK Int -- eid
@@ -243,7 +243,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         if action["action_type"]==VhIoWrapper.ActionType.CLICK:
             return actions
         if action["action_type"]==VhIoWrapper.ActionType.INPUT:
-            token_list: List[str] = self._tokenizer( action["text"].item()
+            token_list: List[int] = self._tokenizer( action["text"].item()
                                                    , add_special_tokens=False
                                                    )["input_ids"]
             for tkn in token_list:
@@ -282,7 +282,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         """
 
         actions: List[Dict[str, np.ndarray]] = self._process_action(action)
-        self._env_steps += len(actions)
+        self._env_steps += len(actions)+1
 
         total_reward = 0.
         instructions: List[str] = []

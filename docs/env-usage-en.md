@@ -477,7 +477,8 @@ Mobile-Env accepts a `dict` object as the action containing four items:
 + `touch_position` - A NumPy array with the dtype as floating number and length
   as 2. This argument represents the coordinates of the touch position `(x,
   y)`.  The coordinate values should be normalized to `[0, 1]`. This argument
-  is required only for the `TOUCH` actions.
+  should be present for `TOUCH` and `LIFT` actions, but only has effect for
+  `TOUCH` actions.
 + `input_token` - A NumPy scalar array. The dtype is integer. It is used to
   indicate the index of the token in the vocabulary. The index starts from 0.
   This argument is required only for the `TEXT` actions
