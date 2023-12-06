@@ -26,10 +26,14 @@ from typing import Any
 
 # numpy array of uint8 with shape (H, W, 3) --Image.fromarray-> RGB Image
 
-def visualize(record: Dict[str, Any], task_definition_id: str) -> Image.Image:
+def visualize( record: Dict[str, Any]
+             , task_definition_id: str
+             , with_marks: bool = True
+             , with_descp: bool = True
+             ) -> Image.Image:
     """
     Args:
-        record: dict like
+        record (Dict[str, Any]): dict like
           {
             "action_type": {0, 1, 2, 3}
             "input_token": str, present if `action_type` is 3
@@ -40,7 +44,10 @@ def visualize(record: Dict[str, Any], task_definition_id: str) -> Image.Image:
             "instruction": list of str, optional
             "observation": ndarray of uint8 with shape (H, W, 3)
           }
-        task_definition_id: str
+        task_definition_id (str): str
+        with_marks (bool): if the action will be marked on the screen
+        with_descp (bool): if several description about the task and action
+          should be added under the screen
 
     Return:
         Image.Image
@@ -49,12 +56,47 @@ def visualize(record: Dict[str, Any], task_definition_id: str) -> Image.Image:
     # commonly, H = 1920, W = 1080
     height, width, _ = record["observation"].shape
     info_height = 400
-    canvas = Image.new("RGB", (width, height + info_height), color="white")
+    screen: Image.Image = Image.fromarray(record["observation"])
 
-    canvas.paste(Image.fromarray(record["observation"]))
+    font = ImageFont.truetype("/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc", size=50)
+    drawer = ImageDraw.Draw(screen, mode="RGBA")
+
+    if record["action_type"]==action_type.ActionType.TEXT:
+        if with_marks:
+            drawer.rectangle( (width/5., .75*height, .8*width, 0.9375*height)
+                            , fill=(135, 135, 135, 127)
+                            )
+            drawer.text( (width/2., 0.84375*height), record["input_token"]
+                       , fill=(0, 0, 0, 229), font=font, anchor="mm"
+                       )
+
+        action_text = "TEXT({:})".format(record["input_token"])
+    elif record["action_type"]==action_type.ActionType.TOUCH:
+        x, y = record["touch_position"]
+        x *= width
+        y *= height
+        r0 = 20
+        r1 = 50
+
+        if with_marks:
+            drawer.ellipse( (x-r1, y-r1, x+r1, y+r1)
+                          , fill=(255, 175, 175, 76)
+                          )
+            drawer.ellipse( (x-r0, y-r0, x+r0, y+r0)
+                          , fill=(255, 175, 175, 153)
+                          )
+
+        action_text = "TOUCH({:.2f}, {:.2f})".format(x, y)
+    else:
+        action_text = "{:}".format(str(action_type.ActionType(record["action_type"])))
+
+    if not with_descp:
+        return screen
+
+    canvas = Image.new("RGB", (width, height + info_height), color="white")
+    canvas.paste(screen)
 
     drawer = ImageDraw.Draw(canvas, mode="RGBA")
-    font = ImageFont.truetype("/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc", size=50)
 
     title_anchor = (10, height+10)
     drawer.text( title_anchor, task_definition_id
@@ -66,31 +108,6 @@ def visualize(record: Dict[str, Any], task_definition_id: str) -> Image.Image:
                                 )
 
     action_anchor = (10, title_bbox[3]+10)
-    if record["action_type"]==action_type.ActionType.TEXT:
-        drawer.rectangle( (width/5., .75*height, .8*width, 0.9375*height)
-                        , fill=(135, 135, 135, 127)
-                        )
-        drawer.text( (width/2., 0.84375*height), record["input_token"]
-                   , fill=(0, 0, 0, 229), font=font, anchor="mm"
-                   )
-
-        action_text = "TEXT({:})".format(record["input_token"])
-    elif record["action_type"]==action_type.ActionType.TOUCH:
-        x, y = record["touch_position"]
-        x *= width
-        y *= height
-        r0 = 20
-        r1 = 50
-        drawer.ellipse( (x-r1, y-r1, x+r1, y+r1)
-                      , fill=(255, 175, 175, 76)
-                      )
-        drawer.ellipse( (x-r0, y-r0, x+r0, y+r0)
-                      , fill=(255, 175, 175, 153)
-                      )
-
-        action_text = "TOUCH({:.2f}, {:.2f})".format(x, y)
-    else:
-        action_text = "{:}".format(str(action_type.ActionType(record["action_type"])))
     drawer.text( action_anchor, action_text
                , fill=(0, 0, 0, 255), font=font
                )

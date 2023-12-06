@@ -18,15 +18,24 @@ Created by Danyang Zhang @X-Lance.
 """
 
 import visualization
-import random
+#import random
 
 import pickle as pkl
-import sys
+#import sys
 import os.path
 import os
 
-pkl_path = sys.argv[1]
-video_path = sys.argv[2]
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("pkl_path", type=str)
+parser.add_argument("video_path", type=str)
+parser.add_argument("--no-marks", action="store_false", dest="marks")
+parser.add_argument("--no-descp", action="store_false", dest="descp")
+args: argparse.Namespace = parser.parse_args()
+
+pkl_path: str = args.pkl_path
+video_path: str = args.video_path
 
 with open(pkl_path, "rb") as f:
     record = pkl.load(f)
@@ -59,7 +68,7 @@ for i, trjtr in enumerate(trajectories):
     print(os.path.join(video_path, dirname))
 
     for j, rcd in enumerate(trjtr[1:]):
-        screen = visualization.visualize(rcd, task_definition_id)
+        screen = visualization.visualize(rcd, task_definition_id, args.marks, args.descp)
         screen.save( os.path.join( video_path
                                  , dirname
                                  , "{:}.jpg".format(j+1)
