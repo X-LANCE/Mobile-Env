@@ -45,6 +45,7 @@ from dm_env import specs
 import numpy as np
 from transformers import PreTrainedTokenizer
 import enum
+import time
 
 #ActionType = action_type.ActionType
 
@@ -78,6 +79,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
               , tokenizer: PreTrainedTokenizer
               , num_tap_frames: int = 5
               , num_scroll_frame_rate: int = 15
+              , wait_sec: float = 1.
               ):
     #  method __init__ {{{ # 
     """
@@ -90,6 +92,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         num_scroll_frame_rate (int): the frame rate of the TOUCH action for
           SCROLL iteration. the real duration of a SCORLL action in frames is
           `int(round(num_scroll_frame_rate*euclidean_length))`.
+        wait_sec (float): waiting time after each action performed
     """
 
     super().__init__(env)
@@ -99,6 +102,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     self._tokenizer: PreTrainedTokenizer = tokenizer
     self._nb_tap_frames: int = num_tap_frames
     self._nb_scroll_frame_rate: float = float(num_scroll_frame_rate)
+    self._wait_sec: float = wait_sec
 
     self._env_steps: int = 0
 
@@ -192,7 +196,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                       }
                     )
       return actions
-    if action_type["action_type"]==TapActionWrapper.ActionType.SCROLL:
+    if action["action_type"]==TapActionWrapper.ActionType.SCROLL:
       scroll_distance: np.float64 = np.linalg.norm(action["end_position"]-action["start_position"])
       nb_frames: int = int(np.round(scroll_distance*self._nb_scroll_frame_rate))
       x_trajectory: np.array = np.linspace( action["start_position"][0], action["end_position"][0]
@@ -203,7 +207,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                                           , num=nb_frames
                                           , dtype=np.float32
                                           )
-      for p in np.stack([x_trajectory, y_trajectory]):
+      for p in np.stack([x_trajectory, y_trajectory], axis=-1):
         actions.append( { "action_type": np.array( action_type.ActionType.TOUCH
                                                  , dtype=np.int32
                                                  )
@@ -217,7 +221,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                       }
                     )
       return actions
-    if action_type["action_type"]==TapActionWrapper.ActionType.TYPE:
+    if action["action_type"]==TapActionWrapper.ActionType.TYPE:
       token_list: List[int] = self._tokenizer( action["text"].item()
                                              , add_special_tokens=False
                                              )["input_ids"]
@@ -270,6 +274,19 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
             and action["response"] is not None\
             and action["response"] != "":
         appended_lift["response"] = action["response"]
+    timestep = self._env.step(appended_lift)
+    instructions += self._env.task_instructions()
+    if timestep.reward>0.:
+        total_reward += timestep.reward
+
+    time.sleep(self._wait_sec)
+    appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
+                                                                    , dtype=np.int32
+                                                                    )
+                                           , "touch_position": np.array( [0., 0.]
+                                                                       , dtype=np.float32
+                                                                       )
+                                           }
     timestep = self._env.step(appended_lift)
     instructions += self._env.task_instructions()
     if timestep.reward>0.:

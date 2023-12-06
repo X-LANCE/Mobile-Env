@@ -50,11 +50,18 @@ RGB_TO_GRAYSCALE_COEFFICIENTS = [0.2126, 0.7152, 0.0722]
 class ImageRescaleWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with rescaled observations."""
 
-  def __init__(
-      self,
-      env: dm_env.Environment,
-      zoom_factors: Optional[Sequence[float]] = (0.5, 0.5),
-      grayscale: bool = False):
+  def __init__( self
+              , env: dm_env.Environment
+              , zoom_factors: Optional[Sequence[float]] = (0.5, 0.5)
+              , grayscale: bool = False
+              ):
+    """
+    Args:
+        env (dm_env.Environment): the wrapped environment
+        zoom_factors (Optional[Sequence[float]]): zoom factor for (H, W)
+        grayscale (bool): if the image will be transfered to grayscale
+    """
+
     super().__init__(env)
     assert 'pixels' in self._env.observation_spec()
     assert self._env.observation_spec()['pixels'].shape[-1] in [1, 3], (
