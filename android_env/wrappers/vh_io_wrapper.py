@@ -148,9 +148,10 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
         scroll_trajectory = np.linspace(0.2, 0.8, num=self._nb_scroll_frames, dtype=np.float32)
         scroll_trajectory = np.stack( [ scroll_trajectory
-                                      , np.zeros( (self._nb_scroll_frames,)
-                                                , dtype=np.float32
-                                                )
+                                      , np.full( (self._nb_scroll_frames,)
+                                               , 0.5
+                                               , dtype=np.float32
+                                               )
                                       ]
                                     , axis=1
                                     ) # (SF, 2); SF = self._nb_scroll_frames

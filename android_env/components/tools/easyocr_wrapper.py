@@ -56,29 +56,37 @@ def in_bbox(bbox0: torch.Tensor, bbox1: torch.Tensor) -> torch.Tensor:
 
 class EasyOCRWrapper(TextModel):
     def __init__( self
+                , lang_list: List[str] = ["en"]
                 , gpu: Union[bool, str, torch.device] = True
                 , model_storage_directory: Optional[str] = None
                 , download_enabled: bool = True
+                , reader: Optional[easyocr.Reader] = None
                 ):
         #  method __init__ {{{ # 
         """
         Args:
-            gpu: bool or str or torch.device to specify the model device
-            model_storage_directory: optional str for the EasyOCR model path.
-              EasyOCR will check the following variables in order to determine
-              in which directory the model should be found:
+            lang_list (List[str]): language list
+            gpu (Union[bool, str, torch.device]): bool or str or torch.device
+              to specify the model device
+            model_storage_directory (Optional[sr]: optional str for the EasyOCR
+              model path.  EasyOCR will check the following variables in order
+              to determine in which directory the model should be found:
               + `model_storage_directory`
               + $EASYOCR_MODULE_PATH
               + $MODULE_PATH
               + ~/.EasyOCR
-            download_enabled: bool
+            download_enabled (bool): if the model should be downloaded while
+              not present
+
+            reader (Optional[easyocr.Reader]): an easyocr reader instance. if
+              `reader` is provided, the other parameters will be omitted.
         """
 
-        self._reader: easyocr.Reader =\
-                easyocr.Reader( ["en"], gpu=gpu
-                              , model_storage_directory=model_storage_directory
-                              , download_enabled=download_enabled
-                              )
+        self._reader: easyocr.Reader = reader\
+                                    or easyocr.Reader( lang_list, gpu=gpu
+                                                     , model_storage_directory=model_storage_directory
+                                                     , download_enabled=download_enabled
+                                                     )
         self._lock: threading.Lock = threading.Lock()
         #  }}} method __init__ # 
 
