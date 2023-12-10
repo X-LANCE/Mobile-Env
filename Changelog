@@ -1,3 +1,21 @@
+2023-12-10 Danyang Zhang <zdy004007@126.com>
+
+	v3.3
+
+	Minor updates to platform.
+
+	* android_env/wrappers/tap_action_wrapper.py: Reconditioned
+	TapActionWrapper to support SCROLL, TYPE actions.
+	* android_env/wrappers/vh_io_wrapper.py: Fixed several bugs.
+	* android_env/components/tools/easyocr_wrapper.py: Updated a new argument
+	to enable construct a wrapper based on an existing EasyOCR reader.
+
+	Miscellaneous.
+
+	* (Updated command line arguments to visualize_pickle.py)
+	  * tools/annotation-tool/pkl_tools/visualization.py
+	  * tools/annotation-tool/pkl_tools/visualize_pickle.py
+
 2023-12-01 Danyang Zhang <zdy004007@126.com>
 
 	v3.2
