@@ -93,4 +93,20 @@ class RemoteAdbController( AdbController
 
         return output
         #  }}} method _execute_command # 
+
+    def install_apk( self
+                   , local_apk_path: str
+                   , timeout: Optional[float] = None
+                   ):
+        """
+        Installs an app given a `local_apk_path` in the filesystem.
+
+        Args:
+            local_apk_path (str): Path to .apk file in the local filesystem.
+            timeout (Optional[float]): A timeout to use for this operation. If
+              not set the default timeout set on the constructor will be used.
+        """
+        self._execute_command( ['install', '-r', '-t', '-g', local_apk_path]
+                             , timeout=timeout
+                             )
     #  }}} class RemoteAdbController # 
