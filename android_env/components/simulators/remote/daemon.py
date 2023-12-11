@@ -143,14 +143,14 @@ def launch() -> str:
     return "OK"
     #  }}} function launch # 
 
-@app.route("/start", methods=["POST"])
-def start() -> str:
-    #  function start {{{ # 
+@app.route("/restart", methods=["POST"])
+def restart() -> str:
+    #  function restart {{{ # 
     sid: int = session["sid"]
     with manager[sid]["lock"]:
         manager[sid]["simulator"].restart()
     return "OK"
-    #  }}} function start # 
+    #  }}} function restart # 
 
 @app.route("/close", methods=["POST"])
 def close() -> str:

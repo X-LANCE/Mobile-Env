@@ -43,7 +43,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
     - launching
       + init
       + launch
-      + start
+      + restart
       + close
     - adb
       + create_adbc
@@ -98,7 +98,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
             address (str): IP address of remote daemon
             port (int): listening port of remote daemone
             timeout (float): timeout for regular commands in secondes
-            launch_timeout (float): timeout for commands `launch`, `start`, and
+            launch_timeout (float): timeout for commands `launch`, `restart`, and
               `close` in **minutes**
             retry (int): retry times
         """

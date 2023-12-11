@@ -31,6 +31,7 @@ from transformers import PreTrainedTokenizer
 import numpy as np
 import lxml.etree
 import re
+import time
 
 #import logging
 
@@ -104,6 +105,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 , tokenizer: PreTrainedTokenizer
                 , nb_click_frames: int = 3
                 , nb_scroll_frmaes: int = 10
+                , wait_sec: float = 0.
                 ):
         #  method __init__ {{{ # 
         """
@@ -115,6 +117,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
               the CLICK iteraction
             nb_scroll_frmaes (int): the duration the TOUCH action will last for
               the SCROLL iteraction
+            wait_sec (float): waiting time after each action performed
         """
 
         super(VhIoWrapper, self).__init__(env)
@@ -125,6 +128,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         self._tokenizer: PreTrainedTokenizer = tokenizer
         self._nb_click_frames: int = nb_click_frames
         self._nb_scroll_frames: int = nb_scroll_frmaes
+        self._wait_sec: float = wait_sec
 
         self._env_steps: int = 0
 
@@ -327,6 +331,20 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         instructions += self._env.task_instructions()
         if timestep.reward>0.:
             total_reward += timestep.reward
+
+        if self._wait_sec>0.:
+            time.sleep(self._wait_sec)
+            appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
+                                                                            , dtype=np.int32
+                                                                            )
+                                                   , "touch_position": np.array( [0., 0.]
+                                                                               , dtype=np.float32
+                                                                               )
+                                                   }
+            timestep = self._env.step(appended_lift)
+            instructions += self._env.task_instructions()
+            if timestep.reward>0.:
+                total_reward += timestep.reward
 
         timestep: dm_env.TimeStep = self._process_timestep(timestep)
 
