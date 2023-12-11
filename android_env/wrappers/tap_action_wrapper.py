@@ -80,6 +80,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
               , num_tap_frames: int = 5
               , num_scroll_frame_rate: int = 15
               , wait_sec: float = 1.
+              , action_batch: bool = False
               ):
     #  method __init__ {{{ # 
     """
@@ -93,6 +94,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
           SCROLL iteration. the real duration of a SCORLL action in frames is
           `int(round(num_scroll_frame_rate*euclidean_length))`.
         wait_sec (float): waiting time after each action performed
+        action_batch (bool): if actions are combined in a batch
     """
 
     super().__init__(env)
@@ -103,6 +105,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     self._nb_tap_frames: int = num_tap_frames
     self._nb_scroll_frame_rate: float = float(num_scroll_frame_rate)
     self._wait_sec: float = wait_sec
+    self._action_batch: bool = action_batch
 
     self._env_steps: int = 0
 
@@ -241,14 +244,14 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     actions = self._process_action(action)
     self._env_steps += len(actions)+1
 
-    total_reward = 0
+    total_reward = 0.
     instructions: List[str] = []
-    for act in actions:
-      timestep: dm_env.TimeStep = self._env.step(act)
+    if self._action_batch:
+      timestep: dm_env.TimeStep = self._env.step(actions)
       instructions += self._env.task_instructions()
-
       if timestep.reward>0.:
         total_reward += timestep.reward
+
 
       if timestep.last():
         self._instructions = instructions
@@ -257,6 +260,21 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                               , discount=timestep.discount
                               , observation=timestep.observation
                               )
+    else:
+      for act in actions:
+        timestep: dm_env.TimeStep = self._env.step(act)
+        instructions += self._env.task_instructions()
+
+        if timestep.reward>0.:
+          total_reward += timestep.reward
+
+        if timestep.last():
+          self._instructions = instructions
+          return dm_env.TimeStep( step_type=timestep.step_type
+                                , reward=total_reward
+                                , discount=timestep.discount
+                                , observation=timestep.observation
+                                )
 
     if action["action_type"]==TapActionWrapper.ActionType.TYPE:
         self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")

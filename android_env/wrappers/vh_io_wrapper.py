@@ -106,6 +106,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 , nb_click_frames: int = 3
                 , nb_scroll_frmaes: int = 10
                 , wait_sec: float = 0.
+                , action_batch: bool = False
                 ):
         #  method __init__ {{{ # 
         """
@@ -118,6 +119,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             nb_scroll_frmaes (int): the duration the TOUCH action will last for
               the SCROLL iteraction
             wait_sec (float): waiting time after each action performed
+            action_batch (bool): if actions are combined in a batch
         """
 
         super(VhIoWrapper, self).__init__(env)
@@ -129,6 +131,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         self._nb_click_frames: int = nb_click_frames
         self._nb_scroll_frames: int = nb_scroll_frmaes
         self._wait_sec: float = wait_sec
+        self._action_batch: bool = action_batch
 
         self._env_steps: int = 0
 
@@ -291,15 +294,9 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
         total_reward = 0.
         instructions: List[str] = []
-        for act in actions:
-            #step_type: dm_env.StepType
-            #reward: float
-            #discount: float
-            #observation: Dict[str, Any]
-            #step_type, reward, discount, observation = self._env.step(act)
-            timestep: dm_env.TimeStep = self._env.step(act)
+        if self._action_batch:
+            timestep: dm_env.TimeStep = self._env.step(actions)
             instructions += self._env.task_instructions()
-
             if timestep.reward>0.:
                 total_reward += timestep.reward
 
@@ -310,6 +307,26 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                                       , discount=timestep.discount
                                       , observation=timestep.observation
                                       )
+        else:
+            for act in actions:
+                #step_type: dm_env.StepType
+                #reward: float
+                #discount: float
+                #observation: Dict[str, Any]
+                #step_type, reward, discount, observation = self._env.step(act)
+                timestep: dm_env.TimeStep = self._env.step(act)
+                instructions += self._env.task_instructions()
+
+                if timestep.reward>0.:
+                    total_reward += timestep.reward
+
+                if timestep.last():
+                    self._instructions = instructions
+                    return dm_env.TimeStep( step_type=timestep.step_type
+                                          , reward=total_reward
+                                          , discount=timestep.discount
+                                          , observation=timestep.observation
+                                          )
 
         if action["action_type"]==VhIoWrapper.ActionType.INPUT:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")

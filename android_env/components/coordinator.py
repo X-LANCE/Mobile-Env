@@ -444,7 +444,9 @@ class Coordinator():
           for _, tkn in act:
             self._send_action_to_taskmanager(tkn)
 
-      get_vh: bool = len(action)<=0 or action[-1]["action_type"].item()==action_type_lib.ActionType.LIFT
+      last_action: Optional[action_type_lib.ActionType] =\
+          None if len(action)>0 else action[-1]["action_type"].item()
+      #get_vh: bool = len(action)<=0 or action[-1]["action_type"].item()==action_type_lib.ActionType.LIFT
 
     elif action is not None:
 
@@ -459,11 +461,14 @@ class Coordinator():
       elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
         self._send_action_to_simulator(action)
 
-      get_vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
+      last_action: Optional[action_type_lib.ActionType] = action["action_type"].item()
+      #get_vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
 
     else:
-      get_vh: bool = True
+      last_action: Optional[action_type_lib.ActionType] = None
+      #get_vh: bool = True
 
+    get_vh: bool = last_action is None or last_action==action_type_lib.ActionType.LIFT
     get_vh = get_vh and self._with_view_hierarchy
 
     self._elapsed_step_from_screen_check += 1
@@ -471,13 +476,13 @@ class Coordinator():
 
     check_vh: bool = self._check_check( self._vh_check_control_method
                                       , self._vh_check_control_value
-                                      , last_action=action["action_type"] if action is not None else None
+                                      , last_action=last_action
                                       , last_time=self._last_vh_check_time
                                       , elapsed_step=self._elapsed_step_from_vh_check
                                       )
     check_screen: bool = self._check_check( self._screen_check_control_method
                                           , self._screen_check_control_value
-                                          , last_action=action["action_type"] if action is not None else None
+                                          , last_action=last_action
                                           , last_time=self._last_screen_check_time
                                           , elapsed_step=self._elapsed_step_from_screen_check
                                           )
