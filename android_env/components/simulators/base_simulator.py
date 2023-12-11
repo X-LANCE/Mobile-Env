@@ -16,7 +16,8 @@
 """A base class for talking to different types of Android simulators."""
 
 import abc
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, Union
+from typing import List, Dict, Tuple
 
 from absl import logging
 from android_env.components import action_type as action_type_lib
@@ -97,7 +98,7 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     pass
 
   @abc.abstractmethod
-  def send_action(self, action: Dict[str, np.ndarray]) -> None:
+  def send_action(self, action: Union[Dict[str, np.ndarray],List[Dict[str, np.ndarray]]]) -> None:
     """Sends the action to be executed to the simulator."""
     pass
 

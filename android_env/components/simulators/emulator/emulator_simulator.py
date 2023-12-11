@@ -34,7 +34,8 @@
 
 import functools
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Union
+from typing import Dict, List
 
 from absl import logging
 from android_env.components import adb_controller
@@ -47,7 +48,7 @@ import numpy as np
 import portpicker
 
 from android_env.proto import emulator_controller_pb2
-
+import time
 
 def is_existing_emulator_provided(launcher_args: Dict[str, Any]) -> bool:
   """Returns true if all necessary args were provided."""
@@ -59,13 +60,15 @@ def is_existing_emulator_provided(launcher_args: Dict[str, Any]) -> bool:
 class EmulatorSimulator(base_simulator.BaseSimulator):
   """Controls an Android Emulator."""
 
-  def __init__(self,
-               emulator_launcher_args: Dict[str, Any],
-               adb_controller_args: Dict[str, Any],
-               tmp_dir: Optional[str] = None,
-               adb_root: bool = False,
-               frida_server: Optional[str] = None,
-               **kwargs):
+  def __init__( self
+              , emulator_launcher_args: Dict[str, Any]
+              , adb_controller_args: Dict[str, Any]
+              , tmp_dir: Optional[str] = None
+              , adb_root: bool = False
+              , frida_server: Optional[str] = None
+              , gap_sec: float = 0.05
+              , **kwargs
+              ):
 
     # If adb_port, console_port and grpc_port are all already provided,
     # we assume the emulator already exists and there's no need to launch.
@@ -86,6 +89,8 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
 
     self._adb_root: bool = adb_root
     self._frida_server: Optional[str] = frida_server
+
+    self._gap_sec: float = 0.05
 
     super().__init__(**kwargs)
 
@@ -164,16 +169,23 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
         width=self._screen_dimensions[1],
     )
 
-  def send_action(self, action: Dict[str, np.ndarray]) -> None:
+  def send_action(self, action: Union[Dict[str, np.ndarray], List[Dict[str, np.ndarray]]]) -> None:
     """Sends touch events to the emulator."""
     assert self._emulator_stub, 'Emulator stub has not been initialized yet.'
-    touches = []
-    for i, finger_action in enumerate(self._split_action(action)):
-      x, y, down = self._prepare_action(finger_action)
-      touches.append(emulator_controller_pb2.Touch(
-          x=x, y=y, pressure=int(down), identifier=i))
-    self._emulator_stub.sendTouch(
-        emulator_controller_pb2.TouchEvent(touches=touches))
+
+    if not isinstance(action, list):
+      action: List[Dict[str, np.ndarray]] = [action]
+
+    for i, act in enumerate(action):
+      if i>0:
+        time.sleep(self._gap_sec)
+      touches = []
+      for i, finger_action in enumerate(self._split_action(act)):
+        x, y, down = self._prepare_action(finger_action)
+        touches.append(emulator_controller_pb2.Touch(
+            x=x, y=y, pressure=int(down), identifier=i))
+      self._emulator_stub.sendTouch(
+          emulator_controller_pb2.TouchEvent(touches=touches))
 
   def _get_observation(self) -> Optional[List[np.ndarray]]:
     """Fetches the latest observation from the emulator."""

@@ -70,12 +70,14 @@ class RemoteSimulator( base_simulator.BaseSimulator
           }
     - act & observ.
       + act
-        + sends {
-            "action_type": int
-            "touch_position": list of float
-            "input_token": int
-            "response": str
-          }
+        + sends [
+            {
+                "action_type": int
+                "touch_position": list of float
+                "input_token": int
+                "response": str
+            }
+          ]
       + observ
         + receives {
             "img": base64
@@ -168,17 +170,24 @@ class RemoteSimulator( base_simulator.BaseSimulator
                                                 )
         #  }}} method _create_log_stream # 
 
-    def send_action(self, action: Dict[str, np.ndarray]):
+    def send_action(self, action: Union[Dict[str, np.ndarray], List[Dict[str, np.ndarray]]]):
         #  method send_action {{{ # 
-        action_dict: Dict[str, Any] = {}
-        action_dict["action_type"] = action["action_type"].tolist()
-        if "touch_position" in action:
-            action_dict["touch_position"] = action["touch_position"].tolist()
-        if "input_token" in action:
-            action_dict["input_token"] = action["input_token"].tolist()
-        if "response" in action:
-            action_dict["response"] = action["response"].tolist()
-        self._get_response("act", action_dict)
+        if not isinstance(action, list):
+          action: List[Dict[str, np.ndarray]] = [action]
+        action_dicts: List[Dict[str, Any]] = []
+
+        for act in action:
+            action_dict: Dict[str, Any] = {}
+            action_dict["action_type"] = act["action_type"].tolist()
+            if "touch_position" in act:
+                action_dict["touch_position"] = act["touch_position"].tolist()
+            if "input_token" in act:
+                action_dict["input_token"] = act["input_token"].tolist()
+            if "response" in act:
+                action_dict["response"] = act["response"].tolist()
+            action_dicts.append(action_dict)
+
+        self._get_response("act", action_dicts)
         #  }}} method send_action # 
     def _get_observation(self) -> Optional[List[np.ndarray]]:
         #  method _get_observation {{{ # 

@@ -47,6 +47,7 @@ from android_env.components.simulators import base_simulator
 import dm_env
 import numpy as np
 import lxml.etree
+import itertools
 
 import enum
 from numbers import Number
@@ -358,9 +359,9 @@ class Coordinator():
   #  }}} Reset Interfaces # 
 
   def execute_action( self
-                    , action: Optional[ Dict[ str
-                                            , np.ndarray
-                                            ]
+                    , action: Optional[ Union[ Dict[str, np.ndarray]
+                                             , List[Dict[str, np.ndarray]]
+                                             ]
                                       ]
                     ) -> Tuple[ Optional[ Dict[ str
                                               , Union[ np.ndarray
@@ -388,6 +389,7 @@ class Coordinator():
             "response": np.ndarray with shape () of object (str), optional
               response to human user
           }
+          of list of such dicts (if the simulator supports)
 
     Returns:
       Optional[Dict[str, Union[np.ndarray, Optional[lxml.etree.Element]]]]:
@@ -416,7 +418,35 @@ class Coordinator():
     if self._should_restart or self._check_timeout():
       return None, 0.0, {}, [], True
 
-    if action is not None:
+    if isinstance(action, list):
+      responses: Iterable[str] = filter( lambda rsp: rsp is not None and rsp != ""
+                                       , map( lambda act: act.get("response", np.array("")).item()
+                                            , action
+                                            )
+                                       )
+      for rsp in responses:
+        self._task_manager.receive_response(rsp)
+
+      actions: Iterable[Tuple[int, Dict[str, np.ndarray]]] =\
+          map( lambda act: ( np.clip(act["action_type"]-1, 0, 2).item() # 0 for TOUCH & LIFT (simulator), 1 for REPEAT, 2 for TEXT (taskmanager)
+                           , act
+                           )
+             , action
+             )
+      actions: Iterable[int, Iterable[Tuple[int, Dict[str, np.ndarray]]]] =\
+          itertools.groupby( actions
+                           , key=(lambda act: act[0])
+                           )
+      for act_t, act in actions:
+        if act_t==0:
+          self._send_action_to_simulator(list(map(lambda t: t[1], act)))
+        elif act_t==2:
+          for _, tkn in act:
+            self._send_action_to_taskmanager(tkn)
+
+      get_vh: bool = len(action)<=0 or action[-1]["action_type"].item()==action_type_lib.ActionType.LIFT
+
+    elif action is not None:
 
       if "response" in action\
           and action["response"] is not None\
@@ -504,7 +534,11 @@ class Coordinator():
     self._task_manager.send_token(action["input_token"].item())
     #  }}} method `_send_action_to_taskmanager` # 
 
-  def _send_action_to_simulator(self, action: Dict[str, np.ndarray]) -> None:
+  def _send_action_to_simulator( self
+                               , action: Union[ Dict[str, np.ndarray]
+                                              , List[Dict[str, np.ndarray]]
+                                              ]
+                               ):
     #  method _send_action_to_simulator {{{ # 
     """Sends the selected action to the simulator.
 

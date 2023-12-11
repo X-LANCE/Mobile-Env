@@ -189,7 +189,11 @@ class AndroidEnv(dm_env.Environment):
         reward=0.0,
         discount=0.0)
 
-  def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
+  def step( self
+          , action: Union[ Dict[str, np.ndarray]
+                         , List[Dict[str, np.ndarray]]
+                         ]
+          ) -> dm_env.TimeStep:
     """Takes a step in the environment."""
 
     # Check if it's time to reset the episode.

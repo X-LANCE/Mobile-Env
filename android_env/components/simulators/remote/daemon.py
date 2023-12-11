@@ -102,6 +102,7 @@ def init() -> str:
                                  }
         adb_root = False
         frida_server: Optional[str] = None
+        gap_sec: float = config.get("gap_sec", 0.05)
 
         if "mitm_config" in config\
                 and config["mitm_config"] is not None\
@@ -122,6 +123,7 @@ def init() -> str:
                                      , emulator_launcher_args=emulator_launcher_args
                                      , adb_root=adb_root
                                      , frida_server=frida_server
+                                     , gap_sec=gap_sec
                                      )
 
         with glock:
@@ -225,21 +227,24 @@ def set_log_filters() -> str:
 @app.route("/act", methods=["POST"])
 def action() -> str:
     #  function action {{{ # 
-    args: Dict[str, Union[int, List[float], str]] =\
+    args: List[Dict[str, Union[int, List[float], str]]] =\
             request.json
 
-    action_dict: Dict[str, np.ndarray] = {}
-    action_dict["action_type"] = np.array(args["action_type"])
-    if "touch_position" in args:
-        action_dict["touch_position"] = np.array(args["touch_position"])
-    if "input_token" in args:
-        action_dict["input_token"] = np.array(args["input_token"])
-    if "response" in args:
-        action_dict["response"] = np.array(args["response"], dtype=np.object_)
+    action_dicts: List[Dict[str, np.ndarray]] = []
+    for arg in args:
+        action_dict: Dict[str, np.ndarray] = {}
+        action_dict["action_type"] = np.array(arg["action_type"])
+        if "touch_position" in arg:
+            action_dict["touch_position"] = np.array(arg["touch_position"])
+        if "input_token" in arg:
+            action_dict["input_token"] = np.array(arg["input_token"])
+        if "response" in arg:
+            action_dict["response"] = np.array(arg["response"], dtype=np.object_)
+        action_dicts.append(action_dict)
 
     sid: int = session["sid"]
     with manager[sid]["lock"]:
-        manager[sid]["simulator"].send_action(action_dict)
+        manager[sid]["simulator"].send_action(action_dicts)
     return "OK"
     #  }}} function action # 
 

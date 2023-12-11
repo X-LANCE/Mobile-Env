@@ -6,3 +6,4 @@ emulator_path: ~/Android/Sdk/emulator/emulator
 run_headless: true
 mitm_config:
   method: syscert
+gap_sec: 0.05
