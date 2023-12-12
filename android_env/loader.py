@@ -49,7 +49,7 @@ from android_env.utils import fix_path
 from google.protobuf import text_format
 
 from typing import Optional, Any
-from typing import Dict
+from typing import Dict, Tuple
 import functools
 
 def load( task_path: str
@@ -245,6 +245,7 @@ def load_remote( task_path: str
                , timeout: float = 5.
                , launch_timeout: float = 2.
                , retry: int = 3
+               , resize_for_transfer: Optional[Tuple[int, int]] = None
                , mitm_config: Optional[Dict[str, str]] = None
                , start_token_mark: str = ""
                , non_start_token_mark: str = "##"
@@ -268,6 +269,8 @@ def load_remote( task_path: str
     launch_timeout (float): timeout for commands `launch`, `start`, and
       `close` in **minutes**
     retry (int): retry times
+    resize_for_transfer (Optional[Tuple[int, int]]): if the screen
+      should be resized for transferring
 
     mitm_config: An optional dict to config the launch options if an mitm proxy
       is in need for a web-based app. The dict is expected to have a struture
@@ -362,6 +365,7 @@ def load_remote( task_path: str
                                               , timeout=timeout
                                               , launch_timeout=launch_timeout
                                               , retry=retry
+                                              , resize_for_transfer=resize_for_transfer
                                               )
 
   if unify_vocabulary is not None:

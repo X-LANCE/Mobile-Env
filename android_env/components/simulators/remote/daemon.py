@@ -23,6 +23,7 @@ import yaml
 import os.path
 import numpy as np
 import base64
+from PIL import Image
 
 import logging
 import datetime
@@ -260,6 +261,7 @@ def observation() -> Dict[str, Union[str, List[int], int]]:
             "time": int as the timestamp
           }
     """
+    args: Dict[str, List[int]] = request.json
 
     sid: int = session["sid"]
     with manager[sid]["lock"]:
@@ -267,12 +269,22 @@ def observation() -> Dict[str, Union[str, List[int], int]]:
         timestamp: np.int64
         observation, timestamp = manager[sid]["simulator"]._get_observation()
 
+    raw_width: int
+    raw_height: int
+    raw_height, raw_width, _ = observation.shape
+
+    if "resize_to" in args:
+        observation = np.array( Image.fromarray(observation).resize(args["resize_to"])
+                              , dtype=np.uint8
+                              )
     width: int
     height: int
     height, width, _ = observation.shape
+
     observation: str = base64.b64encode(observation.tobytes()).decode()
     return { "img": observation
            , "size": [width, height]
+           , "raw_size": [raw_width, raw_height]
            , "time": timestamp.item()
            }
     #  }}} function observation # 

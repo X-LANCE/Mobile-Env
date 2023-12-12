@@ -23,10 +23,11 @@ from android_env.components.simulators.remote import remote_base\
 #from android_env.components.action_type import ActionType
 
 import requests
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from typing import Optional, Union, Any
 import numpy as np
 import base64
+from PIL import Image
 
 from absl import logging
 import traceback
@@ -79,9 +80,13 @@ class RemoteSimulator( base_simulator.BaseSimulator
             }
           ]
       + observ
+        + sends {
+            "resize_to": [int, int] # W, H
+        }
         + receives {
             "img": base64
             "size": [int, int] # W, H
+            "raw_size": [int, int] # W, H
             "time": int
           }
     """
@@ -92,6 +97,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
                 , timeout: float = 5.
                 , launch_timeout: float = 2.
                 , retry: int = 3
+                , resize_for_transfer: Optional[Tuple[int, int]] = None
                 , **kwargs
                 ):
         #  method __init__ {{{ # 
@@ -103,6 +109,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
             launch_timeout (float): timeout for commands `launch`, `restart`, and
               `close` in **minutes**
             retry (int): retry times
+            resize_for_transfer (Optional[Tuple[int, int]]): if the screen
+              should be resized for transferring
         """
 
         super(RemoteSimulator, self).__init__(**kwargs)
@@ -115,6 +123,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
         self._timeout: float = timeout
         self._launch_timeout: float = launch_timeout*60.
         self._retry: int = retry
+
+        self._resize_for_transfer: Optional[Tuple[int, int]] = resize_for_transfer
 
         self._session: requests.Session = requests.Session()
         self._adb_device_name: str = "remote-device"
@@ -197,7 +207,10 @@ class RemoteSimulator( base_simulator.BaseSimulator
             np.int64: the timestamp
         """
 
-        response: requests.Response = self._get_response("observ")
+        response: requests.Response = self._get_response( "observ"
+                                                        , { "resize_to": self._resize_for_transfer }\
+                                                       if self._resize_for_transfer is not None else {}
+                                                        )
         response: Dict[str, Any] = response.json()
 
         width: int
@@ -209,6 +222,9 @@ class RemoteSimulator( base_simulator.BaseSimulator
                                          , count=width*height*3
                                          )
         image = np.reshape(image, (height, width, 3))
+        image = np.array( Image.fromarray(image).resize(response["raw_size"])
+                        , dtype=np.uint8
+                        )
 
         return [image, np.int64(response["time"])]
         #  }}} method _get_observation # 
@@ -218,7 +234,7 @@ if __name__ == "__main__":
     import time
     #from typing import Iterator
     from android_env.components.action_type import ActionType
-    from PIL import Image
+    #from PIL import Image
 
     simulator = RemoteSimulator("127.0.0.1", 5000)
     simulator.launch()
