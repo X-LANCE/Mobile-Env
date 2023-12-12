@@ -110,7 +110,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
               `close` in **minutes**
             retry (int): retry times
             resize_for_transfer (Optional[Tuple[int, int]]): if the screen
-              should be resized for transferring
+              should be resized for transferring as (W, H)
         """
 
         super(RemoteSimulator, self).__init__(**kwargs)

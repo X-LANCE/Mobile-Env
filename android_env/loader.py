@@ -270,7 +270,7 @@ def load_remote( task_path: str
       `close` in **minutes**
     retry (int): retry times
     resize_for_transfer (Optional[Tuple[int, int]]): if the screen
-      should be resized for transferring
+      should be resized for transferring as (W, H)
 
     mitm_config: An optional dict to config the launch options if an mitm proxy
       is in need for a web-based app. The dict is expected to have a struture
