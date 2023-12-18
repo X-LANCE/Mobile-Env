@@ -1,6 +1,9 @@
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
 <!-- vimc: call SyntaxRange#Include('```bibtex', '```', 'bib', 'NonText'): -->
 
+WARNING! This branch is obsolete. The development is merged into the main
+branch.
+
 # Mobile-Env: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era 
 
 Mobile-Env is a interaction platform for evaluation and training of the

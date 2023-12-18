@@ -3,6 +3,8 @@ build
 .eggs
 android_env.egg-info
 mobile_env.egg-info/
+mobile_env.egg-info.bak/
+mobile_env_rl.egg-info/
 *_pb2.py
 *_pb2_grpc.py
 *_pb2.py.bak
@@ -32,3 +34,9 @@ tools-backup/
 backup-configs/
 
 sphinx/
+
+tests
+simu_daemon_logs
+tools/annotation-tool/logs
+android-envd.conf.yaml
+build-docker/

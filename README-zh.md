@@ -2,6 +2,8 @@
 <!-- vimc: call SyntaxRange#Include('```bibtex', '```', 'bib', 'NonText'): -->
 <!-- vim: set nospell iminsert=2: -->
 
+警告：本分支已废弃，原有开发已合并入主分支。
+
 # Mobile-Env：大模型时代的交互智能体评测平台与基准
 
 Mobile-Env是针对信息用户界面交互设计的验证、训练平台，论文现公开于[arXiv](https://arxiv.org/abs/2305.08144)。
