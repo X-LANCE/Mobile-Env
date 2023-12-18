@@ -56,6 +56,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("dump_file", type=str)
 parser.add_argument("task_path", type=str)
 parser.add_argument("--no-dump", action="store_false", dest="dump")
+parser.add_argument("--avd-name", default="Pixel_2_API_30_ga_x64", type=str)
+parser.add_argument("--enable-easyocr", action="store_true")
+parser.add_argument( "--mitm-method", nargs="?"
+                   , const="syscert", default=None
+                   , type=str, choices=["syscert", "frida", "packpatch"]
+                   )
+parser.add_argument("--mitm-address", default="127.0.0.1", type=str)
+parser.add_argument("--mitm-port", default=8080, type=int)
+parser.add_argument("--frida-script", default="frida-script.js", type=str)
 args: argparse.Namespace = parser.parse_args()
 #dump_file = sys.argv[1] if len(sys.argv)>1 else "../test_dump.pkl"
 #task_path = sys.argv[2] if len(sys.argv)>2 else "../../android_env/apps/wikihow/templates.miniout"
@@ -94,11 +103,16 @@ task_list = list(
 init_task = 0
 task_dict = {0: 0}
 sbert_holder = SBERTHolder()
-task_manager_args: Dict[str, Any] = {"text_model": EasyOCRWrapper()}
+task_manager_args: Dict[str, Any] = {"text_model": EasyOCRWrapper()} if args.enable_easyocr  else {}
 android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
-                          , avd_name="Pixel_2_API_30_ga_x64_1"
+                          , avd_name=args.avd_name
                           , run_headless=True
-                          , mitm_config={"method": "syscert"}
+                          , mitm_config=None if args.mitm_method==None\
+                                           else { "method": args.mitm_method
+                                                , "address": args.mitm_address
+                                                , "port": args.mitm_port
+                                                , "frida-script": args.frida_script
+                                                }
                            #, text_model=EasyOCRWrapper()
                           , sbert_holder=sbert_holder
                           , with_view_hierarchy=True
@@ -133,6 +147,8 @@ def do_action():
     #if action["actionType"]!=action_type.ActionType.REPEAT:
         #print(action)
 
+    timestamp: str = action["timestamp"]
+
     parsed_action = {}
     parsed_action["action_type"] = np.array(action["actionType"])
     if action["actionType"]==action_type.ActionType.TEXT:
@@ -149,6 +165,7 @@ def do_action():
         instruction = android.task_instructions()
     response = timestep_to_json(timestep)
     response["instruction"] = instruction
+    response["timestamp"] = timestamp
     return response
 
 @app.route("/reset", methods=["POST"])

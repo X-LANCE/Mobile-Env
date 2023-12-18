@@ -101,8 +101,11 @@ export default {
     },
 
     async sendAction(action) {
+		let timestamp = Date.now();
+		action.timestamp = timestamp;
         let response = await net_do_action(action)
-        this.$refs.simulator.setScreen(response.observation);
+		if(new Date(response.timestamp)>=timestamp)
+			this.$refs.simulator.setScreen(response.observation);
         if(response.instruction.length>0)
             this.$refs.simulator.newInstruction(
                 response.instruction);
