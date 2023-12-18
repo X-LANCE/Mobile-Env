@@ -4,6 +4,17 @@
 
 ## 最近更新
 
+* （2023-12-18 v3.5）
+  * 由于检查视图框架和屏幕图像耗时较长，因此更新了机制来更灵活地管理在什么时机检查视图框架与屏幕图像，以平衡对历程事件的充分检查的需求和所带来交互时延升高
+  * 为`ResponseEvent`（回复事件）添加了多种评分方式：正则匹配、模糊匹配、向量编码匹配
+  * 优化了`VhIoWrapper`、`TapActionWrapper`，为`TapActionWrapper`添加了对`SCROLL`、`TYPE`动作的支持
+  * 优化了远程模拟器，为缓解网络传输的时延问题，支持了一次性发送、执行一个动作组，支持了在传输前后对屏幕图像缩放以减少传输的数据量
+  * 将标注工具合并到了主分支，原标注工具分支已废弃
+  * 为标注工具添加了对回复事件的支持
+  * 为标注工具新添了一些命令行选项
+
+具体信息请查看[更新日志](Changelog)和相关文档。
+
 * （2023-10-31 v3.0）将指定视图框架节点的方式，从原本的“视图框架路径”改为了Mobile-Env定制的CSS选择器（me-selector），并为EventSlot节点也添加了可重复性控制功能。控制EventSlot的可重复性会有助于避免重复触发那种结合了多类事件源的`OR`型虚拟事件
 
 具体信息请查看[更新日志](Changelog)和[文档](docs/task-definition-zh.md)。
@@ -80,6 +91,45 @@ pip install .
 ### 其他辅助工具
 
 还开发了一套标注工具用于采集人类演示，以及一套模板工具，来根据模板生成任务定义，并将多个任务定义串接成一个多步任务。更详细的介绍请查看[其他辅助工具](docs/other-tools-zh.md)。
+
+### Mobile-Env执行的开销参考
+
+以下数据测量自如下配置：
+
+* 操作系统与硬件：
+  * 操作系统：Manjaro 23.1.0 Vulcan
+  * 内核版本：x86\_64 Linux 6.1.64-1-MANJARO
+  * 处理器：Intel Core i7-10700 @ 16x 4.8GHz
+  * 显卡：NVIDIA GeForce RTX 3090
+  * 运存：64GB
+  * 启用内核虚拟化硬件加速
+* 安卓开发工具
+  * Android emulator version 32.1.14.0
+  * Android平台工具34.0.4
+  * libvert 1:9.9.0
+* Python及相关包
+  * Python 3.8.16
+  * EasyOCR 1.7.2
+  * sentence-transformers 2.2.2
+* 安卓虚拟机
+  * 机型：Pixel 2
+  * 接口版本：API 30
+  * 系统变种：Google APIs
+  * 处理器核数：4
+  * 存储：8GB
+  * 屏幕尺寸：1080×1920
+
+|                      项目                     | 耗时均值 | 耗时标准差 |
+|:---------------------------------------------:|:--------:|:----------:|
+|                  `TOUCH`动作                  | 410.50µs |   64.71µs  |
+|                   `LIFT`动作                  | 412.30µs |   84.18µs  |
+|                   `TEXT`动作                  |   1.30s  |    0.28s   |
+|                      截图                     |  19.94ms |   21.47ms  |
+| 调用Sentence Transformer（all-MiniLM-L12-v2） |  8.51ms  |   0.17ms   |
+|                  获取视图框架                 |   2.53s  |    1.90s   |
+|                  调用EasyOCR                  |   0.44s  |    0.08s   |
+
+单运行一个[WikiHow 2.9.6应用](https://apkcombo.com/zh/wikihow-how-to-do-anything/com.wikihow.wikihowapp/download/apk)时，占用虚拟内存6031MiB，残存内存3444MiB。
 
 ## 项目信息
 

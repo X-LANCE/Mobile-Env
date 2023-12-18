@@ -6,7 +6,9 @@
 
 ### 人类演示标注工具
 
-为了方便为行为克隆方法收集人类演示数据，开发了一款基于网页界面的标注工具。该标注工具可直接通过docker部署，其镜像现托管于[DockerHub](https://hub.docker.com/r/zdy023/mobile-env-web)。本平台的[演示视频](https://youtu.be/gKV6KZYwxGY)中，展示了如何使用该标注工具。
+为了方便为行为克隆方法收集人类演示数据，开发了一款基于网页界面的标注工具。~~该标注工具可直接通过docker部署，其镜像现托管于[DockerHub](https://hub.docker.com/r/zdy023/mobile-env-web)（过时）。~~本平台的[演示视频](https://youtu.be/gKV6KZYwxGY)中，展示了如何使用该标注工具。
+
+标注工具网页界面使用的方式请参见[README.md](../tools/annotation-tool/README-zh.md)。
 
 除了网页界面外，还提供了几个命令行工具用来对标注结果预处理、可视化。相关代码存放于`../tools/annotation-tool/pkl_tools`。
 
@@ -63,7 +65,7 @@ python visualize_pickle.py PKL_NAME DUMPDIR
 * `PKL_NAME` - 要可视化的标注文件
 * `DUMPDIR` - 要保存提出的帧的目录
 
-标注文件中的每条历程会提出一组帧，存放于`DUMPDIR`下的一个子目录中。该命令会依次打印出各历程的帧保存的目录路径。事实上，每条历程保存的子目录会命名为`任务定义文件名:历程序号%历程数量#历程长度`。
+标注文件中的每条历程会提出一组帧，存放于`DUMPDIR`下的一个子目录中。该命令会依次打印出各历程的帧保存的目录路径。事实上，每条历程保存的子目录会命名为`任务定义文件名:历程序号%历程数量#历程长度`。可以采用`python visualize_pickle.py --help`命令查看更多命令行选项。
 
 得到帧后，可以利用ffmpeg等工具将其连接成视频。或利用提供的`make_video_from_pickle.sh`脚本，直接得到帧与视频：
 

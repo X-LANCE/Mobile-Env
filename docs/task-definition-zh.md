@@ -629,7 +629,8 @@ $$
   - `filters` - 字符串数组，提供要使用的过滤器，如`jd:D`；系统日志是由`adb logcat -v epoch FILTERS *:S`命令获得的，其中`FILTERS`为任务定义中指定的所有过滤器；该定义文件中所有的日志事件源中声明了的过滤器，会去重后混合在一起用于调用该ADB命令
   - `pattern` - 提供要识别的日志行的正则表达式
 + `response_event` - 识别智能体给人类用户的回复
-  - `pattern` - 提供要与回复文本匹配的正则表达式
+  - `mode` - 枚举值，指定匹配事件的方式，可选`REGEX`、`DIFFLIB`、`FUZZ`、`SBERT`。`REGEX`为采用正则匹配，`DIFFLIB`为采用`difflib`做模糊匹配，`FUZZ`为采用`rapidfuzz`库做模糊匹配，`SBERT`为采用`sentence-tranformers`库计算嵌入向量匹配
+  - `pattern` - 提供匹配的模式串，可为正则表达式或参考回复
 
 ##### 如何指定视图框架节点
 

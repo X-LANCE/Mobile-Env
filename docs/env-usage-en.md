@@ -138,6 +138,7 @@ Pinning Problem & Solutions](docs/dynamic-app-en.md).
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+from android_env.components.coordinator import EventCheckControl
 
 env = android_env.load( task_path
                       , avd_name
@@ -154,6 +155,11 @@ env = android_env.load( task_path
                       , text_model=EasyOCRWrapper()
                       , icon_model=ResNet()
                       , with_view_hierarchy=False
+                      , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
+                                         , "vh_check_control_value": 3.
+                                         , "screen_check_control_method": EventCheckControl.LIFT
+                                         , "screen_check_control_value": 1.
+                                         }
                       )
 ```
 
@@ -222,6 +228,19 @@ The parameters are
 * `with_view_hierarchy` - If the view hierarchy (VH) should be returned in the
   observation. This option is disabled defaultly for the long latency of VH
   acquisition through ADB.
+* `coordinator_args` - Used to cover the default arguments to create a
+  `Coordinator`. It can be used to customize the arguments controlling the
+  check to VH and screenshot. The parameters are:
+  * `vh_check_control_method` & `vh_check_control_value`
+  * `screen_check_control_method` & `screen_check_control_value`
+  Here the `_method` parameters expect a `EventCheckControl` enum flag
+  (`enum.Flag`). The valid values are `LIFT`, `TEXT`, `TIME`, and `STEP`.
+  `LIFT` specifies to check "after `LIFT` action". `TEXT` specifies to check
+  "after `TEXT` action". `TIME` indicates to check `in a certain time`. `STEP`
+  indicates to check `in a certain step`. These control methods can be applied
+  combined, while `STEP` will not task effect if `TIME` is specified, too.
+  The `_value` parameters are used to specify the seconds to wait for `TIME` or
+  the steps to wait for `STEP`.
 
 The text model is supposed to implement two interfaces:
 
@@ -366,6 +385,7 @@ function below:
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+from android_env.components.coordinator import EventCheckControl
 
 env = android_env.load_remote( task_path
                              , address
@@ -381,6 +401,11 @@ env = android_env.load_remote( task_path
                              , text_model=EasyOCRWrapper()
                              , icon_model=ResNet()
                              , with_view_hierarchy=False
+                             , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
+                                                , "vh_check_control_value": 3.
+                                                , "screen_check_control_method": EventCheckControl.LIFT
+                                                , "screen_check_control_value": 1.
+                                                }
                              )
 ```
 

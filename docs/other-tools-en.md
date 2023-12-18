@@ -6,10 +6,13 @@
 ### Annotation Tool for Human Demonstration
 
 An annotation tool based on web interface is developed to collect human
-demonstrations for behavior cloning approaches. A ready-to-use docker image is
-provided for convenience at <https://hub.docker.com/r/zdy023/mobile-env-web>.
-The usage of the annotation tool is demonstrated in our [demo
+demonstrations for behavior cloning approaches. ~~A ready-to-use docker image
+is provided for convenience at <https://hub.docker.com/r/zdy023/mobile-env-web>
+(Deprecated)~~.  The usage of the annotation tool is demonstrated in our [demo
 video](https://youtu.be/gKV6KZYwxGY).
+
+Usage of the web interface of annotation tool is referred to in
+[README.md](../tools/annotation-tool/README.md)
 
 Exept for the web interface, a few command line tools are offered for
 preprocessing and visualization of the annotations. The codes are stored at
@@ -80,6 +83,8 @@ which will be saved in a child folder under `DUMPDIR`. This command will print
 the path to the frame folders one by one. Actually, the child foler for a
 trajectory is named as
 `task_definition_file_name:trajectory_index%trajectory_counts#trajectory_length`.
+You can also use `python visualize_pickle.py --help` command to check more
+commandline options.
 
 The extracted frames can be concatenated to a video by the tools like ffmpeg.
 Or the script `make_video_from_pickle.sh` can be adopted to obtain the frames

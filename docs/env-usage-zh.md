@@ -95,6 +95,7 @@ sed -i.bak -e 's#^\(image\.sysdir\.1[[:space:]]*=[[:space:]]*\)Sdk/#\1#g' ~/.and
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+from android_env.components.coordinator import EventCheckControl
 
 env = android_env.load( task_path
                       , avd_name
@@ -111,6 +112,11 @@ env = android_env.load( task_path
                       , text_model=EasyOCRWrapper()
                       , icon_model=ResNet()
                       , with_view_hierarchy=False
+                      , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
+                                         , "vh_check_control_value": 3.
+                                         , "screen_check_control_method": EventCheckControl.LIFT
+                                         , "screen_check_control_value": 1.
+                                         }
                       )
 ```
 
@@ -140,6 +146,10 @@ env = android_env.load( task_path
 * `text_model` - 指定文本模型用于识别屏幕文本以支持从中检测步骤指令、回报、历程结束等历程信号；默认值不挂载任何有效模型。
 * `icon_model` - 指定图表模型用来识别屏幕图标以支持从中检测步骤指令、回报、历程结束等历程信号；默认值不挂载任何有效模型。
 * `with_view_hierarchy` - 是否在返回的观测中加入视图框架（View Hierarchy）项；由于通过ADB获取视图框架时延较长，因此该选项默认不开启
+* `coordinator_args` - 用于覆盖创建`Coordinator`时的默认参数，可用于传递管理对视图框架与屏幕图像的检查的参数。两组参数分别为
+  * `vh_check_control_method`、`vh_check_control_value`
+  * `screen_check_control_method`、`screen_check_control_value`
+  其中`_method`参数需提供`EventCheckControl`枚举标识（`enum.Flag`），有效值为：`LIFT`、`TEXT`、`TIME`、`STEP`，分别表示“在`LIFT`动作后”“在`TEXT`动作后”“间隔一定时间后”“间隔一定步数后”进行检查，不同控制方法可以组合使用，但当`TIME`和`STEP`同时指定时，`STEP`方案不会生效；`_value`参数用于指定`TIME`方法等待的秒数或`STEP`方法等待的步数
 
 传入的文本模型需要实现两个接口：
 
@@ -275,6 +285,7 @@ flask --app android_env.components.simulators.remote.daemon run -h <a.b.c.d> -p 
 ```python
 import android_env
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
+from android_env.components.coordinator import EventCheckControl
 
 env = android_env.load_remote( task_path
                              , address
@@ -290,6 +301,11 @@ env = android_env.load_remote( task_path
                              , text_model=EasyOCRWrapper()
                              , icon_model=ResNet()
                              , with_view_hierarchy=False
+                             , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
+                                                , "vh_check_control_value": 3.
+                                                , "screen_check_control_method": EventCheckControl.LIFT
+                                                , "screen_check_control_value": 1.
+                                                }
                              )
 ```
 

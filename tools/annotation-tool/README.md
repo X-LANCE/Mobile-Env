@@ -31,6 +31,8 @@ python backend/server.py DUMPPATH TASK_DIFINITION_PATH
 * `DUMPPATH` - the path of the pkl file to dump the collected annotation
 * `TASK_DIFINITION_PATH` - the folder where the task definition files are stored
 
+Use `python backend/server.py --help` to check more commandline options.
+
 ### Build the Docker
 
 Please refer to [BUILD.md](build-docker/BUILD-en.md).

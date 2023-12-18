@@ -1,5 +1,36 @@
 2023-12-10 Danyang Zhang <zdy004007@126.com>
 
+	v3.5
+
+	* Fixed a vulnerability of axios dependency of annotation-tool frontend
+	* Updated mechanism to stablize the screen showing on the web interface of
+	annotation-tool
+	* Added new commandline options to annotation-tool
+
+2023-12-10 Danyang Zhang <zdy004007@126.com>
+
+	v3.4
+
+	Improvement of RemoteSimulator
+
+	* Fixed bugs of install_apk action caused by different paths on local and
+	remote machine
+	  * android_env/components/simulators/remote/remote_adb_controller.py
+	* Updated with action batch function to reduce total time delay of a
+	composite action
+	  * android_env/environment.py
+	  * android_env/components/coordinator.py
+	  * android_env/components/simulators/base_simulator.py
+	  * android_env/components/simulators/emulator/emulator_simulator.py
+	  * android_env/components/simulators/remote/daemon.py
+	  * android_env/components/simulators/remote/remote_simulator.py
+	* Added resizing function to reduce transferred bits
+	  * android_env/components/simulators/remote/daemon.py
+	  * android_env/components/simulators/remote/remote_simulator.py
+	  * android_env/loader.py
+
+2023-12-10 Danyang Zhang <zdy004007@126.com>
+
 	v3.3
 
 	Minor updates to platform.

@@ -3,6 +3,24 @@
 
 ## NEWS!!
 
+* (2023-12-18 v3.5)
+  * Owing to the long time delay of VH check and screenshot check, we updated
+    the mechanism of managing the check time. By this way, the requirement of
+    sufficient check for the episode events and the resulted long delay can be
+    balanced.
+  * Added multiple rating methods to `ResponseEvent`: regex matching, fuzzy
+    matching, and vector encoding matching.
+  * Improved `VhIoWrapper` and `TapActionWrapper`. Added support to `SCROLL`
+    and `TYPE` to `TapActionWrapper`.
+  * Optimized `RemoteSimulator`. In order to reduce the delay of network
+    transfering, enabled action batch to send and execute a group of actions
+    and enabled resizing the image before and after transferring to shrink the
+    transferred data.
+  * Merged annotation tool to the main branch. The original annotation-tool
+    branch is deprecated.
+  * Added support to `ResponseEvent` to annotation tool.
+  * Supplemented several commandline options to annotation-tool.
+
 * (2023-10-31 v3.0) Migrated VH node specification from the original VH path to
   Mobile-Env-customized CSS selector (me-selector) and added repeatability
   control to EventSlots. Repeatability control for EventSlots may be useful to
@@ -138,6 +156,48 @@ We also developed an annotation tool for the human demonstrations, and a suite
 of template tool to auto-generate task definitions according to templates and
 to combine multiple task definitions to form a multi-step task. The details are
 referred to in [Miscellaneous Auxiliary Tools](docs/other-tools-en.md).
+
+### Reference Time-Consuming and Memory Usage o Mobile-Env
+
+The data are measured under the configuration below:
+
+* OS and hardware:
+  * Operating System: Manjaro 23.1.0 Vulcan
+  * Kernel Version: x86\_64 Linux 6.1.64-1-MANJARO
+  * CPU: Intel Core i7-10700 @ 16x 4.8GHz
+  * GPU: NVIDIA GeForce RTX 3090
+  * RAM: 64 GB
+  * KVM acceleration enabled
+* Android development tools
+  * Android emulator version 32.1.14.0
+  * Android platform tools 34.0.4
+  * libvert 1:9.9.0
+* Python & packages
+  * Python 3.8.16
+  * EasyOCR 1.7.2
+  * sentence-transformers 2.2.2
+* Android Virtual Device
+  * Device type: Pixel 2
+  * API version: API 30
+  * OS Variant: Google APIs
+  * CPU cores: 4
+  * Memory: 8 GB
+  * Screen size: 1080×1920
+
+|                           Item                          | Avg Time | Time Std Dev |
+|:-------------------------------------------------------:|:--------:|:------------:|
+|                      `TOUCH` action                     | 410.50µs |    64.71µs   |
+|                      `LIFT` action                      | 412.30µs |    84.18µs   |
+|                      `TEXT` action                      |   1.30s  |     0.28s    |
+|                   screenshot capturing                  |  19.94ms |    21.47ms   |
+| invocation of Sentence Transformer（all-MiniLM-L12-v2） |  8.51ms  |    0.17ms    |
+|                       VH capturing                      |   2.53s  |     1.90s    |
+|                  invocation of EasyOCR                  |   0.44s  |     0.08s    |
+
+When only an [app of WikiHow
+2.9.6](https://apkcombo.com/zh/wikihow-how-to-do-anything/com.wikihow.wikihowapp/download/apk)
+is running, the Android emulator occupies 6,031 MiB of virtual memory and 3,444
+MiB of residual memory.
 
 ## About
 

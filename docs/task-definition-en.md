@@ -882,7 +882,13 @@ The options of `event` is the aforementioned event sources:
     be merged (with duplicates removed) before invoking the ADB command.
   - `pattern` - The regex for the expected log line.
 + `response_event` - Matches the response to human user.
-  - `pattern` - The regex for the response.
+  - `mode` - Enum indicating the matching method. Valid options are: `REGEX`,
+    `DIFFLIB`, `FUZZ`, and `SBERT`. `REGEX` matches the event using regex.
+    `DIFFLIB` leverages `difflib` for fuzzy match and `FUZZ` leverages
+    `rapidfuzz` for fuzzy match. `SBERT` computes embedding vector for matching
+    by `sentence-transformers`.
+  - `pattern` - The pattern for the response event. This can be a regex or a
+    reference response.
 
 ##### Specification of View Hierarchy Node
 
