@@ -21,6 +21,8 @@
   * Added support to `ResponseEvent` to annotation tool.
   * Supplemented several commandline options to annotation-tool.
 
+For more details, please see our [Change Log](Changelog) and Documents.
+
 * (2023-10-31 v3.0) Migrated VH node specification from the original VH path to
   Mobile-Env-customized CSS selector (me-selector) and added repeatability
   control to EventSlots. Repeatability control for EventSlots may be useful to
