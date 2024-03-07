@@ -160,7 +160,10 @@ event_slots: {
 			"y = {x[0]: ast.literal_eval(x[1])}"
 		]
 	}
-	json_extra_listener: { events: { id: 3 } }
+	json_extra_listener: {
+		events: { id: 3 }
+		transformation: ["y = x[0]"]
+	}
 }
 
 extras_spec: [

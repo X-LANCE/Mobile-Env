@@ -153,11 +153,11 @@ event_sources: {
 event_slots: {
 	score_listener: {
 		events: { id: 1 }
-		transformation: "y = float(x)"
+		transformation: "y = float(x[0])"
 	}
 	reward_listener: {
 		events: { id: 2 }
-		transformation: "y = float(x)"
+		transformation: "y = float(x[0])"
 	}
 	episode_end_listener: { events: { id: 3 } }
 	extra_listener: {
@@ -167,7 +167,10 @@ event_slots: {
 			"y = {x[0]: ast.literal_eval(x[1])}"
 		]
 	}
-	json_extra_listener: { events: { id: 5 } }
+	json_extra_listener: {
+		events: { id: 5 }
+		transformation: ["y = x[0]"]
+	}
 }
 
 extras_spec: [

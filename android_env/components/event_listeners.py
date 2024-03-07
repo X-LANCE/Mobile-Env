@@ -229,7 +229,7 @@ class EventSource(Event[V], abc.ABC, Generic[I, V]):
         #  }}} method `snapshot` # 
     def is_set(self) -> bool:
         return self._flag_cache
-    def get(self) -> List[W]:
+    def get(self) -> List[V]:
         #  method `get` {{{ # 
         """
         return lsit the wrapped type
