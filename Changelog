@@ -1,3 +1,11 @@
+2024-03-11 Danyang Zhang <zdy004007@126.com>
+
+	Added remote_path parameter to load_remote functions.
+
+	* android_env/loader.py
+	* android_env/utils.py
+	* android_env/environment.py
+
 2023-12-10 Danyang Zhang <zdy004007@126.com>
 
 	v3.5
@@ -135,7 +143,7 @@
 
 2023-08-22 Danyang Zhang <zdy004007@126.com>
 
-	Document update
+	Document updated.
 
 	* Changelog: Added this file.
 	* TODO.md: Added it to note the future development plan.
