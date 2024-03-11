@@ -886,7 +886,7 @@ The options of `event` is the aforementioned event sources:
     `DIFFLIB`, `FUZZ`, and `SBERT`. `REGEX` matches the event using regex.
     `DIFFLIB` leverages `difflib` for fuzzy match and `FUZZ` leverages
     `rapidfuzz` for fuzzy match. `SBERT` computes embedding vector for matching
-    by `sentence-transformers`.
+    by `sentence-transformers`. (Match score of `FUZZ` mode is in range 0~100.)
   - `pattern` - The pattern for the response event. This can be a regex or a
     reference response.
 

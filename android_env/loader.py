@@ -256,6 +256,7 @@ def load_remote( task_path: str
                , sbert_holder: Optional[SBERTHolder] = None
                , with_view_hierarchy: bool = False
                , coordinator_args: Optional[Dict[str, Any]] = None
+               , remote_path: Optional[str] = None
                ) -> environment.AndroidEnv:
   """Loads an AndroidEnv instance.
 
@@ -316,6 +317,9 @@ def load_remote( task_path: str
     coordinator_args (Optional[Dict[str, Any]]): overrides several default
       arguments of Coordinator
 
+    remote_path (Optional[str]): set a different folder path for resources on
+      remote machine
+
   Returns:
     env: An AndroidEnv instance.
   """
@@ -357,7 +361,7 @@ def load_remote( task_path: str
 
   # transform the paths in task definitions
   for t in task_list:
-    fix_path(t, task_directory)
+    fix_path(t, task_directory, remote_path)
 
   # Create simulator.
   simulator = remote_simulator.RemoteSimulator( address=address

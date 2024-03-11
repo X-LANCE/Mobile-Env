@@ -82,9 +82,9 @@ pip install .
 
 `demos`目录下提供了几个示例任务定义。其中三个迁移自AndroidEnv：
 
-* `classic_2048.m.textproto` - 经典的2048小游戏
-* `accessibility_forwarder_clock_set_timer.m.textproto` - 简单的小任务，需要智能体按按钮重设计时器
-* `systemui_egg_land_default.m.textproto` - Flappy Droid，对经典小游戏Flappy Bird的开源复现
+* `classic_2048.m.textproto` - [经典的2048小游戏](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#classic-2048)
+* `accessibility_forwarder_clock_set_timer.m.textproto` - 简单的小任务，需要智能体按按钮[重设计时器](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#accessibility-forwarder)
+* `systemui_egg_land_default.m.textproto` - [Flappy Droid](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#flappydroid)，对经典小游戏Flappy Bird的开源复现
 
 剩下一个文件`openmoneybox.add_billings.textproto`，基于开源记账应用[OpenMoneyBox](https://f-droid.org/en/packages/com.igisw.openmoneybox/)定义。任务的具体内容请查看该任务定义文件。
 

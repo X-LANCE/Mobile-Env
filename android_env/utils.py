@@ -20,7 +20,7 @@ from android_env.proto import task_pb2
 import os.path
 from typing import Optional
 
-def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
+def fix_path(task: task_pb2.Task, task_directory: str, remote_path: Optional[str] = None) -> task_pb2.Task:
     """
     Fixes the path setting in `task` and return it back.
 
@@ -28,15 +28,23 @@ def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
         task (task_pb2.Task): task config object
         task_directory (str): the path which is expected to be the base path,
           usually is the directory of the task config file
+        remote_path (Optional[str]): a different path for resources on the
+          remote machine
 
     Return:
         task_pb2.Task: task config object with the fixed path
     """
 
-    for st in task.setup_steps:
-        _fix(st, task_directory)
-    for st in task.reset_steps:
-        _fix(st, task_directory)
+    if remote_path is None:
+        for st in task.setup_steps:
+            _fix(st, task_directory)
+        for st in task.reset_steps:
+            _fix(st, task_directory)
+    else:
+        for st in task.setup_steps:
+            _fix(st, remote_path)
+        for st in task.reset_steps:
+            _fix(st, remote_path)
     for evt_s in task.event_sources:
         if evt_s.HasField("icon_match"):
             attribute_name: Optional[str] = evt_s.WhichOneof("event")
@@ -47,10 +55,13 @@ def fix_path(task: task_pb2.Task, task_directory: str) -> task_pb2.Task:
                             os.path.normpath(os.path.join(task_directory, path))
     return task
 
-def _fix(setup: task_pb2.SetupStep, task_directory: str):
+def _fix(setup: task_pb2.SetupStep, task_directory: str, and_abs: bool = False):
     if setup.HasField("adb_call")\
             and setup.adb_call.HasField("install_apk"):
         apk_path = setup.adb_call.install_apk.filesystem.path
         if not os.path.isabs(apk_path):
             setup.adb_call.install_apk.filesystem.path =\
                     os.path.normpath(os.path.join(task_directory, apk_path))
+        elif and_abs:
+            setup.adb_call.install_apk.filesystem.path =\
+                    os.path.normpath(os.path.join(task_directory, os.path.basename(apk_path)))

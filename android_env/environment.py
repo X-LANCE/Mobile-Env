@@ -32,7 +32,8 @@
 
 """Android environment implementation."""
 
-from typing import Any, Dict, List, Union
+from typing import Any, Union, Optional
+from typing import Dict, List
 from absl import logging
 from android_env.components import coordinator as coordinator_lib
 from android_env.components import task_manager as task_manager_lib
@@ -112,13 +113,13 @@ class AndroidEnv(dm_env.Environment):
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
 
-  def add_task(self, task_path: str, **kwargs: Dict[str, Any]):
+  def add_task(self, task_path: str, remote_path: Optional[str], **kwargs: Dict[str, Any]):
     #  method `add_task` {{{ # 
     task = task_pb2.Task()
     with open(task_path, 'r') as f:
       text_format.Parse(f.read(), task)
 
-    fix_path(task, os.path.dirname(task_path))
+    fix_path(task, os.path.dirname(task_path), remote_path)
     #for st in task.setup_steps:
       #if st.HasField("adb_call") and\
           #st.adb_call.HasField("install_apk"):

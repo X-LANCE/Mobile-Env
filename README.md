@@ -141,11 +141,14 @@ Mobile-Env](docs/task-definition-en.md).
 Several demo task definitions are provided under `demos`. Three of them are
 migrated from  AndroidEnv:
 
-* `classic_2048.m.textproto` - Classic 2048 game.
+* `classic_2048.m.textproto` - [Classic 2048
+  game](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#classic-2048).
 * `accessibility_forwarder_clock_set_timer.m.textproto` - A simple task
-  requiring the agent to reset a running timer.
-* `systemui_egg_land_default.m.textproto` - Flappy Droid. An open-sourced
-  implementation of classic game, Flappy Bird.
+  requiring the agent to [reset a running
+  timer](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#accessibility-forwarder).
+* `systemui_egg_land_default.m.textproto` - [Flappy
+  Droid](https://github.com/google-deepmind/android_env/blob/main/docs/example_tasks.md#flappydroid).
+  An open-sourced implementation of classic game, Flappy Bird.
 
 Another one, `openmoneybox.add_billings.textproto` is defined upon an
 open-sourced billing app,

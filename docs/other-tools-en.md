@@ -11,6 +11,11 @@ is provided for convenience at <https://hub.docker.com/r/zdy023/mobile-env-web>
 (Deprecated)~~.  The usage of the annotation tool is demonstrated in our [demo
 video](https://youtu.be/gKV6KZYwxGY).
 
+![Annotation Tool 1](images/annotation-tool-1.png)
+![Annotation Tool 2](images/annotation-tool-2.png)
+![Annotation Tool 3](images/annotation-tool-3.png)
+![Annotation Tool 4](images/annotation-tool-4.png)
+
 Usage of the web interface of annotation tool is referred to in
 [README.md](../tools/annotation-tool/README.md)
 

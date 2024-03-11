@@ -8,6 +8,11 @@
 
 为了方便为行为克隆方法收集人类演示数据，开发了一款基于网页界面的标注工具。~~该标注工具可直接通过docker部署，其镜像现托管于[DockerHub](https://hub.docker.com/r/zdy023/mobile-env-web)（过时）。~~本平台的[演示视频](https://youtu.be/gKV6KZYwxGY)中，展示了如何使用该标注工具。
 
+![标注工具1](images/annotation-tool-1.png)
+![标注工具2](images/annotation-tool-2.png)
+![标注工具3](images/annotation-tool-3.png)
+![标注工具4](images/annotation-tool-4.png)
+
 标注工具网页界面使用的方式请参见[README.md](../tools/annotation-tool/README-zh.md)。
 
 除了网页界面外，还提供了几个命令行工具用来对标注结果预处理、可视化。相关代码存放于`../tools/annotation-tool/pkl_tools`。
