@@ -100,6 +100,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     bounds_pattern: Pattern[str] = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
+    # TODO: enable to set a custom filter_elements
     def __init__( self
                 , env: AndroidEnv
                 , tokenizer: PreTrainedTokenizer
