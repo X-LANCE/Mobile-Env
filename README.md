@@ -215,7 +215,7 @@ the following BibTeX:
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
-  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era},
+  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for LLM-GUI Interaction},
   author    = {Danyang Zhang and
                Lu Chen and
                Zihan Zhao and
