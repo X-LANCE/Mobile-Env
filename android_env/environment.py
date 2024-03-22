@@ -113,7 +113,7 @@ class AndroidEnv(dm_env.Environment):
   def android_logs(self) -> Dict[str, Any]:
     return self._coordinator.get_logs()
 
-  def add_task(self, task_path: str, remote_path: Optional[str], **kwargs: Dict[str, Any]):
+  def add_task(self, task_path: str, remote_path: Optional[str] = None, **kwargs: Dict[str, Any]):
     #  method `add_task` {{{ # 
     task = task_pb2.Task()
     with open(task_path, 'r') as f:

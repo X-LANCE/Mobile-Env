@@ -28,6 +28,7 @@ Created by Danyang Zhang @X-Lance.
 > 
 > import Data.List
 >   ( intercalate
+>   , intersperse
 >   )
 > import qualified Network.URL as U
 > 
@@ -81,6 +82,11 @@ This category of functions are used to convert the list in the input to differen
 > regex_list x = "("
 >              ++ intercalate "|" (split ',' x)
 >              ++ ")"
+
+`spacejoin` converts a comma-seperated list into a space-seperated list.
+
+> spacejoin :: Modifier
+> spacejoin x = intersperse ' ' (split ',' x)
 
 ###### Regex Operations
 

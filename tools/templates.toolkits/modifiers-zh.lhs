@@ -28,6 +28,7 @@ Created by Danyang Zhang @X-Lance.
 > 
 > import Data.List
 >   ( intercalate
+>   , intersperse
 >   )
 > import qualified Network.URL as U
 > 
@@ -81,6 +82,11 @@ Created by Danyang Zhang @X-Lance.
 > regex_list x = "("
 >              ++ intercalate "|" (split ',' x)
 >              ++ ")"
+
+`spacejoin`将逗号分隔的列表转为空格分隔的列表。
+
+> spacejoin :: Modifier
+> spacejoin x = intersperse ' ' (split ',' x)
 
 ###### 正则操作
 

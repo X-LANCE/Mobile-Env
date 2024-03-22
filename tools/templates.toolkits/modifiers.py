@@ -40,6 +40,9 @@ def to_list(x: str) -> str:
 def regex_list(x: str) -> str:
     return "(" + "|".join(x.split(",")) + ")"
 
+def spacejoin(x: str) -> str:
+    return " ".join(x.split(","))
+
 # Regex Operations
 
 _metaCharacters = str.maketrans({ch: "\\" + ch

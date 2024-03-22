@@ -55,25 +55,6 @@ reset_steps: [
 	{ adb_call: { force_stop: { package_name: "com.igisw.openmoneybox" } } },
 	{ adb_call: { clear_cache: { package_name: "com.igisw.openmoneybox" } } }
 ]
-reset_steps: {
-	adb_call: {
-		start_activity: { full_activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
-	}
-	success_condition: {
-		wait_for_app_screen: {
-			app_screen: { activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
-			timeout_sec: 10.0
-		}
-		num_retries: 10
-	}
-}
-reset_steps: {
-	adb_call: {
-		start_screen_pinning: { full_activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
-	}
-}
-
-expected_app_screen: { activity: "com.igisw.openmoneybox/com.igisw.openmoneybox.MainActivity" }
 
 max_num_steps: 500
 
@@ -213,7 +194,7 @@ event_sources: [
 	{
 		text_detect: {
 			expect: "(?i)salary" # category
-			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+			rect: { x0: 0., x1: 1., y0: 0.38, y1: 0.42 }
 		}
 		id: 16
 		repeatability: LAST
@@ -245,7 +226,7 @@ event_sources: [
 	{
 		text_detect: {
 			expect: "(?i)extra" # category
-			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+			rect: { x0: 0., x1: 1., y0: 0.38, y1: 0.42 }
 		}
 		id: 21
 		repeatability: LAST
@@ -277,7 +258,7 @@ event_sources: [
 	{
 		text_detect: {
 			expect: "(?i)assets" # category
-			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+			rect: { x0: 0., x1: 1., y0: 0.38, y1: 0.42 }
 		}
 		id: 26
 		repeatability: LAST
@@ -309,7 +290,7 @@ event_sources: [
 	{
 		text_detect: {
 			expect: "(?i)daily" # category
-			rect: { x0: 0., x1: 1., y0: 0.38: y1: 0.42 }
+			rect: { x0: 0., x1: 1., y0: 0.38, y1: 0.42 }
 		}
 		id: 31
 		repeatability: LAST
@@ -464,7 +445,10 @@ event_slots: {
 			}
 		}
 	}
-	episode_end_listener: { events: { id: 46 } }
+	episode_end_listener: {
+		events: { id: 46 }
+		transformation: "y = True"
+	}
 	instruction_listener: {
 		type: OR
 		events: {

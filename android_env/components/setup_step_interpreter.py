@@ -1,4 +1,5 @@
 # coding=utf-8
+# vim: set tabstop=2 shiftwidth=2:
 # Copyright 2023 SJTU X-Lance Lab
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +34,7 @@
 
 import copy
 import random
-import re
+#import re
 import time
 from typing import Any, Dict, Optional, Sequence
 
@@ -256,6 +257,12 @@ class SetupStepInterpreter():
 
     elif call_type == 'disable_animations':
       self._adb_controller.disable_animations()
+
+    elif call_type == "shell_command":
+      self._adb_controller._execute_shell_command(adb_cmd.shell_command.command)
+
+    elif call_type == "adb_command":
+      self._adb_controller._execute_normal_command(adb_cmd.adb_command.command)
 
     else:
       raise NotImplementedError('No ADB call type [%s].' % call_type)
