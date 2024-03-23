@@ -86,7 +86,7 @@ This category of functions are used to convert the list in the input to differen
 `spacejoin` converts a comma-seperated list into a space-seperated list.
 
 > spacejoin :: Modifier
-> spacejoin x = intersperse ' ' (split ',' x)
+> spacejoin = intersperse ' ' . split ','
 
 ###### Regex Operations
 
@@ -127,6 +127,11 @@ These two functions are used for case conversion of the input text just as their
 > upper :: Modifier
 > lower = map toLower
 > upper = map toUpper
+
+`sentence_to_words` splits a sentence into words by white spaces and then joins them into a list by commas.
+
+> sentence_to_words :: Modifier
+> sentence_to_words = intersperse ',' . words
 
 ###### Other Operations
 

@@ -1,3 +1,25 @@
+2024-03-23 Danyang Zhang <zdy004007@126.com>
+
+	Fixed bugs
+
+	* android_env/environment.py
+	* demos/openmoneybox.add_billings.textproto
+
+	Updated new types of ADB operations for SetupStep
+
+	* android_env/proto/adb.proto
+	* android_env/components/setup_step_interpreter.py
+
+	Updated new modifiers
+	
+	* tools/templates.toolkits/modifiers.py
+	* tools/templates.toolkits/modifiers-zh.lhs
+	* tools/templates.toolkits/modifiers-en.lhs
+
+	Updated syntax of .task config files
+	
+	* tools/templates.toolkits/parse.py
+
 2024-03-11 Danyang Zhang <zdy004007@126.com>
 
 	Added remote_path parameter to load_remote functions.

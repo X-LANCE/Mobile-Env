@@ -68,6 +68,9 @@ def url_title(x: str) -> str:
 lower: Modifier = str.lower
 upper: Modifier = str.upper
 
+def sentence_to_words(x: str) -> str:
+    return ",".join(x.split())
+
 # Other Operations
 
 def filter_comma(x: str) -> str:

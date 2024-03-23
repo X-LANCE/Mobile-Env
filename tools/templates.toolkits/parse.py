@@ -22,7 +22,7 @@ from google.protobuf import text_format
 import os.path
 import re
 import modifiers
-from typing import Match, Dict, List
+from typing import Match, Dict, List, Set
 from typing import Callable, TypeVar
 import functools
 
@@ -100,9 +100,19 @@ def main():
     parser.add_argument("--output", "-o", type=str)
     args = parser.parse_args()
 
+    extra_setup_steps: Set[int] = set() # index-1
+    extra_reset_steps: Set[int] = set() # index-1
+
     with open(args.task) as f:
-        conf_list = list(
-                map(str.strip, f.readlines()))
+        conf_list: List[str] = []
+        for i, l in enumerate(f):
+            items: List[str] = l.strip().split()
+            conf_list.append(items[0])
+            if i>0 and len(items)>=1:
+                if "s" in items[1]:
+                    extra_setup_steps.add(i-1)
+                if "r" in items[1]:
+                    extra_reset_steps.add(i-1)
 
     conf_path = os.path.dirname(args.task)
 
@@ -180,9 +190,14 @@ def main():
     for i, t in enumerate(task_list[1:]):
         target_task.id = "{:}-{:}".format(target_task.id, t.id)
         target_task.name = "{:}, {:}".format(target_task.name,
-            t.name.split(" - ", maxsplit=1)[1])
+            t.name.split(" - ", maxsplit=1)[-1])
         target_task.description = "{:}\n{:}".format(target_task.description,
             t.description)
+
+        if i in extra_setup_steps:
+            target_task.setup_steps.extend(t.setup_steps)
+        if i in extra_reset_steps:
+            target_task.reset_steps.extend(t.reset_steps)
 
         #  calculate new base {{{ # 
         for evt in t.event_sources:

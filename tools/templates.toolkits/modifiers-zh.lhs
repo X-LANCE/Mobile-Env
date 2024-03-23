@@ -86,7 +86,7 @@ Created by Danyang Zhang @X-Lance.
 `spacejoin`将逗号分隔的列表转为空格分隔的列表。
 
 > spacejoin :: Modifier
-> spacejoin x = intersperse ' ' (split ',' x)
+> spacejoin = intersperse ' ' . split ','
 
 ###### 正则操作
 
@@ -127,6 +127,11 @@ Created by Danyang Zhang @X-Lance.
 > upper :: Modifier
 > lower = map toLower
 > upper = map toUpper
+
+`sentence_to_words`用于将一句话按空白字符分开，再用逗号串成列表。
+
+> sentence_to_words :: Modifier
+> sentence_to_words = intersperse ',' . words
 
 ###### 其他操作
 
