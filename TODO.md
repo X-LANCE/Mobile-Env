@@ -45,6 +45,7 @@
   a conceptual idea.
 * (Unit Tests): Have a thorough check to the original unit test codes.
 * (Task Debugger): Maybe a debugger for task definition composing?
+* (Long Click): Long click action for VhIoWrapper.
 
 ---
 

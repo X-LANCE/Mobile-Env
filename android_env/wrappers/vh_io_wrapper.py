@@ -276,7 +276,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
         #  method _process_timestep {{{ # 
-        self._bbox_list: List[List[int]] = filter_elements(timestep.observation["view_hierarchy"])[1]
+        if timestep.observation["view_hierarchy"] is not None:
+            self._bbox_list: List[List[int]] = filter_elements(timestep.observation["view_hierarchy"])[1]
         return timestep
         #  }}} method _process_timestep # 
 
