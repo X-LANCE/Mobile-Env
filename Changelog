@@ -1,3 +1,9 @@
+2024-03-25 Danyang Zhang <zdy004007@126.com>
+
+	Fixed bugs in VhIoWrapper w.r.t. null view hierarchy from OS
+
+	* android_env/wrappers/vh_io_wrapper.py
+
 2024-03-23 Danyang Zhang <zdy004007@126.com>
 
 	Fixed bugs
@@ -11,13 +17,13 @@
 	* android_env/components/setup_step_interpreter.py
 
 	Updated new modifiers
-	
+
 	* tools/templates.toolkits/modifiers.py
 	* tools/templates.toolkits/modifiers-zh.lhs
 	* tools/templates.toolkits/modifiers-en.lhs
 
 	Updated syntax of .task config files
-	
+
 	* tools/templates.toolkits/parse.py
 
 2024-03-11 Danyang Zhang <zdy004007@126.com>
