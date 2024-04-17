@@ -35,6 +35,12 @@ tools/syscert_setup.exp [EMULATOR_PATH [AVD_NAME [CERT_PATH]]]
 + `AVD_NAME` - 要修改的安卓虚拟机（镜像）名称，默认为`Pixel_2_API_30_x64`
 + `CERT_PATH` - 要注入的SSL证书的路径，默认为`$HOME/.mitmproxy/mitmproxy-ca-cert.cer`
 
+该方案配置好后，若要手动启动模拟器，应添加`-writable-system`选项挂载修改后的系统`/system`分区。如：
+
+```sh
+emulator @Pixel_2_API_30_x64 -writable-system -http-proxy http://127.0.0.1:8080
+```
+
 #### frida方案：运行时替换应用程序的证书验证器
 
 该方案，采用运行时注入工具[Frida](https://github.com/frida/frida)替换应用程序的证书验证器，以解除其固定证书。该方案同样需要adbd获取root权限，因此需要采用Google APIs版本的镜像。加载环境时，`mitm_config`参数中，`method`字段要设置为`frida`。本方案仅基于frida 14.2.2完成了测试，并针对该版本，提供了配置脚本[`frida_setup.sh`](../tools/frida_setup.sh)，该脚本同样需要安装expect来执行。

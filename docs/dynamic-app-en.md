@@ -66,6 +66,14 @@ The three optional arguments are:
 + `CERT_PATH` - The path to the SSL certificate to be injected. Defaults to
   `$HOME/.mitmproxy/mitmproxy-ca-cert.cer`.
 
+If you want to launch the AVD manually after this plan configured, you need to
+append `-writable-system` option to the command to mount the modified `/system`
+partition. For instance,
+
+```sh
+emulator @Pixel_2_API_30_x64 -writable-system -http-proxy http://127.0.0.1:8080
+```
+
 #### Frida Plan: Replace the Certificate Verifier of the App at Runtime
 
 This plan is to replace the app's certificate verifier by the runtime
