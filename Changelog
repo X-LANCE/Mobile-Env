@@ -1,15 +1,17 @@
+2024-04-30 Danyang Zhang <zdy004007@126.com>
+
+	v3.6
+
+	Updated documents.
+
 2024-03-25 Danyang Zhang <zdy004007@126.com>
-
-	Fixed bugs in VhIoWrapper w.r.t. null view hierarchy from OS
-
-	* android_env/wrappers/vh_io_wrapper.py
-
-2024-03-23 Danyang Zhang <zdy004007@126.com>
 
 	Fixed bugs
 
-	* android_env/environment.py
-	* demos/openmoneybox.add_billings.textproto
+	* (Bugs caused by new remote_path arg): android_env/environment.py
+	* (Typos, bugs w.r.t. new episode end event, removed reset steps which
+	cause AVD haulting): demos/openmoneybox.add_billings.textproto
+	* (Bugs w.r.t null VH from OS): android_env/wrappers/vh_io_wrapper.py
 
 	Updated new types of ADB operations for SetupStep
 
@@ -90,6 +92,9 @@
 	Enabled multiple check methods for ResponseEvent
 
 	Fixed bugs w.r.t. ResponseEvent
+
+	Updated episode end event slots by making it triggered only when the
+	returned value is True
 
 	* android_env/proto/task.proto
 	* android_env/components/event_listeners.py

@@ -4,6 +4,13 @@
 
 ## 最近更新
 
+* （2024-04-30 v3.6）
+  * 更新了加载远程模拟器的函数，用以为远程资源提供不同于本地任务定义文件所在目录的路径
+  * 更新了任务模板工具，增加了新的槽位修饰符与任务配置文件语法
+  * 修复了已知的问题
+
+具体信息请查看[更新日志](Changelog)和相关文档。
+
 * （2023-12-18 v3.5）
   * 由于检查视图框架和屏幕图像耗时较长，因此更新了机制来更灵活地管理在什么时机检查视图框架与屏幕图像，以平衡对历程事件的充分检查的需求和所带来交互时延升高
   * 为`ResponseEvent`（回复事件）添加了多种评分方式：正则匹配、模糊匹配、向量编码匹配
@@ -139,10 +146,11 @@ pip install .
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
-  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era},
+  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for LLM-GUI Interaction},
   author    = {Danyang Zhang and
-               Lu Chen and
+               Hongshen Xu and
                Zihan Zhao and
+               Lu Chen and
                Ruisheng Cao and
                Kai Yu},
   journal   = {CoRR},

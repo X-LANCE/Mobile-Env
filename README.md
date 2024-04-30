@@ -3,6 +3,14 @@
 
 ## NEWS!!
 
+* (2024-04-30 v3.6)
+  * Updated function to load a remote simulator to enable providing the remote
+    resources with a different path with the path of the local task definition
+    file.
+  * Updated task template toolkit, added new slot modifiers and sytaxes for
+    task config file.
+  * Fixed known bugs.
+
 * (2023-12-18 v3.5)
   * Owing to the long time delay of VH check and screenshot check, we updated
     the mechanism of managing the check time. By this way, the requirement of
@@ -217,8 +225,9 @@ the following BibTeX:
 @article{DanyangZhang2023_MobileEnv,
   title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for LLM-GUI Interaction},
   author    = {Danyang Zhang and
-               Lu Chen and
+               Hongshen Xu and
                Zihan Zhao and
+               Lu Chen and
                Ruisheng Cao and
                Kai Yu},
   journal   = {CoRR},

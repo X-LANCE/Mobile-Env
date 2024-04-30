@@ -207,15 +207,24 @@ keywords: bake,lobster,tails
 ```
 
 As for the config file of task token combination `<taskname>.task`, each line
-in the file should specify a file name of the task token config like:
+in the file should specify a file name of the task token config and an optional
+combination option like:
 
 ```
 search-lobster
-access_author-Bob
+access_author-Bob   sr
 ```
 
-The instances will be combined in order during instantiation and become the
-small steps of the final large multi-step task.
+Currently, there are two combination options: `s` and `r`. If `s` is specified,
+the setup steps (`setup_steps`) of the current task token will be appended into
+the final task definition. Similarly, if `r` is specified, the reset steps
+(`reset_steps`) of the current task token will be appended. If no combination
+options are specified, any setup or reset steps won't be appended, *i.e.*, only
+the steps added for the preceding task tokens are preserved. By default, the
+setup ans reset steps of the first task token will always be preserved in the
+final combined task definition. The instances will be combined in the
+declaration order during instantiation and become the small steps of the final
+large multi-step task.
 
 ##### The Syntax of the Modifiers
 

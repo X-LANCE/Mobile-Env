@@ -766,7 +766,10 @@ is the same with the screen text event sources.
 
 The response event source will react to the response from the agent to human
 user. If the response matches with the defined pattern, the event source will
-be triggered and return a tuple comprising all the regex-captured groups.
+be triggered. Mobile-Env supports various matching methods, spanning regex
+match, fuzzy match, and embedding match. If regex match is adopted, the source
+will return a tuple comprising all the regex-captured groups, or the source
+will return the numeric match score.
 
 ##### The Event Slots
 
@@ -789,8 +792,9 @@ The episode end event slot (`episode_end_listener`) indicated if the episode
 comes to the end and the platform will restart the task at the next step. This
 usually means that the agent has just achieved the task target. But it is also
 possible that several severe errors have occured and the system cannot resume
-and has to restart. Only the triggering flag of this event slot makes sense and
-it returns no further values to the agent.
+and has to restart. ~~Only the triggering flag of this event slot makes sense
+and it returns no further values to the agent.~~ Only when the event slot is
+triggered and the returned value is `True`, the episode will be restarted.
 
 The instruction event slot (`instruction_listener`) gives the agent the novel
 step supplementary instructions during the interaction. This slot accepts and
@@ -876,10 +880,11 @@ The options of `event` is the aforementioned event sources:
       * `floating` - A floating reference
 + `log_event` - Matches the system log lines and requires two fields:
   - `filters` - An array of string for the log filters like `jd:D`. The system
-    logs are obtained by the command `adb logcat -v epoch FILTERS *:S`, where
-    `FILTERS` is all the filter names declared in the definition. All the
-    filters declared across the log event sources in the definition file will
-    be merged (with duplicates removed) before invoking the ADB command.
+    logs are obtained by the command [`adb logcat -v epoch FILTERS
+    *:S`](https://developer.android.com/tools/logcat), where `FILTERS` is all
+    the filter names declared in the definition. All the filters declared
+    across the log event sources in the definition file will be merged (with
+    duplicates removed) before invoking the ADB command.
   - `pattern` - The regex for the expected log line.
 + `response_event` - Matches the response to human user.
   - `mode` - Enum indicating the matching method. Valid options are: `REGEX`,
