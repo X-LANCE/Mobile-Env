@@ -46,6 +46,8 @@
 * (Unit Tests): Have a thorough check to the original unit test codes.
 * (Task Debugger): Maybe a debugger for task definition composing?
 * (Long Click): Long click action for VhIoWrapper.
+* (Keyboard Input for Annotation Tool): Supports free keyboard input for the
+  web interface of annoatation tool.
 
 ---
 
