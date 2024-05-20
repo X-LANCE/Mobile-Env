@@ -40,3 +40,4 @@ class ActionType(enum.IntEnum):
   LIFT = 1
   REPEAT = 2
   TEXT = 3
+  ADB = 4

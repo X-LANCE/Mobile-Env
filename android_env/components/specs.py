@@ -63,22 +63,26 @@ _PROTO_DTYPE_TO_NUMPY_DTYPE = {
 def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.Array]:
   """Default action spec for AndroidEnv.
 
+  Each action is supposed to have following keys:
+    action_type (np.int32): An integer of type ActionType: TOUCH=0, LIFT=1,
+      REPEAT=2, TEXT=3, ADB=4
+    touch_position (np.float32): Position [x, y] of the touch action, where x,
+      y are float values between 0.0 and 1.0 corresponding to the relative
+      position on the screen. IGNORED when (action_type != ActionType.TOUCH).
+    input_token (np.int32): An integer as the input token id.
+    command (np.object_): str as adb command, like `install xxx`, `shell am
+      stack list`
+    response (np.object_): str as response text
+
   Args:
-    num_tokens: Number of candidate tokens
-    num_fingers: Number of virtual fingers of the agent.
+    num_tokens (int): Number of candidate tokens
+    num_fingers (int): Number of virtual fingers of the agent.
+
   Returns:
-    A dict of action specs, each item corresponding to a virtual finger.
-    action_type: An integer of type ActionType: TOUCH=0, LIFT=1, REPEAT=2, TEXT=3
-    touch_position: Position [x, y] of the touch action, where x, y are float
-      values between 0.0 and 1.0 corresponding to the relative position on the
-      screen. IGNORED when (action_type != ActionType.TOUCH).
-    input_token: An integer as the input token id.
-    action_type_i: Action type for additional fingers (i>1).
-    touch_position_i: Touch position for additional fingers (i>1).
-    response: text
+    Dict[str, specs.Array]: The action specifications
   """
 
-  nb_types = len(action_type.ActionType)-1 if num_tokens==0 else len(action_type.ActionType)
+  nb_types = 3 if num_tokens==0 else len(action_type.ActionType)
   action_spec = { 'action_type':
                     specs.DiscreteArray( num_values=nb_types
                                        , name='action_type'
@@ -112,10 +116,12 @@ def base_action_spec(num_tokens: int, num_fingers: int = 1) -> Dict[str, specs.A
 
   if num_tokens>0:
     action_spec.update({
-        'input_token':
-          specs.DiscreteArray(
-            num_values=num_tokens,
-            name="input_token")
+        'input_token': specs.DiscreteArray( num_values=num_tokens
+                                          , name="input_token"
+                                          )
+      , 'command': specs.StringArray( shape=()
+                                    , name="command"
+                                    )
       })
 
     #for i in range(2, num_fingers + 1):

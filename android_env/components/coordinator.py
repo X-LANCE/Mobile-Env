@@ -48,6 +48,7 @@ import dm_env
 import numpy as np
 import lxml.etree
 import itertools
+import shlex
 
 import enum
 from numbers import Number
@@ -358,6 +359,42 @@ class Coordinator():
     #  }}} method `change_task_manager` # 
   #  }}} Reset Interfaces # 
 
+  def _perform_actions(self, action_list: List[Dict[str, np.ndarray]]):
+    #  method _perform_actions {{{ # 
+    responses: Iterable[str] = filter( lambda rsp: rsp is not None and rsp != ""
+                                     , map( lambda act: act.get("response", np.array("")).item()
+                                          , action_list
+                                          )
+                                     )
+    for rsp in responses:
+      self._task_manager.receive_response(rsp)
+
+    # 0 for TOUCH & LIFT (simulator)
+    # 1 for REPEAT (ignore)
+    # 2 for TEXT (taskmanager)
+    # 3 for ADB (adb via simulator)
+    actions: Iterable[Tuple[int, Dict[str, np.ndarray]]] =\
+        map( lambda act: ( np.clip(act["action_type"]-1, 0, 2).item()
+                         , act
+                         )
+           , action_list
+           )
+    actions: Iterable[int, Iterable[Tuple[int, Dict[str, np.ndarray]]]] =\
+        itertools.groupby( actions
+                         , key=(lambda act: act[0])
+                         )
+
+    for act_t, act in actions:
+      if act_t==0:
+        self._send_action_to_simulator(list(map(lambda t: t[1], act)))
+      elif act_t==2:
+        for _, tkn in act:
+          self._send_action_to_taskmanager(tkn)
+      elif act_t==3:
+        for _, cmd in act:
+          self._send_adb_command_to_simulator(cmd)
+    #  }}} method _perform_actions # 
+
   def execute_action( self
                     , action: Optional[ Union[ Dict[str, np.ndarray]
                                              , List[Dict[str, np.ndarray]]
@@ -378,18 +415,20 @@ class Coordinator():
     """Executes the selected action and returns transition info.
 
     Args:
-      action (Optional[Dict[str, Optional[Union[np.ndarray, str]]]]): Selected
-        action to perform on the simulated Android device. dict like
+      action (Optional[Union[Dict[str, np.ndarray], List[Dict[str,
+        np.ndarray]]]]): Selected action to perform on the simulated Android
+        device. dict like
           {
             "action_type": action_type_lib.ActionType
             "touch_position": np.ndarray with shape (2,) of float32 as [x, y]
               from [0, 1], optional for TEXT
             "input_token": np.ndarray with shape () of int32, required only for
               TEXT
+            "command": np.ndarray of shape () of object (str) as adb command
             "response": np.ndarray with shape () of object (str), optional
               response to human user
           }
-          of list of such dicts (if the simulator supports)
+        of list of such dicts (if the simulator supports)
 
     Returns:
       Optional[Dict[str, Union[np.ndarray, Optional[lxml.etree.Element]]]]:
@@ -419,47 +458,14 @@ class Coordinator():
       return None, 0.0, {}, [], True
 
     if isinstance(action, list):
-      responses: Iterable[str] = filter( lambda rsp: rsp is not None and rsp != ""
-                                       , map( lambda act: act.get("response", np.array("")).item()
-                                            , action
-                                            )
-                                       )
-      for rsp in responses:
-        self._task_manager.receive_response(rsp)
-
-      actions: Iterable[Tuple[int, Dict[str, np.ndarray]]] =\
-          map( lambda act: ( np.clip(act["action_type"]-1, 0, 2).item() # 0 for TOUCH & LIFT (simulator), 1 for REPEAT, 2 for TEXT (taskmanager)
-                           , act
-                           )
-             , action
-             )
-      actions: Iterable[int, Iterable[Tuple[int, Dict[str, np.ndarray]]]] =\
-          itertools.groupby( actions
-                           , key=(lambda act: act[0])
-                           )
-      for act_t, act in actions:
-        if act_t==0:
-          self._send_action_to_simulator(list(map(lambda t: t[1], act)))
-        elif act_t==2:
-          for _, tkn in act:
-            self._send_action_to_taskmanager(tkn)
+      self._perform_actions(action)
 
       last_action: Optional[action_type_lib.ActionType] =\
-          None if len(action)>0 else action[-1]["action_type"].item()
+          None if len(action)==0 else action[-1]["action_type"].item()
       #get_vh: bool = len(action)<=0 or action[-1]["action_type"].item()==action_type_lib.ActionType.LIFT
 
     elif action is not None:
-
-      if "response" in action\
-          and action["response"] is not None\
-          and action["response"] != "":
-        self._task_manager.receive_response(action["response"].item())
-        pass
-
-      if action["action_type"].item() == action_type_lib.ActionType.TEXT:
-        self._send_action_to_taskmanager(action)
-      elif action['action_type'].item() != action_type_lib.ActionType.REPEAT:
-        self._send_action_to_simulator(action)
+      self._perform_actions([action])
 
       last_action: Optional[action_type_lib.ActionType] = action["action_type"].item()
       #get_vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
@@ -562,6 +568,12 @@ class Coordinator():
       self._log_dict['restart_count_execute_action'] += 1
       self._should_restart = True
     #  }}} method _send_action_to_simulator # 
+
+  def _send_adb_command_to_simulator(self, action: Dict[str, np.ndarray]):
+    #  method _send_adb_command_to_simulator {{{ # 
+    command: List[str] = shlex.split(action["command"].item())
+    self._simulator.execute_adb_command(command)
+    #  }}} method _send_adb_command_to_simulator # 
 
   def _check_timeout(self) -> bool:
     #  method _check_timeout {{{ # 
