@@ -28,6 +28,7 @@ from typing import Optional, Union, Any
 import numpy as np
 import base64
 from PIL import Image
+import io
 
 from absl import logging
 import traceback
@@ -82,6 +83,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
       + observ
         + sends {
             "resize_to": [int, int] # W, H
+            "compression": str, "jpeg" | "png" | "none", default to jpeg
         }
         + receives {
             "img": base64
@@ -98,6 +100,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
                 , launch_timeout: float = 2.
                 , retry: int = 3
                 , resize_for_transfer: Optional[Tuple[int, int]] = None
+                , compression: str = "jpeg"
                 , **kwargs
                 ):
         #  method __init__ {{{ # 
@@ -111,6 +114,8 @@ class RemoteSimulator( base_simulator.BaseSimulator
             retry (int): retry times
             resize_for_transfer (Optional[Tuple[int, int]]): if the screen
               should be resized for transferring as (W, H)
+            compression (str): jpeg | png | none, used for image data
+              transferring
         """
 
         super(RemoteSimulator, self).__init__(**kwargs)
@@ -125,6 +130,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
         self._retry: int = retry
 
         self._resize_for_transfer: Optional[Tuple[int, int]] = resize_for_transfer
+        self._compression: str = compression
 
         self._session: requests.Session = requests.Session()
         self._adb_device_name: str = "remote-device"
@@ -207,24 +213,36 @@ class RemoteSimulator( base_simulator.BaseSimulator
             np.int64: the timestamp
         """
 
-        response: requests.Response = self._get_response( "observ"
-                                                        , { "resize_to": self._resize_for_transfer }\
-                                                       if self._resize_for_transfer is not None else {}
-                                                        )
+        arguments: Dict[str, Any] = {"compression": self._compression}
+        if self._resize_for_transfer is not None:
+            arguments["resize_to"] = self._resize_for_transfer
+
+        response: requests.Response = self._get_response("observ", arguments)
         response: Dict[str, Any] = response.json()
 
         width: int
         height: int
         width, height = response["size"]
         img_buffer: bytes = base64.b64decode(response["img"].encode())
-        image: np.ndarray = np.frombuffer( img_buffer
-                                         , dtype=np.uint8
-                                         , count=width*height*3
-                                         )
-        image = np.reshape(image, (height, width, 3))
-        image = np.array( Image.fromarray(image).resize(response["raw_size"])
-                        , dtype=np.uint8
-                        )
+
+        if self._compression!="none":
+            image: Image.Image = Image.open( io.BytesIO(img_buffer)
+                                           , formats=["jpeg", "png"]
+                                           )
+        else:
+            image: Image.Image = Image.frombytes("RGB", response["size"], img_buffer)
+
+        #image: np.ndarray = np.frombuffer( img_buffer
+                                         #, dtype=np.uint8
+                                         #, count=width*height*3
+                                         #)
+        #image = np.reshape(image, (height, width, 3))
+        #image = np.array( Image.fromarray(image).resize(response["raw_size"])
+                        #, dtype=np.uint8
+                        #)
+        if self._resize_for_transfer is not None:
+            image = image.resize(response["raw_size"])
+        image: np.ndarray = np.array(image, dtype=np.uint8)
 
         return [image, np.int64(response["time"])]
         #  }}} method _get_observation # 

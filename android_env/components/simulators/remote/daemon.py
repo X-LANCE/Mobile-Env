@@ -24,6 +24,7 @@ import os.path
 import numpy as np
 import base64
 from PIL import Image
+import io
 
 import logging
 import datetime
@@ -273,15 +274,31 @@ def observation() -> Dict[str, Union[str, List[int], int]]:
     raw_height: int
     raw_height, raw_width, _ = observation.shape
 
+    observation: Image.Image = Image.fromarray(observation)
+
     if "resize_to" in args:
-        observation = np.array( Image.fromarray(observation).resize(args["resize_to"])
-                              , dtype=np.uint8
-                              )
+        observation = observation.resize(args["resize_to"])
     width: int
     height: int
-    height, width, _ = observation.shape
+    width, height = observation.size
 
-    observation: str = base64.b64encode(observation.tobytes()).decode()
+    if args.get("compression", "jpeg") == "jpeg":
+        with io.BytesIO() as bfr:
+            observation.save(bfr, "jpeg")
+            observation: bytes = bfr.getvalue()
+    elif args.get("compression", "jpeg") == "png":
+        with io.BytesIO() as bfr:
+            observation.save(bfr, "png")
+            observation: bytes = bfr.getvalue()
+    elif args.get("compression", "jpeg") == "none":
+        observation: bytes = observation.tobytes()
+    else:
+        with io.BytesIO() as bfr:
+            observation.save(bfr, "jpeg")
+            observation: bytes = bfr.getvalue()
+
+    observation: str = base64.b64encode(observation).decode()
+
     return { "img": observation
            , "size": [width, height]
            , "raw_size": [raw_width, raw_height]

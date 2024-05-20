@@ -15,8 +15,8 @@
   repeatability of an event slot. Will implement it when I have the time.
 * ✓ (About new event source RHU): Update the annotation tool to support the new
   type of event source.
-* (JPEG compression for transfer): Applied JEPG compression before transferring
-  the screen to RemoteSimulator
+* ✓ (JPEG compression for transfer): Applied JEPG compression before
+  transferring the screen to RemoteSimulator
 * (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
   through rapidfuzz library.
 * (Beyond `dm_env` interfaces): Will follow new gymnasium to distinguish
