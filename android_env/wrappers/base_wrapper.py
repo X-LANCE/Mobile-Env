@@ -33,29 +33,29 @@
 """Base class for AndroidEnv wrappers."""
 
 from typing import Any, Dict
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep
+from android_env.interfaces import specs
 
 
-class BaseWrapper(dm_env.Environment):
+class BaseWrapper():
   """AndroidEnv wrapper."""
 
   def __init__(self, env):
     self._env = env
 
-  def switch_task(self, index: int) -> dm_env.TimeStep:
+  def switch_task(self, index: int) -> timestep.TimeStep:
     self._reset_state()
     timestep = self._env.switch_task(index)
     self._post_switch_task()
     timestep = self._process_timestep(timestep)
     return timestep
 
-  def reset(self) -> dm_env.TimeStep:
+  def reset(self) -> timestep.TimeStep:
     self._reset_state()
     timestep = self._process_timestep(self._env.reset())
     return timestep
 
-  def step(self, action: Any) -> dm_env.TimeStep:
+  def step(self, action: Any) -> timestep.TimeStep:
     action = self._process_action(action)
     return self._process_timestep(self._env.step(action))
 
@@ -69,7 +69,7 @@ class BaseWrapper(dm_env.Environment):
   def _process_action(self, action: Any) -> Any:
     return action
 
-  def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+  def _process_timestep(self, timestep: timestep.TimeStep) -> timestep.TimeStep:
     return timestep
 
   def observation_spec(self) -> Dict[str, specs.Array]:

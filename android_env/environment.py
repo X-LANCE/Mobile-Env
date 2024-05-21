@@ -41,10 +41,11 @@ from android_env.utils import fix_path
 from android_env.proto import task_pb2
 from google.protobuf import text_format
 import os.path
-import dm_env
+from android_env import interfaces
 import numpy as np
+from lxml.etree import _Element
 
-class AndroidEnv(dm_env.Environment):
+class AndroidEnv():
   """An RL environment that interacts with Android apps."""
 
   def __init__(self, coordinator: coordinator_lib.Coordinator):
@@ -62,13 +63,13 @@ class AndroidEnv(dm_env.Environment):
     logging.info('Task extras spec: %s', self.task_extras_spec())
 
   #  Informational Interfaces {{{ # 
-  def action_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def action_spec(self) -> Dict[str, interfaces.specs.Array]:
     return self._coordinator.action_spec()
 
-  def observation_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def observation_spec(self) -> Dict[str, interfaces.specs.Array]:
     return self._coordinator.observation_spec()
 
-  def task_extras_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def task_extras_spec(self) -> Dict[str, interfaces.specs.Array]:
     return self._coordinator.task_extras_spec()
 
   def command(self) -> List[str]:
@@ -134,7 +135,7 @@ class AndroidEnv(dm_env.Environment):
     self._coordinator.add_task_manager(task_manager)
     #  }}} method `add_task` # 
 
-  def switch_task(self, index: int) -> dm_env.TimeStep:
+  def switch_task(self, index: int) -> interfaces.timestep.TimeStep:
     #  method `change_task` {{{ # 
     logging.info('Changing Task to {:d}...'.format(index))
 
@@ -155,14 +156,10 @@ class AndroidEnv(dm_env.Environment):
     logging.info('Done Changing Task.')
     logging.info('************* NEW EPISODE *************')
 
-    return dm_env.TimeStep(
-        step_type=dm_env.StepType.FIRST,
-        observation=self._latest_observation,
-        reward=0.0,
-        discount=0.0)
+    return interfaces.timestep.restart(observation=self._latest_observation)
     #  }}} method `change_task` # 
 
-  def reset(self) -> dm_env.TimeStep:
+  def reset(self) -> interfaces.timestep.TimeStep:
     """Resets the environment for a new RL episode."""
 
     logging.info('Resetting AndroidEnv...')
@@ -184,17 +181,13 @@ class AndroidEnv(dm_env.Environment):
     logging.info('Done resetting AndroidEnv.')
     logging.info('************* NEW EPISODE *************')
 
-    return dm_env.TimeStep(
-        step_type=dm_env.StepType.FIRST,
-        observation=self._latest_observation,
-        reward=0.0,
-        discount=0.0)
+    return interfaces.timestep.restart(observation=self._latest_observation)
 
   def step( self
           , action: Union[ Dict[str, np.ndarray]
                          , List[Dict[str, np.ndarray]]
                          ]
-          ) -> dm_env.TimeStep:
+          ) -> interfaces.timestep.TimeStep:
     """Takes a step in the environment."""
 
     # Check if it's time to reset the episode.
@@ -202,7 +195,14 @@ class AndroidEnv(dm_env.Environment):
       return self.reset()
 
     # Execute selected action.
-    obs, reward, extras, instructions, episode_end = self._coordinator.execute_action(action)
+    obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
+    reward: float
+    extras: Dict[str, Any]
+    instructions: List[str]
+    episode_end: bool
+    succeeds: Optional[bool]
+    obs, reward, extras, instructions, episode_end, succeeds =\
+        self._coordinator.execute_action(action)
 
     # Process relevant information.
     if obs is not None:
@@ -214,11 +214,26 @@ class AndroidEnv(dm_env.Environment):
 
     # Return timestep with reward and observation just computed.
     if episode_end:
-      return dm_env.termination(
-          observation=self._latest_observation, reward=reward)
+      if succeeds:
+        return interfaces.timestep.success(
+                observation=self._latest_observation
+              , reward=reward
+              )
+      elif succeeds is None:
+        return interfaces.timestep.truncation(
+                observation=self._latest_observation
+              , reward=reward
+              )
+      else:
+        return interfaces.timestep.failure(
+                observation=self._latest_observation
+              , reward=reward
+              )
     else:
-      return dm_env.transition(
-          observation=self._latest_observation, reward=reward, discount=0.0)
+      return interfaces.timestep.transition(
+              observation=self._latest_observation
+            , reward=reward
+            )
 
   def task_extras(self, latest_only: bool = True) -> Dict[str, np.ndarray]:
     """Returns latest task extras."""

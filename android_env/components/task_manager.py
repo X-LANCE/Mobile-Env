@@ -757,9 +757,19 @@ class TaskManager():
     return instructions
     #  }}} function `get_current_instructions` # 
 
-  def check_if_episode_ended(self, with_view_hierarchy: bool) -> bool:
+  def check_if_episode_ended(self, with_view_hierarchy: bool) -> Tuple[bool, Optional[bool]]:
     #  method `check_if_episode_ended` {{{ # 
-    """Determines whether the episode should be terminated and reset."""
+    """
+    Determines whether the episode should be terminated and reset.
+
+    Args:
+        with_view_hierarchy (bool): if view hierarchy is expected in the
+          observation, check of max duration will be canceled
+
+    Returns:
+        bool: if episode should be terminated
+        Optional[bool]: success indicator
+    """
 
     # Check if player existed the task
     #if self._check_player_exited():
@@ -767,17 +777,16 @@ class TaskManager():
       self._log_dict['reset_count_player_exited'] += 1
       logging.warning('Player exited the game. Ending episode.')
       logging.info('************* END OF EPISODE *************')
-      return True
+      return True, None
 
     # Check if episode has ended
     #with self._lock:
       #if self._latest_values['episode_end']: # zdy
-    if self._episode_end_event.is_set()\
-        and self._episode_end_event.get()[0]: # zdy
+    if self._episode_end_event.is_set():
       self._log_dict['reset_count_episode_end'] += 1
       logging.info('End of episode from logcat! Ending episode.')
       logging.info('************* END OF EPISODE *************')
-      return True
+      return True, self._episode_end_event.get()[0]
 
     # Check if step limit or time limit has been reached
     if self._task.max_num_steps > 0:
@@ -785,7 +794,7 @@ class TaskManager():
         self._log_dict['reset_count_max_duration_reached'] += 1
         logging.info('Maximum task duration (steps) reached. Ending episode.')
         logging.info('************* END OF EPISODE *************')
-        return True
+        return True, None
 
     if not with_view_hierarchy and self._task.max_duration_sec > 0.0:
       task_duration = datetime.datetime.now() - self._task_start_time
@@ -794,9 +803,9 @@ class TaskManager():
         self._log_dict['reset_count_max_duration_reached'] += 1
         logging.info('Maximum task duration (sec) reached. Ending episode.')
         logging.info('************* END OF EPISODE *************')
-        return True
+        return True, None
 
-    return False
+    return False, None
     #  }}} method `check_if_episode_ended` # 
 
   def snapshot_events( self

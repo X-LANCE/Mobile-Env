@@ -402,7 +402,7 @@ class Coordinator():
                                       ]
                     ) -> Tuple[ Optional[ Dict[ str
                                               , Union[ np.ndarray
-                                                     , Optional[lxml.etree.Element]
+                                                     , Optional[lxml.etree._Element]
                                                      ]
                                               ]
                                         ]
@@ -410,6 +410,7 @@ class Coordinator():
                               , Dict[str, Any]
                               , List[str]
                               , bool
+                              , Optional[bool]
                               ]:
     #  method execute_action {{{ # 
     """Executes the selected action and returns transition info.
@@ -444,7 +445,10 @@ class Coordinator():
       float: reward, Total reward collected since the last call.
       Dict[str, Any]: extras, Task extras observed since the last call.
       List[str]: instructions, Task instructions received since the last call.
-      bool: episode end, Boolean indicating if the RL episode should be terminated.
+      bool: episode end, Boolean indicating if the RL episode should be
+        terminated.
+      Optional[bool]: success indicator, True for success, False for failure,
+        and None for exception
     """
 
     # Increment counters.
@@ -455,7 +459,7 @@ class Coordinator():
 
     # If a restart is neccessary, end the episode.
     if self._should_restart or self._check_timeout():
-      return None, 0.0, {}, [], True
+      return None, 0.0, {}, [], True, None
 
     if isinstance(action, list):
       self._perform_actions(action)
@@ -519,17 +523,19 @@ class Coordinator():
       reward = self._task_manager.get_current_reward() # zdy
       task_extras = self._task_manager.get_current_extras()
       instructions = self._task_manager.get_current_instructions()
-      episode_end = self._task_manager.check_if_episode_ended(self._with_view_hierarchy)
+      episode_end: bool
+      succeeds: Optional[bool]
+      episode_end, succeeds = self._task_manager.check_if_episode_ended(self._with_view_hierarchy)
 
       self._task_manager.clear_events()
 
-      return observation, reward, task_extras, instructions, episode_end
+      return observation, reward, task_extras, instructions, episode_end, succeeds
 
     except (errors.ReadObservationError, socket.error):
       logging.exception('Unable to fetch observation. Restarting simulator.')
       self._log_dict['restart_count_fetch_observation'] += 1
       self._should_restart = True
-      return None, 0.0, {}, [], True
+      return None, 0.0, {}, [], True, None
     #  }}} method execute_action # 
 
   def _send_action_to_taskmanager(self, action: Dict[str, np.ndarray]):
