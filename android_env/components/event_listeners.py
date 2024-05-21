@@ -55,7 +55,7 @@ class TextMatcher:
         SBERT = 3 # sentence-transformers
 
     def __init__( self
-                , pattern: str
+                , pattern: str, threshold: Optional[float]
                 , mode: CheckMode
                 , sbert: Optional[SentenceTransformer] = None
                 ):
@@ -63,12 +63,15 @@ class TextMatcher:
         """
         Args:
             pattern (str): the reference to match to
+            threshold (Optional[float]): match threshold for several match
+              modes.
             mode (CheckMode): the match mode
             sbert (Optional[SentenceTransformer]): sentence transformer used
               in SBERT mode
         """
 
         self._pattern: str = pattern
+        self._threshold: Optional[float] = float
         self._sbert: Optional[SentenceTransformer] = sbert
 
         self._mode: TextMatcher.CheckMode = mode
@@ -120,7 +123,7 @@ class TextMatcher:
                      , score, received
                      , self._mode.name, self._pattern
                      )
-        return True, score
+        return score>=self._threshold, score
         #  }}} method __call__ # 
     #  }}} class TextMatcher # 
 
@@ -676,7 +679,7 @@ class RegionEvent(EventSource[I, V], abc.ABC):
 
 class TextEvent(RegionEvent[Optional[str], List[str]]):
     #  class `TextEvent` {{{ # 
-    def __init__( self, expect: str
+    def __init__( self, expect: str, threshold: Optional[float]
                 , mode: TextMatcher.CheckMode
                 , region: Iterable[float], needs_detection: bool = False
                 , repeatability: Repeatability = Repeatability.NONE
@@ -686,6 +689,7 @@ class TextEvent(RegionEvent[Optional[str], List[str]]):
         """
         Args:
             expect (str): expected texts
+            threshold (Optional[float]): match threshold for several match
             mode (TextMatcher.CheckMode): checking mode
             region (Iterable[float]): [x0, y0, x1, y1]
             needs_detection (bool): detection or recognition
@@ -698,7 +702,7 @@ class TextEvent(RegionEvent[Optional[str], List[str]]):
         super(TextEvent, self).__init__(region, needs_detection, repeatability)
 
         #self._expect: Pattern[str] = re.compile(expect)
-        self._text_matcher: TextMatcher = TextMatcher(expect, mode, sbert)
+        self._text_matcher: TextMatcher = TextMatcher(expect, threshold, mode, sbert)
         #  }}} method `__init__` # 
 
     def _verify(self, text: Optional[str]) -> Tuple[bool, Optional[List[str]]]:
@@ -1067,7 +1071,7 @@ class LogEvent(EventSource[str, List[str]]):
 class ResponseEvent(EventSource[str, Union[List[str], float]]):
     #  class ResponseEvent {{{ # 
     def __init__( self
-                , pattern: str
+                , pattern: str, threshold: Optional[float]
                 , mode: TextMatcher.CheckMode
                 , sbert: Optional[SentenceTransformer] = None
                 , repeatability: Repeatability = Repeatability.NONE
@@ -1076,6 +1080,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         """
         Args:
             pattern (str): the reference for ResponseEvent
+            threshold (Optional[float]): match threshold for several match
             mode (CheckMode): the match mode. relies on the following
               modules:
               * re
@@ -1088,7 +1093,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         """
 
         super(ResponseEvent, self).__init__(repeatability)
-        self._text_matcher: TextMatcher = TextMatcher(pattern, mode, sbert)
+        self._text_matcher: TextMatcher = TextMatcher(pattern, threshold, mode, sbert)
         #  }}} method __init__ # 
 
     def _verify(self, response: str) -> Tuple[bool, Optional[Union[List[str], float]]]:

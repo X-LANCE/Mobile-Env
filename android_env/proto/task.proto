@@ -151,6 +151,7 @@ message EventSource {
         string expect = 1;
         Rect rect = 2;
 		MatchMode mode = 3;
+		float threshold = 4;
     }
     // recognize the icon of the given class
     message IconRecogEvent {
@@ -220,6 +221,7 @@ message EventSource {
 	message ResponseEvent {
 		string pattern = 1;
 		MatchMode mode = 2;
+		float threshold = 3;
 	}
 
     enum Repeatability {

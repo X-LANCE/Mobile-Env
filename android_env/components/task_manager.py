@@ -294,6 +294,7 @@ class TaskManager():
       if needs_sbert and not hasattr(self, "_sbert"):
         self._sbert: SentenceTransformer = self._get_sbert()
       event = event_listeners.TextEvent( event_source.text_recognize.expect
+                                       , event_source.text_recognize.threshold
                                        , event_listeners.TextMatcher.CheckMode(event_source.text_recognize.mode)
                                        , _rect_to_list(event_source.text_recognize.rect), needs_detection=False
                                        , repeatability=event_listeners.Repeatability(event_source.repeatability)
@@ -305,6 +306,7 @@ class TaskManager():
       if needs_sbert and not hasattr(self, "_sbert"):
         self._sbert: SentenceTransformer = self._get_sbert()
       event = event_listeners.TextEvent( event_source.text_detect.expect
+                                       , event_source.text_detect.threshold
                                        , event_listeners.TextMatcher.CheckMode(event_source.text_detect.mode)
                                        , _rect_to_list(event_source.text_detect.rect), needs_detection=True
                                        , repeatability=event_listeners.Repeatability(event_source.repeatability)
@@ -373,6 +375,7 @@ class TaskManager():
       if needs_sbert and not hasattr(self, "_sbert"):
         self._sbert: SentenceTransformer = self._get_sbert()
       event = event_listeners.ResponseEvent( event_source.response_event.pattern
+                                           , event_source.response_event.threshold
                                            , event_listeners.TextMatcher.CheckMode(event_source.response_event.mode)
                                            , self._sbert if needs_sbert else None
                                            , repeatability=event_listeners.Repeatability(event_source.repeatability)
