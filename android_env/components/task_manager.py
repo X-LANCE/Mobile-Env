@@ -290,14 +290,26 @@ class TaskManager():
 
     #  Text Events {{{ # 
     if event_source.HasField("text_recognize"):
-      event = event_listeners.TextEvent(event_source.text_recognize.expect,
-          _rect_to_list(event_source.text_recognize.rect), needs_detection=False,
-          repeatability=event_listeners.Repeatability(event_source.repeatability))
+      needs_sbert = event_source.text_recognize.mode==task_pb2.EventSource.MatchMode.SBERT
+      if needs_sbert and not hasattr(self, "_sbert"):
+        self._sbert: SentenceTransformer = self._get_sbert()
+      event = event_listeners.TextEvent( event_source.text_recognize.expect
+                                       , event_listeners.TextMatcher.CheckMode(event_source.text_recognize.mode)
+                                       , _rect_to_list(event_source.text_recognize.rect), needs_detection=False
+                                       , repeatability=event_listeners.Repeatability(event_source.repeatability)
+                                       , sbert=self._sbert if needs_sbert else None
+                                       )
       self._text_events.append(event)
     elif event_source.HasField("text_detect"):
-      event = event_listeners.TextEvent(event_source.text_detect.expect,
-          _rect_to_list(event_source.text_detect.rect), needs_detection=True,
-          repeatability=event_listeners.Repeatability(event_source.repeatability))
+      needs_sbert = event_source.text_detect.mode==task_pb2.EventSource.MatchMode.SBERT
+      if needs_sbert and not hasattr(self, "_sbert"):
+        self._sbert: SentenceTransformer = self._get_sbert()
+      event = event_listeners.TextEvent( event_source.text_detect.expect
+                                       , event_listeners.TextMatcher.CheckMode(event_source.text_detect.mode)
+                                       , _rect_to_list(event_source.text_detect.rect), needs_detection=True
+                                       , repeatability=event_listeners.Repeatability(event_source.repeatability)
+                                       , sbert=self._sbert if needs_sbert else None
+                                       )
       self._text_events.append(event)
     #  }}} Text Events # 
     #  Icon Events {{{ # 
@@ -357,11 +369,11 @@ class TaskManager():
           repeatability=event_listeners.Repeatability(event_source.repeatability))
       self._log_events.append(event)
     elif event_source.HasField("response_event"):
-      needs_sbert = event_source.response_event.mode==task_pb2.EventSource.ResponseEvent.Mode.SBERT
+      needs_sbert = event_source.response_event.mode==task_pb2.EventSource.MatchMode.SBERT
       if needs_sbert and not hasattr(self, "_sbert"):
         self._sbert: SentenceTransformer = self._get_sbert()
       event = event_listeners.ResponseEvent( event_source.response_event.pattern
-                                           , event_listeners.ResponseEvent.ResponseCheckMode(event_source.response_event.mode)
+                                           , event_listeners.TextMatcher.CheckMode(event_source.response_event.mode)
                                            , self._sbert if needs_sbert else None
                                            , repeatability=event_listeners.Repeatability(event_source.repeatability)
                                            )

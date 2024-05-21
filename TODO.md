@@ -17,7 +17,7 @@
   type of event source.
 * ✓ (JPEG compression for transfer): Applied JEPG compression before
   transferring the screen to RemoteSimulator
-* (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
+* ✓ (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
   through rapidfuzz library.
 * (Beyond `dm_env` interfaces): Will follow new gymnasium to distinguish
   successful finishing and error termination. Will give a DmEnvWrapper instead

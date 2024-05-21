@@ -46,6 +46,84 @@ C = TypeVar("Cast")
 T = TypeVar("Transformed")
 W = TypeVar("Wrapped")
 
+class TextMatcher:
+    #  class TextMatcher {{{ # 
+    class CheckMode(enum.IntEnum):
+        REGEX = 0 # re
+        DIFFLIB = 1 # difflib
+        FUZZ = 2 # rapidfuzz
+        SBERT = 3 # sentence-transformers
+
+    def __init__( self
+                , pattern: str
+                , mode: CheckMode
+                , sbert: Optional[SentenceTransformer] = None
+                ):
+        #  method __init__ {{{ # 
+        """
+        Args:
+            pattern (str): the reference to match to
+            mode (CheckMode): the match mode
+            sbert (Optional[SentenceTransformer]): sentence transformer used
+              in SBERT mode
+        """
+
+        self._pattern: str = pattern
+        self._sbert: Optional[SentenceTransformer] = sbert
+
+        self._mode: TextMatcher.CheckMode = mode
+        if mode==TextMatcher.CheckMode.REGEX:
+            matcher: Pattern[str] = re.compile(self._pattern, flags=re.MULTILINE)
+            self._match: Callable[[str], Match[str]] = matcher.search
+        elif mode==TextMatcher.CheckMode.DIFFLIB:
+            matcher: SequenceMatcher = SequenceMatcher( b=self._pattern
+                                                      , autojunk=False
+                                                      )
+            def match_(a: str) -> float:
+                matcher.set_seq1(a)
+                return matcher.ratio()
+            self._match: Callable[[str], float] = match_
+        elif mode==TextMatcher.CheckMode.FUZZ:
+            self._match: Callable[[str], float] = functools.partial( fuzz.ratio
+                                                                   , self._pattern
+                                                                   )
+        elif mode==TextMatcher.CheckMode.SBERT:
+            # (1, D)
+            encoding: torch.Tensor = self._sbert.encode( [self._pattern]
+                                                       , show_progress_bar=False
+                                                       , convert_to_tensor=True
+                                                       , normalize_embeddings=True
+                                                       )
+            def match_(a: str) -> float:
+                # (1, D)
+                a_encoding: torch.Tensor = self._sbert.encode( [a]
+                                                             , show_progress_bar=False
+                                                             , convert_to_tensor=True
+                                                             , normalize_embeddings=True
+                                                             )
+                return dot_score(encoding, a_encoding).squeeze().cpu().item()
+            self._match: Callable[[str], float] = match_
+        #  }}} method __init__ # 
+
+    def __call__(self, received: str) -> Tuple[bool, Optional[Union[List[str], float]]]:
+        #  method __call__ {{{ # 
+        if self._mode==TextMatcher.CheckMode.REGEX:
+            match_: Match[str] = self._match(received)
+            if match_ is not None:
+                logging.debug( "\x1b[5;31mText Matcher: %s for REGEX %s\x1b[0m"
+                             , received, self._pattern
+                             )
+                return True, match_.groups()
+            return False, None
+        score: float = self._match(received)
+        logging.debug( "\x1b[5;31mText Matcher: %.4f @ %s for %s %s\x1b[0m"
+                     , score, received
+                     , self._mode.name, self._pattern
+                     )
+        return True, score
+        #  }}} method __call__ # 
+    #  }}} class TextMatcher # 
+
 class Event(abc.ABC, Generic[W]):
     #  abstract class `Event` {{{ # 
     #def __init__(self,
@@ -598,34 +676,29 @@ class RegionEvent(EventSource[I, V], abc.ABC):
 
 class TextEvent(RegionEvent[Optional[str], List[str]]):
     #  class `TextEvent` {{{ # 
-    def __init__(self, expect: str,
-            region: Iterable[float], needs_detection: bool = False,
-            #transformation: Optional[str] = None,
-            #cast: Optional[Callable[[str], C]] = None,
-            #wrap: Optional[Callable[[T], W]] = None,
-            #update: Optional[Callable[[W, W], W]] = None,
-            repeatability: Repeatability = Repeatability.NONE):
+    def __init__( self, expect: str
+                , mode: TextMatcher.CheckMode
+                , region: Iterable[float], needs_detection: bool = False
+                , repeatability: Repeatability = Repeatability.NONE
+                , sbert: Optional[SentenceTransformer] = None
+                ):
         #  method `__init__` {{{ # 
         """
-        expect - str
-        region - iterable of four floats as [x0, y0, x1, y1]
-        needs_detection - bool
-        #transformation - str or None
-        #cast - callable accepting the verified type returning the cast type or
-          #None
-        #wrap - callable accepting the transformed type returning the wrapped
-          #type or None
-        #update - callable accepting
-          #+ the wrapped type
-          #+ the wrapped type
-          #and returning the wrapped type
-        repeatability - Repeatability
+        Args:
+            expect (str): expected texts
+            mode (TextMatcher.CheckMode): checking mode
+            region (Iterable[float]): [x0, y0, x1, y1]
+            needs_detection (bool): detection or recognition
+            sbert (Optional[SentenceTransformer]): sentence transformer used
+              in SBERT mode
+            repeatability (Repeatability): 
         """
 
         #super(TextEvent, self).__init__(region, needs_detection, transformation, cast, wrap, update, repeatability)
         super(TextEvent, self).__init__(region, needs_detection, repeatability)
 
-        self._expect: Pattern[str] = re.compile(expect)
+        #self._expect: Pattern[str] = re.compile(expect)
+        self._text_matcher: TextMatcher = TextMatcher(expect, mode, sbert)
         #  }}} method `__init__` # 
 
     def _verify(self, text: Optional[str]) -> Tuple[bool, Optional[List[str]]]:
@@ -638,11 +711,14 @@ class TextEvent(RegionEvent[Optional[str], List[str]]):
 
         if text is None:
             return False, None
-        match_ = self._expect.search(text)
-        if match_ is not None:
-            logging.debug("\x1b[5;31mText Matched: %s for %s\x1b[0m", text, self._expect.pattern)
-            return True, match_.groups()
-        return False, None
+
+        matches: bool
+        values: Optional[Union[List[str], float]]
+        matches, values = self._text_matcher(text)
+
+        if matches:
+            logging.info("\x1b[5;31mText Event: %s (%s)\x1b[0m", text, values)
+        return matches, values
         #  }}} method `_verify` # 
     #  }}} class `TextEvent` # 
 
@@ -990,15 +1066,9 @@ class LogEvent(EventSource[str, List[str]]):
 
 class ResponseEvent(EventSource[str, Union[List[str], float]]):
     #  class ResponseEvent {{{ # 
-    class ResponseCheckMode(enum.IntEnum):
-        REGEX = 0
-        DIFFLIB = 1
-        FUZZ = 2
-        SBERT = 3
-
     def __init__( self
                 , pattern: str
-                , mode: ResponseCheckMode
+                , mode: TextMatcher.CheckMode
                 , sbert: Optional[SentenceTransformer] = None
                 , repeatability: Repeatability = Repeatability.NONE
                 ):
@@ -1006,7 +1076,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         """
         Args:
             pattern (str): the reference for ResponseEvent
-            mode (ResponseCheckMode): the match mode. relies on the following
+            mode (CheckMode): the match mode. relies on the following
               modules:
               * re
               * difflib
@@ -1018,59 +1088,18 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         """
 
         super(ResponseEvent, self).__init__(repeatability)
-
-        self._pattern: str = pattern
-        self._sbert: Optional[SentenceTransformer] = sbert
-
-        self._mode: ResponseEvent.ResponseCheckMode = mode
-        if mode==ResponseEvent.ResponseCheckMode.REGEX:
-            matcher: Pattern[str] = re.compile(self._pattern, flags=re.MULTILINE)
-            self._match: Callable[[str], Match[str]] = matcher.search
-        elif mode==ResponseEvent.ResponseCheckMode.DIFFLIB:
-            matcher: SequenceMatcher = SequenceMatcher( b=self._pattern
-                                                            , autojunk=False
-                                                            )
-            def match_(a: str) -> float:
-                matcher.set_seq1(a)
-                return matcher.ratio()
-            self._match: Callable[[str], float] = match_
-        elif mode==ResponseEvent.ResponseCheckMode.FUZZ:
-            self._match: Callable[[str], float] = functools.partial( fuzz.ratio
-                                                                   , self._pattern
-                                                                   )
-        elif mode==ResponseEvent.ResponseCheckMode.SBERT:
-            # (1, D)
-            encoding: torch.Tensor = self._sbert.encode( [self._pattern]
-                                                       , show_progress_bar=False
-                                                       , convert_to_tensor=True
-                                                       , normalize_embeddings=True
-                                                       )
-            def match_(a: str) -> float:
-                # (1, D)
-                a_encoding: torch.Tensor = self._sbert.encode( [a]
-                                                             , show_progress_bar=False
-                                                             , convert_to_tensor=True
-                                                             , normalize_embeddings=True
-                                                             )
-                return dot_score(encoding, a_encoding).squeeze().cpu().item()
-            self._match: Callable[[str], float] = match_
+        self._text_matcher: TextMatcher = TextMatcher(pattern, mode, sbert)
         #  }}} method __init__ # 
 
     def _verify(self, response: str) -> Tuple[bool, Optional[Union[List[str], float]]]:
         #  method _verify {{{ # 
-        if self._mode==ResponseEvent.ResponseCheckMode.REGEX:
-            match_: Match[str] = self._match(response)
-            if match_ is not None:
-                logging.info( "\x1b[5;31mResponse Event: %s for REGEX %s\x1b[0m"
-                            , response, self._pattern
-                            )
-                return True, match_.groups()
-            return False, None
-        score: float = self._match(response)
-        logging.info( "\x1b[5;31mResponse Score: %.4f @ %s for %s %s\x1b[0m"
-                    , score, response
-                    , self._mode.name, self._pattern
-                    )
-        return True, score
+        matches: bool
+        values: Optional[Union[List[str], float]]
+        matches, values = self._text_matcher(response)
+        if matches:
+            logging.info( "\x1b[5;31mResponse Event: %s (%s)%\x1b[0m"
+                        , response, values
+                        )
+        return matches, values
         #  }}} method _verify # 
     #  }}} class ResponseEvent # 

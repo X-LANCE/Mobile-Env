@@ -132,6 +132,13 @@ message ArraySpec {
 // zdy
 // message `EventSource` {{{ 
 message EventSource {
+	enum MatchMode {
+		REGEX = 0;
+		DIFFLIB = 1;
+		FUZZ = 2;
+		SBERT = 3;
+	}
+
     // floats in range [0, 1]
     message Rect {
         float x0 = 2;
@@ -143,6 +150,7 @@ message EventSource {
     message TextEvent {
         string expect = 1;
         Rect rect = 2;
+		MatchMode mode = 3;
     }
     // recognize the icon of the given class
     message IconRecogEvent {
@@ -210,15 +218,8 @@ message EventSource {
     //}
 
 	message ResponseEvent {
-		enum Mode {
-			REGEX = 0;
-			DIFFLIB = 1;
-			FUZZ = 2;
-			SBERT = 3;
-		}
-
 		string pattern = 1;
-		Mode mode = 2;
+		MatchMode mode = 2;
 	}
 
     enum Repeatability {
