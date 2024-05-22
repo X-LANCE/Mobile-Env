@@ -16,14 +16,15 @@
 Created by Danyang Zhang @X-Lance.
 """
 
-from android_env.environment import AndroidEnv
+#from android_env.environment import AndroidEnv
 from android_env.wrappers import base_wrapper
 
 from typing import Dict, List, Pattern, Tuple
 from typing import Union
 from numbers import Number
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep as Tstep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 from android_env.components import action_type
 
 import enum
@@ -102,7 +103,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     # TODO: enable to set a custom filter_elements
     def __init__( self
-                , env: AndroidEnv
+                , env: Environment
                 , tokenizer: PreTrainedTokenizer
                 , nb_click_frames: int = 3
                 , nb_scroll_frmaes: int = 10
@@ -112,7 +113,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         #  method __init__ {{{ # 
         """
         Args:
-            env (AndroidEnv): the environment to be wrapped
+            env (Environment): the environment to be wrapped
             tokenizer (PreTrainedTokenizer): tokenizer to tokenize the input
               text into the tokens from the vocabulary of the environment
             nb_click_frames (int): the duration the TOUCH action will last for
@@ -274,21 +275,21 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             return actions
         #  }}} method _process_action # 
 
-    def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+    def _process_timestep(self, timestep: Tstep.TimeStep) -> Tstep.TimeStep:
         #  method _process_timestep {{{ # 
         if timestep.observation["view_hierarchy"] is not None:
             self._bbox_list: List[List[int]] = filter_elements(timestep.observation["view_hierarchy"])[1]
         return timestep
         #  }}} method _process_timestep # 
 
-    def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
+    def step(self, action: Dict[str, np.ndarray]) -> Tstep.TimeStep:
         #  method step {{{ # 
         """
         Args:
             action (Dict[str, np.ndarray): vh-element-wise action
 
         Returns:
-            dm_env.TimeStep
+            Tstep.TimeStep
         """
 
         actions: List[Dict[str, np.ndarray]] = self._process_action(action)
@@ -297,26 +298,26 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         total_reward = 0.
         instructions: List[str] = []
         if self._action_batch:
-            timestep: dm_env.TimeStep = self._env.step(actions)
+            timestep: Tstep.TimeStep = self._env.step(actions)
             instructions += self._env.task_instructions()
             if timestep.reward>0.:
                 total_reward += timestep.reward
 
             if timestep.last():
                 self._instructions = instructions
-                return dm_env.TimeStep( step_type=timestep.step_type
-                                      , reward=total_reward
-                                      , discount=timestep.discount
-                                      , observation=timestep.observation
-                                      )
+                return Tstep.TimeStep( step_type=timestep.step_type
+                                     , reward=total_reward
+                                     , discount=timestep.discount
+                                     , observation=timestep.observation
+                                     )
         else:
             for act in actions:
-                #step_type: dm_env.StepType
+                #step_type: Tstep.StepType
                 #reward: float
                 #discount: float
                 #observation: Dict[str, Any]
                 #step_type, reward, discount, observation = self._env.step(act)
-                timestep: dm_env.TimeStep = self._env.step(act)
+                timestep: Tstep.TimeStep = self._env.step(act)
                 instructions += self._env.task_instructions()
 
                 if timestep.reward>0.:
@@ -324,11 +325,11 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
                 if timestep.last():
                     self._instructions = instructions
-                    return dm_env.TimeStep( step_type=timestep.step_type
-                                          , reward=total_reward
-                                          , discount=timestep.discount
-                                          , observation=timestep.observation
-                                          )
+                    return Tstep.TimeStep( step_type=timestep.step_type
+                                         , reward=total_reward
+                                         , discount=timestep.discount
+                                         , observation=timestep.observation
+                                         )
 
         if action["action_type"]==VhIoWrapper.ActionType.INPUT:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
@@ -365,14 +366,14 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             if timestep.reward>0.:
                 total_reward += timestep.reward
 
-        timestep: dm_env.TimeStep = self._process_timestep(timestep)
+        timestep: Tstep.TimeStep = self._process_timestep(timestep)
 
         self._instructions = instructions
-        return dm_env.TimeStep( step_type=timestep.step_type
-                              , reward=total_reward
-                              , discount=timestep.discount
-                              , observation=timestep.observation
-                              )
+        return Tstep.TimeStep( step_type=timestep.step_type
+                             , reward=total_reward
+                             , discount=timestep.discount
+                             , observation=timestep.observation
+                             )
         #  }}} method step # 
 
     def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:

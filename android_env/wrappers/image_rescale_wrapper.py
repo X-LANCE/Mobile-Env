@@ -34,8 +34,9 @@
 from typing import Optional, Sequence, Dict
 
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep as Tstep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 import numpy as np
 from PIL import Image
 
@@ -51,13 +52,13 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with rescaled observations."""
 
   def __init__( self
-              , env: dm_env.Environment
+              , env: Environment
               , zoom_factors: Optional[Sequence[float]] = (0.5, 0.5)
               , grayscale: bool = False
               ):
     """
     Args:
-        env (dm_env.Environment): the wrapped environment
+        env (Environment): the wrapped environment
         zoom_factors (Optional[Sequence[float]]): zoom factor for (H, W)
         grayscale (bool): if the image will be transfered to grayscale
     """
@@ -80,7 +81,7 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
   def raw_pixels(self):
     return self._raw_pixels
 
-  def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+  def _process_timestep(self, timestep: Tstep.TimeStep) -> Tstep.TimeStep:
     observation = timestep.observation
     self._raw_pixels = observation['pixels'].copy()
     processed_observation = observation.copy()
@@ -113,11 +114,11 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
       return np.expand_dims(resized_array, axis=-1)
     return resized_array
 
-#def reset(self) -> dm_env.TimeStep:
+#def reset(self) -> Tstep.TimeStep:
     #timestep = self._env.reset()
     #return self._process_timestep(timestep)
 
-  def step(self, action) -> dm_env.TimeStep:
+  def step(self, action) -> Tstep.TimeStep:
     timestep = self._env.step(action)
     return self._process_timestep(timestep)
 

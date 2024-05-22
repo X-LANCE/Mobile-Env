@@ -32,29 +32,32 @@
 
 """Wraps the AndroidEnv to expose an OpenAI Gym interface."""
 
-from typing import Any, Dict, Tuple
+from typing import Any, Optional, Union
+from typing import Dict, Tuple
 
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
-import gym
-from gym import spaces
+from android_env.interfaces import timestep as Tstep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
+import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
-
+from lxml.etree import _Element
 
 class GymInterfaceWrapper(base_wrapper.BaseWrapper, gym.Env):
   """AndroidEnv with OpenAI Gym interface."""
 
-  def __init__(self, env: dm_env.Environment):
+  def __init__(self, env: Environment):
 
     base_wrapper.BaseWrapper.__init__(self, env)
     self.spec = None
     self.action_space = self._spec_to_space(self._env.action_spec())
     self.observation_space = self._spec_to_space(self._env.observation_spec())
     self.metadata = {'render.modes': ['rgb_array']}
+    self.render_mode: str = "rgb_array"
 
   def _spec_to_space(self, spec: specs.Array) -> spaces.Space:
-    """Converts dm_env specs to OpenAI Gym spaces."""
+    """Converts Mobile-Env specs to OpenAI Gym spaces."""
 
     if isinstance(spec, list):
       return spaces.Tuple([self._spec_to_space(s) for s in spec])
@@ -87,28 +90,71 @@ class GymInterfaceWrapper(base_wrapper.BaseWrapper, gym.Env):
 
     raise ValueError('Unknown type for specs: {}'.format(spec))
 
-  def render(self, mode='rgb_array'):
+  def render(self, mode='rgb_array') -> Optional[np.ndarray]:
     """Renders the environment."""
     if mode == 'rgb_array':
       if self._latest_observation is None:
-        return
+        return None
       return self._latest_observation['pixels']
     else:
       raise ValueError('Only supported render mode is rgb_array.')
 
-  def switch_task(self, index: int) -> np.ndarray:
-    timestep = self._env.switch_task(index)
-    return timestep.observation
+  #def switch_task(self, index: int) -> np.ndarray:
+    #timestep = self._env.switch_task(index)
+    #return timestep.observation
 
-  def reset(self) -> np.ndarray:
-    timestep = self._env.reset()
-    return timestep.observation
+  def reset(self, seed: None = None, options: Optional[Dict[str, Any]] = None)\
+      -> Tuple[ Dict[str, Union[np.ndarray, Optional[_Element]]]
+              , Dict[str, Any]
+              ]:
+    #  method reset {{{ # 
+    """
+    Args:
+        seed (None): useless, kept to follow the interface definition of
+          gymnasium
+        options (Optional[Dict[str, Any]]): an optional dict; if provided, a
+          key "task_index" with an int value is expected, indicating the task
+          index to switch to
 
-  def step(self, action: Dict[str, int]) -> Tuple[Any, ...]:
-    """Take a step in the base environment."""
-    timestep = self._env.step(self._process_action(action))
-    observation = timestep.observation
-    reward = timestep.reward
-    done = timestep.step_type == dm_env.StepType.LAST
-    info = {'discount': timestep.discount}
-    return observation, reward, done, info
+    Returns:
+        Dict[str, Union[np.ndarray, Optional[_Element]]]: the observation
+        Dict[str, Any]: the task extras
+    """
+
+    if options is not None and "task_index" in options:
+      timestep: Tstep.TimeStep = self._env.switch_task(options["task_index"])
+    else:
+      timestep: Tstep.TimeStep = self._env.reset()
+    return timestep.observation, self._env.task_extras()
+    #  }}} method reset # 
+
+  def step(self, action: Dict[str, np.ndarray]) ->\
+      Tuple[ Dict[str, Union[np.ndarray, Optional[_Element]]]
+           , float
+           , bool
+           , bool
+           , Dict[str, Any]
+           ]:
+    #  method step {{{ # 
+    """
+    Take a step in the base environment.
+
+    Args:
+        action (Dict[str, np.ndarray]): action
+
+    Returns:
+        Dict[str, Union[np.ndarray, Optional[_Element]]]: observation
+        float: reward
+        bool: indicating termination; both success and failure are considered
+          termination according to the description of gymnasium document
+        bool: indicating truncation; usually caused by timeout or other
+          exceptions
+    """
+
+    timestep: Tstep.TimeStep = self._env.step(self._process_action(action))
+    observation: Dict[str, Union[np.ndarray, Optional[_Element]]] = timestep.observation
+    reward: float = timestep.reward
+    terminated: bool = timestep.last() and timestep.succeeds is not None
+    truncated: bool = timestep.is_truncated()
+    return observation, reward, terminated, truncated, self._env.task_extras()
+    #  }}} method step # 

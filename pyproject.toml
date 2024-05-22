@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-env-rl"
-version = "3.6"
+version = "4.0"
 authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
 license = {file = "LICENSE"}
 description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
@@ -13,7 +13,6 @@ readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
 	"absl-py>=0.1.0",
-	"dm_env",
 	"grpcio",
 	"mock",
 	"numpy",
@@ -39,7 +38,7 @@ classifiers = [
 [project.optional-dependencies]
 easyocr = ["easyocr"]
 pygame = ["pygame"]
-gym = ["gym"]
+gym = ["gymnasium"]
 testing = [
 	"attrs==20.3.0",
     "pillow",

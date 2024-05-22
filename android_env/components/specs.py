@@ -36,8 +36,8 @@ from typing import Dict
 
 from android_env.components import action_type
 from android_env.proto import task_pb2
-import dm_env
-from dm_env import specs
+#import dm_env
+from android_env.interfaces import specs
 import numpy as np
 
 
@@ -165,7 +165,7 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
          }
 
 
-def base_task_extras_spec(task: task_pb2.Task) -> Dict[str, dm_env.specs.Array]:
+def base_task_extras_spec(task: task_pb2.Task) -> Dict[str, specs.Array]:
   """Task extras spec for AndroidEnv, as read from a task_pb2.Task."""
 
   return {
@@ -175,7 +175,7 @@ def base_task_extras_spec(task: task_pb2.Task) -> Dict[str, dm_env.specs.Array]:
 
 
 def _convert_spec(array_spec: task_pb2.ArraySpec) -> specs.Array:
-  """Converts ArraySpec proto to dm_env specs.Array."""
+  """Converts ArraySpec proto to specs.Array."""
 
   return specs.Array(
       shape=array_spec.shape,

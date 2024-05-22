@@ -34,10 +34,11 @@
 
 from typing import Dict
 
-from android_env.components import utils
+#from android_env.components import utils
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep as Tstep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 import numpy as np
 
 imgnet_mean = np.array([0.485, 0.456, 0.406])
@@ -63,7 +64,7 @@ def normalize_pixels(pixels: np.ndarray, imgnet_norm: bool = False) -> np.ndarra
 class FloatPixelsWrapper(base_wrapper.BaseWrapper):
   """Wraps AndroidEnv for Panultimate agent."""
 
-  def __init__(self, env: dm_env.Environment, imgnet_norm: bool = False):
+  def __init__(self, env: Environment, imgnet_norm: bool = False):
     super().__init__(env)
     self._should_convert_int_to_float = np.issubdtype(
         self._env.observation_spec()['pixels'].dtype, np.integer)
@@ -81,19 +82,19 @@ class FloatPixelsWrapper(base_wrapper.BaseWrapper):
       observation['pixels'] = float_pixels
     return observation
 
-  def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+  def _process_timestep(self, timestep: Tstep.TimeStep) -> Tstep.TimeStep:
     step_type, reward, discount, observation = timestep
-    return dm_env.TimeStep(
+    return Tstep.TimeStep(
         step_type=step_type,
         reward=reward,
         discount=discount,
         observation=self._process_observation(observation))
 
-  def reset(self) -> dm_env.TimeStep:
+  def reset(self) -> Tstep.TimeStep:
     timestep = self._env.reset()
     return self._process_timestep(timestep)
 
-  def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
+  def step(self, action: Dict[str, np.ndarray]) -> Tstep.TimeStep:
     timestep = self._env.step(action)
     return self._process_timestep(timestep)
 

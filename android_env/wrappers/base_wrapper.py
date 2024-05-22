@@ -32,16 +32,16 @@
 
 """Base class for AndroidEnv wrappers."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from android_env.interfaces import timestep
 from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 
-
-class BaseWrapper():
+class BaseWrapper(Environment):
   """AndroidEnv wrapper."""
 
-  def __init__(self, env):
-    self._env = env
+  def __init__(self, env: Environment):
+    self._env: Environment = env
 
   def switch_task(self, index: int) -> timestep.TimeStep:
     self._reset_state()
@@ -77,6 +77,38 @@ class BaseWrapper():
 
   def action_spec(self) -> Dict[str, specs.Array]:
     return self._env.action_spec()
+
+  def command(self) -> List[str]:
+    return self._env.command()
+
+  def vocabulary(self) -> List[str]:
+    return self._env.vocabulary()
+
+  @property
+  def nb_tasks(self) -> int:
+    return self._env.nb_tasks
+
+  @property
+  def task_index(self) -> int:
+    return self._env.task_index
+
+  @property
+  def task_id(self) -> str:
+    return self._env.task_id
+
+  @property
+  def task_name(self) -> str:
+    return self._env.task_name
+
+  @property
+  def task_description(self) -> str:
+    return self._env.task_description
+
+  def task_instructions(self) -> str:
+    return self._env.task_instructions()
+
+  def task_extras(self) -> str:
+    return self._env.task_extras()
 
   def _wrapper_logs(self) -> Dict[str, Any]:
     """Add wrapper specific logging here."""

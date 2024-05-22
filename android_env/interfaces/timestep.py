@@ -92,6 +92,15 @@ class TimeStep(NamedTuple):
   def last(self) -> bool:
     return self.step_type == StepType.LAST
 
+  def is_success(self) -> bool:
+    return self.last() and self.succeeds
+
+  def is_failure(self) -> bool:
+    return self.last() and self.succeeds is not None and not self.succeeds
+
+  def is_truncated(self) -> bool:
+    return self.last() and self.succeeds is None
+
 # Helper functions for creating TimeStep namedtuples with default settings.
 
 def restart(observation: Any):

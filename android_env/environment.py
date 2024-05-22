@@ -45,7 +45,7 @@ from android_env import interfaces
 import numpy as np
 from lxml.etree import _Element
 
-class AndroidEnv():
+class AndroidEnv(interfaces.env.Environment):
   """An RL environment that interacts with Android apps."""
 
   def __init__(self, coordinator: coordinator_lib.Coordinator):
@@ -143,7 +143,13 @@ class AndroidEnv():
     self._coordinator.switch_task_manager(index)
 
     # Execute selected action (None when resetting).
-    obs, _, extras, instructions, _ = self._coordinator.execute_action(action=None)
+    obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
+    #reward: float
+    extras: Dict[str, Any]
+    instructions: List[str]
+    #episode_end: bool
+    #succeeds: Optional[bool]
+    obs, _, extras, instructions, _, _ = self._coordinator.execute_action(action=None)
 
     # Process relevant information.
     if obs is not None:
@@ -168,7 +174,13 @@ class AndroidEnv():
     self._coordinator.reset_environment_state()
 
     # Execute selected action (None when resetting).
-    obs, _, extras, instructions, _ = self._coordinator.execute_action(action=None)
+    obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
+    #reward: float
+    extras: Dict[str, Any]
+    instructions: List[str]
+    #episode_end: bool
+    #succeeds: Optional[bool]
+    obs, _, extras, instructions, _, _ = self._coordinator.execute_action(action=None)
 
     # Process relevant information.
     if obs is not None:

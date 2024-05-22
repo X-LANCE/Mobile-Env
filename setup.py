@@ -112,7 +112,7 @@ class _BuildPy(build_py):
 
 setup(
     name='mobile-env-rl',
-    version='3.6',
+    version='4.0',
     description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
     author='Danyang Zhang @X-Lance',
@@ -126,7 +126,6 @@ setup(
     ],
     install_requires=[
         "absl-py>=0.1.0",
-        "dm_env",
         "grpcio",
         "mock",
         "numpy",
@@ -148,7 +147,7 @@ setup(
         #'acme': ['dm-acme'],
         'easyocr': ['easyocr'],
         'pygame': ['pygame'],
-        'gym': ['gym'],
+        'gym': ['gymnasium'],
         'testing': testing_requirements,
     },
     cmdclass={

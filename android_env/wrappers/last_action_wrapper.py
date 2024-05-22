@@ -1,4 +1,20 @@
 # coding=utf-8
+# Copyright 2023 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# Revised by Danyang Zhang @X-Lance based on
+# 
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +36,9 @@ from typing import Dict
 from android_env.components import action_type
 from android_env.components import utils
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 import numpy as np
 
 
@@ -37,7 +54,7 @@ class LastActionWrapper(base_wrapper.BaseWrapper):
   """
 
   def __init__(self,
-               env: dm_env.Environment,
+               env: Environment,
                concat_to_pixels: bool = True):
     """Initializes the internal state of this wrapper.
 
@@ -50,7 +67,7 @@ class LastActionWrapper(base_wrapper.BaseWrapper):
     self._concat_to_pixels = concat_to_pixels
     self._screen_dimensions = self._env.observation_spec()['pixels'].shape[:2]
 
-  def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+  def _process_timestep(self, timestep: timestep.TimeStep) -> timestep.TimeStep:
     observation = timestep.observation.copy()
     processed_observation = self._process_observation(observation)
     return timestep._replace(observation=processed_observation)
@@ -84,11 +101,11 @@ class LastActionWrapper(base_wrapper.BaseWrapper):
 
     return last_action_layer
 
-  def reset(self) -> dm_env.TimeStep:
+  def reset(self) -> timestep.TimeStep:
     timestep = self._env.reset()
     return self._process_timestep(timestep)
 
-  def step(self, action) -> dm_env.TimeStep:
+  def step(self, action) -> timestep.TimeStep:
     timestep = self._env.step(action)
     return self._process_timestep(timestep)
 

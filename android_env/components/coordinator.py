@@ -44,7 +44,7 @@ from android_env.components import errors
 from android_env.components import specs
 from android_env.components import task_manager as task_manager_lib
 from android_env.components.simulators import base_simulator
-import dm_env
+from android_env import interfaces
 import numpy as np
 import lxml.etree
 import itertools
@@ -161,17 +161,17 @@ class Coordinator():
     #  }}} method `__init__` # 
 
   #  Informational Interfaces {{{ # 
-  def action_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def action_spec(self) -> Dict[str, interfaces.specs.Array]:
     num_tokens = self._task_manager.nb_tokens()
     num_fingers = self._simulator.num_fingers()
     return specs.base_action_spec(num_tokens=num_tokens, num_fingers=num_fingers)
 
-  def observation_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def observation_spec(self) -> Dict[str, interfaces.specs.Array]:
     screen_dims = self._simulator.screen_dimensions()
     return specs.base_observation_spec(
         height=screen_dims[0], width=screen_dims[1])
 
-  def task_extras_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def task_extras_spec(self) -> Dict[str, interfaces.specs.Array]:
     return specs.base_task_extras_spec(task=self._task_manager.task())
 
   def command(self) -> List[str]:

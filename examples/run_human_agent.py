@@ -33,8 +33,8 @@
 """Loads an interactive session where a human acts on behalf of an agent."""
 
 import time
-from typing import Any, Optional, Union
-from typing import Dict, List, Tuple
+from typing import Any, Union
+from typing import Dict, List
 import pickle as pkl
 
 from absl import app
@@ -44,8 +44,8 @@ import android_env
 from android_env.components import action_type
 from android_env.components import utils
 from android_env.proto import adb_pb2
-from android_env.proto import task_pb2
-import dm_env
+#from android_env.proto import task_pb2
+from android_env.interfaces import timestep as Tstep
 import numpy as np
 import pygame
 
@@ -158,7 +158,7 @@ def _scale_position(
 
 
 def _accumulate_reward(
-    timestep: dm_env.TimeStep,
+    timestep: Tstep.TimeStep,
     episode_return: float) -> float:
   """Accumulates rewards collected over the course of an episode."""
 
@@ -178,7 +178,7 @@ def _render_pygame_frame(
     surface: pygame.Surface,
     screen: pygame.Surface,
     orientation: adb_pb2.AdbCall.Rotate.Orientation,
-    timestep: dm_env.TimeStep) -> None:
+    timestep: Tstep.TimeStep) -> None:
   """Displays latest observation on pygame surface."""
 
   frame = timestep.observation['pixels'][:, :, :3]  # (H x W x C) (RGB)
@@ -215,7 +215,7 @@ class Recorder():
 
   def log(self,
       action: Dict[str, np.ndarray],
-      timestep: dm_env.TimeStep):
+      timestep: Tstep.TimeStep):
     current_type = action["action_type"].item()
     if current_type==action_type.ActionType.LIFT\
         and self.prev_type==action_type.ActionType.LIFT:
@@ -332,7 +332,7 @@ def main(_):
 
         reward = timestep.reward
         instruction = env.task_instructions()
-        #logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
+        logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
         episode_return = _accumulate_reward(timestep, episode_return)
         _render_pygame_frame(surface, screen, orientation, timestep)
 
@@ -346,7 +346,7 @@ def main(_):
 
       reward = timestep.reward
       instruction = env.task_instructions()
-      #logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
+      logging.info('reward: %r, \x1b[31;42minstruct\x1b[0m: %r', reward, instruction)
       episode_return = _accumulate_reward(timestep, episode_return)
       _render_pygame_frame(surface, screen, orientation, timestep)
 

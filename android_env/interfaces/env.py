@@ -15,8 +15,10 @@
 # Created by Danyang Zhang @X-Lance
 
 import abc
-import .timestep
-import .spec
+from . import timestep
+from . import spec
+from typing import Any, Union
+from typing import List
 
 class Environment(abc.ABC):
     @abc.abstractmethod
@@ -33,11 +35,46 @@ class Environment(abc.ABC):
 
     @abc.abstractmethod
     def observation_spec(self) -> spec.Array:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def action_spec(self) -> spec.Array:
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    def command(self) -> List[str]:
+        return []
+
+    def vocabulary(self) -> List[str]:
+        return []
+
+    @property
+    def nb_tasks(self) -> int:
+        return 0
+
+    @property
+    def task_index(self) -> int:
+        return 0
+
+    @property
+    def task_id(self) -> str:
+        return ""
+
+    @property
+    def task_name(self) -> str:
+        return 0
+
+    @property
+    def task_description(self) -> str:
+        return ""
 
     @abc.abstractmethod
-    def command(self) -> 
+    def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:
+        raise NotImplementedError()
+
+    @abc.abstractclassmethod
+    def task_extras(self, latest_only: bool = True) -> Dict[str, np.ndarray]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def close(self):
+        raise NotImplementedError()

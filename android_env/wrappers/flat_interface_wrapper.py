@@ -34,8 +34,9 @@
 from typing import Union, Dict, Any
 
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 import numpy as np
 
 RGB_CHANNELS = (0, 1, 2)
@@ -73,7 +74,7 @@ class FlatInterfaceWrapper(base_wrapper.BaseWrapper):
   """
 
   def __init__(self,
-               env: dm_env.Environment,
+               env: Environment,
                flat_actions: bool = True,
                flat_observations: bool = True,
                keep_action_layer: bool = True):
@@ -96,14 +97,14 @@ class FlatInterfaceWrapper(base_wrapper.BaseWrapper):
     else:
       return action
 
-  def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+  def _process_timestep(self, timestep: timestep.TimeStep) -> timestep.TimeStep:
     if self._flat_observations:
       step_type, reward, discount, observation = timestep
       # Keep only the pixels.
       pixels = observation['pixels']
       pixels = pixels if self._keep_action_layer else _extract_screen_pixels(
           pixels)
-      return dm_env.TimeStep(
+      return timestep.TimeStep(
           step_type=step_type,
           reward=reward,
           discount=discount,
@@ -111,11 +112,11 @@ class FlatInterfaceWrapper(base_wrapper.BaseWrapper):
     else:
       return timestep
 
-  #def reset(self) -> dm_env.TimeStep:
+  #def reset(self) -> timestep.TimeStep:
     #timestep = self._env.reset()
     #return self._process_timestep(timestep)
 
-  def step(self, action: int) -> dm_env.TimeStep:
+  def step(self, action: int) -> timestep.TimeStep:
     timestep = self._env.step(self._process_action(action))
     return self._process_timestep(timestep)
 

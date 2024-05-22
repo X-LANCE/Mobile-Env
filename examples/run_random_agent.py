@@ -38,7 +38,7 @@ from absl import flags
 from absl import logging
 
 import android_env
-from dm_env import specs
+from android_env.interfaces import specs
 import numpy as np
 
 FLAGS = flags.FLAGS

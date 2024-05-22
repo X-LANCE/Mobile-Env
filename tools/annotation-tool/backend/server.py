@@ -25,7 +25,7 @@ from flask_compress import Compress
 import os.path
 import numpy as np
 #import lxml.etree
-import dm_env
+from android_env.interfaces.timestep import TimeStep
 from typing import Dict
 from typing import Any
 import os
@@ -125,7 +125,7 @@ android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
 if args.dump:
     android = RecorderWrapper(android, dump_file=dump_file)
 
-def timestep_to_json(timestep: dm_env.TimeStep) -> Dict[str, Any]:
+def timestep_to_json(timestep: TimeStep) -> Dict[str, Any]:
     with io.BytesIO() as bff:
         image = Image.fromarray(timestep.observation["pixels"])
         image.save(bff, "png")

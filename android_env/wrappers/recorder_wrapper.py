@@ -21,7 +21,8 @@ from android_env.environment import AndroidEnv
 from android_env.components import action_type
 from typing import Dict, List
 from typing import Any
-import dm_env
+#from android_env.interfaces import specs
+from android_env.interfaces import timestep
 import os.path
 import lxml.etree
 import numpy as np
@@ -53,7 +54,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
             List[Dict[str, Any]]\
                 = []
 
-    def step(self, action: Dict[str, Any]) -> dm_env.TimeStep:
+    def step(self, action: Dict[str, Any]) -> timestep.TimeStep:
         #  function `step` {{{ # 
         timestep = self._env.step(action)
 
@@ -106,7 +107,7 @@ class RecorderWrapper(base_wrapper.BaseWrapper):
         return timestep
         #  }}} function `step` # 
 
-    def _process_timestep(self, timestep: dm_env.TimeStep) -> dm_env.TimeStep:
+    def _process_timestep(self, timestep: timestep.TimeStep) -> timestep.TimeStep:
         if timestep.first():
             self.is_valid = True
             self.prev_type = action_type.ActionType.LIFT

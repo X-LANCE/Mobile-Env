@@ -32,14 +32,15 @@
 
 """Wraps the AndroidEnv environment to provide discrete actions."""
 
-from typing import Optional, Sequence
+from typing import Sequence
 from typing import Dict, Tuple
 
-import android_env
+#import android_env
 from android_env.components import action_type
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 import numpy as np
 
 NOISE_CLIP_VALUE = 0.4999
@@ -48,7 +49,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
   """AndroidEnv with discrete actions."""
 
   def __init__(self,
-               env: dm_env.Environment,
+               env: Environment,
                action_grid: Sequence[int] = (10, 10),
                redundant_actions: bool = False,
                keep_repeat: bool = False,
@@ -56,7 +57,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     #  method `__init__` {{{ # 
     """
     Args:
-        env: android_env.AndroidEnv
+        env (Environment): the wrapped environment
         action_grid: Sequence of int as (height, width)
         redundant_actions: bool
           - if True, then the action space will be ((G+V)*A,) where G is grid
@@ -103,7 +104,7 @@ class DiscreteActionWrapper(base_wrapper.BaseWrapper):
     else:
       return self._grid_size + self._num_action_types - 1 + max(0, self._vocabulary_size-1)
 
-  def step(self, action: Dict[str, int]) -> dm_env.TimeStep:
+  def step(self, action: Dict[str, int]) -> timestep.TimeStep:
     """Take a step in the base environment."""
 
     return self._env.step(self._process_action(action))

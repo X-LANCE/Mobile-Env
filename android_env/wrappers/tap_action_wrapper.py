@@ -36,11 +36,12 @@ from typing import Dict, List
 from typing import Union
 from numbers import Number
 
-from android_env.environment import AndroidEnv
+#from android_env.environment import AndroidEnv
 from android_env.components import action_type
 from android_env.wrappers import base_wrapper
-import dm_env
-from dm_env import specs
+from android_env.interfaces import timestep as Tstep
+from android_env.interfaces import specs
+from android_env.interfaces.env import Environment
 
 import numpy as np
 from transformers import PreTrainedTokenizer
@@ -75,7 +76,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
   #  }}} Type Definition # 
 
   def __init__( self
-              , env: AndroidEnv
+              , env: Environment
               , tokenizer: PreTrainedTokenizer
               , num_tap_frames: int = 5
               , num_scroll_frame_rate: int = 15
@@ -85,7 +86,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     #  method __init__ {{{ # 
     """
     Args:
-        env (AndroidEnv): the environment to be wrapped
+        env (Environment): the environment to be wrapped
         tokenizer (PreTrainedTokenizer): tokenizer to tokenize the input
           text into the tokens from the vocabulary of the environment
         num_tap_frames (int): the duration the TOUCH action will last for the
@@ -238,7 +239,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
       return actions
     #  }}} method _process_action # 
 
-  def step(self, action: Dict[str, np.ndarray]) -> dm_env.TimeStep:
+  def step(self, action: Dict[str, np.ndarray]) -> Tstep.TimeStep:
     #  method step {{{ # 
     """Takes a step in the environment."""
     actions = self._process_action(action)
@@ -247,7 +248,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     total_reward = 0.
     instructions: List[str] = []
     if self._action_batch:
-      timestep: dm_env.TimeStep = self._env.step(actions)
+      timestep: Tstep.TimeStep = self._env.step(actions)
       instructions += self._env.task_instructions()
       if timestep.reward>0.:
         total_reward += timestep.reward
@@ -255,14 +256,14 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
 
       if timestep.last():
         self._instructions = instructions
-        return dm_env.TimeStep( step_type=timestep.step_type
-                              , reward=total_reward
-                              , discount=timestep.discount
-                              , observation=timestep.observation
-                              )
+        return Tstep.TimeStep( step_type=timestep.step_type
+                             , reward=total_reward
+                             , discount=timestep.discount
+                             , observation=timestep.observation
+                             )
     else:
       for act in actions:
-        timestep: dm_env.TimeStep = self._env.step(act)
+        timestep: Tstep.TimeStep = self._env.step(act)
         instructions += self._env.task_instructions()
 
         if timestep.reward>0.:
@@ -270,11 +271,11 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
 
         if timestep.last():
           self._instructions = instructions
-          return dm_env.TimeStep( step_type=timestep.step_type
-                                , reward=total_reward
-                                , discount=timestep.discount
-                                , observation=timestep.observation
-                                )
+          return Tstep.TimeStep( step_type=timestep.step_type
+                               , reward=total_reward
+                               , discount=timestep.discount
+                               , observation=timestep.observation
+                               )
 
     if action["action_type"]==TapActionWrapper.ActionType.TYPE:
         self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
@@ -311,11 +312,11 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         total_reward += timestep.reward
 
     self._instructions = instructions
-    return dm_env.TimeStep( step_type=timestep.step_type
-                          , reward=total_reward
-                          , discount=timestep.discount
-                          , observation=timestep.observation
-                          )
+    return Tstep.TimeStep( step_type=timestep.step_type
+                         , reward=total_reward
+                         , discount=timestep.discount
+                         , observation=timestep.observation
+                         )
     #  }}} method step # 
 
   def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:
@@ -327,5 +328,5 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
   def _reset_state(self):
       self._instructions = []
 
-  def action_spec(self) -> Dict[str, dm_env.specs.Array]:
+  def action_spec(self) -> Dict[str, specs.Array]:
     return self._action_spec
