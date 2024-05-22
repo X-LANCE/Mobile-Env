@@ -1,4 +1,8 @@
 <!-- vim: set formatoptions+=a: -->
+<!-- vimc: syn match Incompleted /\(^\*\)\@<=\ \((\)\@=/: -->
+<!-- vimc: syn match Completed /\(^\*\)\@<=\ \(✓\)\@=/: -->
+<!-- vimc: hi Incompleted ctermbg=yellow: -->
+<!-- vimc: hi Completed ctermbg=green: -->
 
 ### Main Branch
 
