@@ -19,11 +19,11 @@
   transferring the screen to RemoteSimulator
 * ✓ (Fuzzy Match): Maybe fuzzy match in text event sources will help. Maybe
   through rapidfuzz library.
-* (Beyond `dm_env` interfaces): Will follow new gymnasium to distinguish
+* ✓ (Beyond `dm_env` interfaces): Will follow new gymnasium to distinguish
   successful finishing and error termination. Will give a DmEnvWrapper instead
   for back-compatibility.
-* (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym to
-  gymnasium.
+* ✓ (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym
+  to gymnasium.
 * (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
   didn't find a ready-to-use IconNet implementation. Still need to train an own
   one. Found some candidates for icon detection,

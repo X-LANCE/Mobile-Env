@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-env-rl"
-version = "4.0"
+version = "4.0b"
 authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
 license = {file = "LICENSE"}
 description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
