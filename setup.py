@@ -148,6 +148,7 @@ setup(
         'easyocr': ['easyocr'],
         'pygame': ['pygame'],
         'gym': ['gymnasium'],
+        'dmenv': ['dm-env'],
         'testing': testing_requirements,
     },
     cmdclass={

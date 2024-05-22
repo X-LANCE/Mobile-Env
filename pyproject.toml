@@ -39,6 +39,7 @@ classifiers = [
 easyocr = ["easyocr"]
 pygame = ["pygame"]
 gym = ["gymnasium"]
+dmenv = ["dm-env"]
 testing = [
 	"attrs==20.3.0",
     "pillow",

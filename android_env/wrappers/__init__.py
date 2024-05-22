@@ -50,3 +50,4 @@ LastActionWrapper = last_action_wrapper.LastActionWrapper
 VhIoWrapper = vh_io_wrapper.VhIoWrapper
 TapActionWrapper = tap_action_wrapper.TapActionWrapper
 RecorderWrapper = recorder_wrapper.RecorderWrapper
+DMEnvInterfaceWrapper = dmenv_wrapper.DMEnvInterfaceWrapper
