@@ -16,9 +16,10 @@
 
 import abc
 from . import timestep
-from . import spec
+from . import specs
 from typing import Any, Union
-from typing import List
+from typing import List, Dict
+import numpy as np
 
 class Environment(abc.ABC):
     @abc.abstractmethod
@@ -34,11 +35,11 @@ class Environment(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def observation_spec(self) -> spec.Array:
+    def observation_spec(self) -> specs.Array:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def action_spec(self) -> spec.Array:
+    def action_spec(self) -> specs.Array:
         raise NotImplementedError()
 
     def command(self) -> List[str]:

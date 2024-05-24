@@ -119,7 +119,6 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     """Sends the action to be executed to the simulator."""
     pass
 
-  @abc.abstractmethod
   def execute_adb_command(self, command: List[str]):
     self._adb_controller._execute_command(command)
 

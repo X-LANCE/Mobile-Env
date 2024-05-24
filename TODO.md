@@ -53,7 +53,10 @@
 * (Keyboard Input for Annotation Tool): Supports free keyboard input for the
   web interface of annoatation tool.
 
----
+### Annotation Tool
+
+* (Migration to 4.0): Update the annotation-tool to better work with new
+  episode end mechanism of 4.0.
 
 ### Task Sets
 

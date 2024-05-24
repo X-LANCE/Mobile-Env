@@ -62,9 +62,9 @@ class DMEnvInterfaceWrapper(BaseWrapper, dm_env.Environment):
                                      , spec.name
                                      )
 
-    def observation_spec(self) -> dm_env.spec.Array:
+    def observation_spec(self) -> dm_env.specs.Array:
         return self._convert_spec(self.observation_spec())
-    def action_spec(self) -> dm_env.spec.Array:
+    def action_spec(self) -> dm_env.specs.Array:
         return self._convert_spec(self.action_spec())
 
     def _process_timestep(self, timestep: TimeStep) -> dm_env.TimeStep:

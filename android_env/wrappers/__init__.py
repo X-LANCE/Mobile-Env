@@ -40,6 +40,7 @@ from android_env.wrappers import last_action_wrapper
 from android_env.wrappers import vh_io_wrapper
 from android_env.wrappers import recorder_wrapper
 from android_env.wrappers import tap_action_wrapper
+from android_env.wrappers import dmenv_wrapper
 
 DiscreteActionWrapper = discrete_action_wrapper.DiscreteActionWrapper
 FlatInterfaceWrapper = flat_interface_wrapper.FlatInterfaceWrapper
