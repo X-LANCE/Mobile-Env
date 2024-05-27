@@ -256,11 +256,12 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
 
       if timestep.last():
         self._instructions = instructions
-        return Tstep.TimeStep( step_type=timestep.step_type
-                             , reward=total_reward
-                             , discount=timestep.discount
-                             , observation=timestep.observation
-                             )
+        return timestep._replace(reward=total_reward)
+        #return Tstep.TimeStep( step_type=timestep.step_type
+                             #, reward=total_reward
+                             #, discount=timestep.discount
+                             #, observation=timestep.observation
+                             #)
     else:
       for act in actions:
         timestep: Tstep.TimeStep = self._env.step(act)
@@ -271,11 +272,12 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
 
         if timestep.last():
           self._instructions = instructions
-          return Tstep.TimeStep( step_type=timestep.step_type
-                               , reward=total_reward
-                               , discount=timestep.discount
-                               , observation=timestep.observation
-                               )
+          return timestep._replace(reward=total_reward)
+          #return Tstep.TimeStep( step_type=timestep.step_type
+                               #, reward=total_reward
+                               #, discount=timestep.discount
+                               #, observation=timestep.observation
+                               #)
 
     if action["action_type"]==TapActionWrapper.ActionType.TYPE:
         self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
@@ -312,11 +314,12 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         total_reward += timestep.reward
 
     self._instructions = instructions
-    return Tstep.TimeStep( step_type=timestep.step_type
-                         , reward=total_reward
-                         , discount=timestep.discount
-                         , observation=timestep.observation
-                         )
+    return timestep._replace(reward=total_reward)
+    #return Tstep.TimeStep( step_type=timestep.step_type
+                         #, reward=total_reward
+                         #, discount=timestep.discount
+                         #, observation=timestep.observation
+                         #)
     #  }}} method step # 
 
   def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:

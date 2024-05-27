@@ -52,6 +52,8 @@
 * (Long Click): Long click action for VhIoWrapper.
 * (Keyboard Input for Annotation Tool): Supports free keyboard input for the
   web interface of annoatation tool.
+* (Accessibility Forwarding): Maybe have a try on the accessibility forwarder
+  to ameliorate the efficiency of VH obtaining following AndroidWorld
 
 ### Annotation Tool
 
