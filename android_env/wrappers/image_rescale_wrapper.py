@@ -93,7 +93,7 @@ class ImageRescaleWrapper(base_wrapper.BaseWrapper):
     # We expect `raw_observation` to have shape (H, W, 3) - 3 for RGB
     new_shape = np.array(
         self._zoom_factors[0:2] * np.array(raw_observation.shape[0:2]),
-        dtype=np.int)[::-1] # ZDY_MARK: PIL.Image.Image.resize accepts (W, H) as the argument
+        dtype=np.int32)[::-1] # ZDY_MARK: PIL.Image.Image.resize accepts (W, H) as the argument
     if self._grayscale:
       # When self._grayscale == True, we squash the RGB into a single layer
       image = np.dot(raw_observation, RGB_TO_GRAYSCALE_COEFFICIENTS)

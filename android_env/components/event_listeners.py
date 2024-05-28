@@ -71,7 +71,7 @@ class TextMatcher:
         """
 
         self._pattern: str = pattern
-        self._threshold: Optional[float] = float
+        self._threshold: float = float(threshold or 0.)
         self._sbert: Optional[SentenceTransformer] = sbert
 
         self._mode: TextMatcher.CheckMode = mode
@@ -1102,7 +1102,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         values: Optional[Union[List[str], float]]
         matches, values = self._text_matcher(response)
         if matches:
-            logging.info( "\x1b[5;31mResponse Event: %s (%s)%\x1b[0m"
+            logging.info( "\x1b[5;31mResponse Event: %s (%s)\x1b[0m"
                         , response, values
                         )
         return matches, values

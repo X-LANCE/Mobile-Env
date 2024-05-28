@@ -54,6 +54,9 @@
   web interface of annoatation tool.
 * (Accessibility Forwarding): Maybe have a try on the accessibility forwarder
   to ameliorate the efficiency of VH obtaining following AndroidWorld
+* (Investigate the snapshot function of Android Emulator): I want to conduct an
+  investigation on the snapshot funciton of Android Emulator. This may help to
+  set different initial state for tasks more easily.
 
 ### Annotation Tool
 

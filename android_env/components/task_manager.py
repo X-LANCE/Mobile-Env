@@ -835,6 +835,8 @@ class TaskManager():
     view_hierarchy: Optional[lxml.etree.Element] = self._adb_controller.get_view_hierarchy()\
                                                 if get_vh\
                                               else None
+    if get_vh and view_hierarchy is None:
+      logging.warning("Fetched View Hierarchy Observation FAILED!")
     self._run_vh_analyzer(view_hierarchy, screen.shape[:2], check_vh)
 
     try:
