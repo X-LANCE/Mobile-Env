@@ -20,7 +20,7 @@ Created by Danyang Zhang @X-Lance.
 from android_env.wrappers import base_wrapper
 
 from typing import Dict, List, Pattern, Tuple
-from typing import Union
+from typing import Union, Callable
 from numbers import Number
 from android_env.interfaces import timestep as Tstep
 from android_env.interfaces import specs
@@ -36,7 +36,7 @@ import time
 
 #import logging
 
-def filter_elements(tree: lxml.etree.Element)\
+def filter_elements(tree: lxml.etree._Element)\
         -> Tuple[ List[lxml.etree.Element]
                 , List[List[int]]
                 ]:
@@ -91,6 +91,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         INPUT = 2
         SCROLL = 3
         GOBACK = 4
+        LONGCLICK = 5
 
     class ScrollDirection(enum.IntEnum):
         LEFT = 0
@@ -101,14 +102,19 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     bounds_pattern: Pattern[str] = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
-    # TODO: enable to set a custom filter_elements
     def __init__( self
                 , env: Environment
                 , tokenizer: PreTrainedTokenizer
                 , nb_click_frames: int = 3
                 , nb_scroll_frmaes: int = 10
+                , nb_long_click_frames: int = 10
                 , wait_sec: float = 0.
                 , action_batch: bool = False
+                , filter_elements: Callable[ [lxml.etree._Element]
+                                           , Tuple[ List[lxml.etree._Element]
+                                                  , List[List[int]]
+                                                  ]
+                                           ] = filter_elements
                 ):
         #  method __init__ {{{ # 
         """
@@ -120,8 +126,12 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
               the CLICK iteraction
             nb_scroll_frmaes (int): the duration the TOUCH action will last for
               the SCROLL iteraction
+            nb_long_click_frames (int): the duration the TOUCH action will last for
+              the LONGCLICK iteraction
             wait_sec (float): waiting time after each action performed
             action_batch (bool): if actions are combined in a batch
+            filter_elements (Callable[[lxml.etree._Element], Tuple[List[lxml.etree._Element], List[List[int]]]]):
+              custom method to filter_elements
         """
 
         super(VhIoWrapper, self).__init__(env)
@@ -132,8 +142,15 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         self._tokenizer: PreTrainedTokenizer = tokenizer
         self._nb_click_frames: int = nb_click_frames
         self._nb_scroll_frames: int = nb_scroll_frmaes
+        self._nb_long_click_frames: int = nb_long_click_frames
         self._wait_sec: float = wait_sec
         self._action_batch: bool = action_batch
+
+        self._filter_elements: Callable[ [lxml.etree._Element]
+                                       , Tuple[ List[lxml.etree._Element]
+                                              , List[List[int]]
+                                              ]
+                                       ] = filter_elements
 
         self._env_steps: int = 0
 
@@ -195,7 +212,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 "action_type": NOTHING | GOBACK
               } or
               {
-                "action_type": CLICK
+                "action_type": CLICK | LONGCLICK
                 "element_id": int
               } or
               {
@@ -247,23 +264,29 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                                                       , dtype=np.float32
                                                       )
                           }
+
+            if action["action_type"]==VhIoWrapper.ActionType.LONGCLICK:
+                actions += [touch_action] * self._nb_long_click_frames
+                actions.append(lift_action)
+                return actions
+
             actions += [touch_action] * self._nb_click_frames
             actions.append(lift_action)
+            if action["action_type"]==VhIoWrapper.ActionType.CLICK:
+                return actions
+            if action["action_type"]==VhIoWrapper.ActionType.INPUT:
+                token_list: List[int] = self._tokenizer( action["text"].item()
+                                                       , add_special_tokens=False
+                                                       )["input_ids"]
+                for tkn in token_list:
+                    actions.append( { "action_type": np.array( action_type.ActionType.TEXT
+                                                             , dtype=np.int32
+                                                             )
+                                    , "input_token": np.array(tkn, dtype=np.int32)
+                                    }
+                                  )
+                return actions
 
-        if action["action_type"]==VhIoWrapper.ActionType.CLICK:
-            return actions
-        if action["action_type"]==VhIoWrapper.ActionType.INPUT:
-            token_list: List[int] = self._tokenizer( action["text"].item()
-                                                   , add_special_tokens=False
-                                                   )["input_ids"]
-            for tkn in token_list:
-                actions.append( { "action_type": np.array( action_type.ActionType.TEXT
-                                                         , dtype=np.int32
-                                                         )
-                                , "input_token": np.array(tkn, dtype=np.int32)
-                                }
-                              )
-            return actions
         if action["action_type"]==VhIoWrapper.ActionType.SCROLL:
             for pst in self._direction_trajectories[action["direction"].item()]:
                 actions.append( { "action_type": np.array( action_type.ActionType.TOUCH
@@ -278,7 +301,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
     def _process_timestep(self, timestep: Tstep.TimeStep) -> Tstep.TimeStep:
         #  method _process_timestep {{{ # 
         if timestep.observation["view_hierarchy"] is not None:
-            self._bbox_list: List[List[int]] = filter_elements(timestep.observation["view_hierarchy"])[1]
+            self._bbox_list: List[List[int]] = self._filter_elements(timestep.observation["view_hierarchy"])[1]
         return timestep
         #  }}} method _process_timestep # 
 

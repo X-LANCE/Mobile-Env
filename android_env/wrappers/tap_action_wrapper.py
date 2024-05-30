@@ -73,6 +73,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     SCROLL = 2
     TYPE = 3
     GOBACK = 4
+    LONGTAP = 5
   #  }}} Type Definition # 
 
   def __init__( self
@@ -80,6 +81,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
               , tokenizer: PreTrainedTokenizer
               , num_tap_frames: int = 5
               , num_scroll_frame_rate: int = 15
+              , num_long_tap_frames: int = 15
               , wait_sec: float = 1.
               , action_batch: bool = False
               ):
@@ -105,6 +107,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     self._tokenizer: PreTrainedTokenizer = tokenizer
     self._nb_tap_frames: int = num_tap_frames
     self._nb_scroll_frame_rate: float = float(num_scroll_frame_rate)
+    self._nb_long_tap_frames: int = num_long_tap_frames
     self._wait_sec: float = wait_sec
     self._action_batch: bool = action_batch
 
@@ -193,6 +196,20 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                    , "touch_position": action["touch_position"]
                    }
                  ] * self._nb_tap_frames
+      actions.append( { "action_type": np.array( action_type.ActionType.LIFT
+                                               , dtype=np.int32
+                                               )
+                      , "touch_position": action["touch_position"]
+                      }
+                    )
+      return actions
+    if action["action_type"]==TapActionWrapper.ActionType.LONGTAP:
+      actions += [ { "action_type": np.array( action_type.ActionType.TOUCH
+                                            , dtype=np.int32
+                                            )
+                   , "touch_position": action["touch_position"]
+                   }
+                 ] * self._nb_long_tap_frames
       actions.append( { "action_type": np.array( action_type.ActionType.LIFT
                                                , dtype=np.int32
                                                )
