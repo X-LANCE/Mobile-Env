@@ -1,3 +1,10 @@
+2024-05-30 Danyang Zhang <zdy004007@126.com>
+
+	Added long click action to VhIoWrapper and TapActionWrapper.
+
+	* android_env/wrappers/vh_io_wrapper.py
+	* android_env/wrappers/tap_action_wrapper.py
+
 2024-05-22 Danyang Zhang <zdy004007@126.com>
 
 	v4.0b

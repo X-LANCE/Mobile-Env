@@ -316,6 +316,8 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     instructions += self._env.task_instructions()
     if timestep.reward>0.:
         total_reward += timestep.reward
+    if timestep.last():
+      return timestep._replace(reward=total_reward)
 
     time.sleep(self._wait_sec)
     appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT

@@ -28,15 +28,6 @@
   for back-compatibility.
 * ✓ (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym
   to gymnasium.
-* (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
-  didn't find a ready-to-use IconNet implementation. Still need to train an own
-  one. Found some candidates for icon detection,
-  [vision-ui](https://github.com/Meituan-Dianping/vision-ui) and
-  [UIED](https://github.com/MulongXie/UIED). However, no icon match model is
-  found. I know that this may be a minor demand. So maybe a runnable workaround
-  will be implemented first by wrapping these out-of-box tools. And will train
-  our own model when I have enough time. Maybe 1 year later, when I'm ready for
-  graduation. (> <)
 * (Non-ASCII character input through clipboard): I found that clipboard
   synching can copy UTF-8 strings. This may be an idea to enable non-ASCII
   character input.  The emulator gPRC has interfaces to operate clipboard.
@@ -47,9 +38,22 @@
   solution.
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
+* (Replace pexpect with a self-composing module): As pexpect doesn't work on
+  Window, maybe replace it with a custom module.
+* (Other problems on Windows): The main problem seems to lie on uiautomator, or
+  the `adb shell`. Maybe change it to `adb exec-out` will solve.
+* (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
+  didn't find a ready-to-use IconNet implementation. Still need to train an own
+  one. Found some candidates for icon detection,
+  [vision-ui](https://github.com/Meituan-Dianping/vision-ui) and
+  [UIED](https://github.com/MulongXie/UIED). However, no icon match model is
+  found. I know that this may be a minor demand. So maybe a runnable workaround
+  will be implemented first by wrapping these out-of-box tools. And will train
+  our own model when I have enough time. Maybe 1 year later, when I'm ready for
+  graduation. (> <)
 * (Unit Tests): Have a thorough check to the original unit test codes.
 * (Task Debugger): Maybe a debugger for task definition composing?
-* (Long Click): Long click action for VhIoWrapper.
+* ✓ (Long Click): Long click action for VhIoWrapper.
 * (Keyboard Input for Annotation Tool): Supports free keyboard input for the
   web interface of annoatation tool.
 * (Accessibility Forwarding): Maybe have a try on the accessibility forwarder
@@ -57,6 +61,8 @@
 * (Investigate the snapshot function of Android Emulator): I want to conduct an
   investigation on the snapshot funciton of Android Emulator. This may help to
   set different initial state for tasks more easily.
+* (About autocasting in task event tree): Restrict the automatic casting (wrap
+  function) to the root node?
 
 ### Annotation Tool
 
