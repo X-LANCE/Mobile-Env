@@ -782,7 +782,7 @@ class TaskManager():
     # Check if episode has ended
     #with self._lock:
       #if self._latest_values['episode_end']: # zdy
-    if self._episode_end_event.is_set():
+    if self._episode_end_event.is_set() and self._episode_end_event.get()[0] is not None:
       self._log_dict['reset_count_episode_end'] += 1
       logging.info('End of episode from logcat! Ending episode.')
       logging.info('************* END OF EPISODE *************')

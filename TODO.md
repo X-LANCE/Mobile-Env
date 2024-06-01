@@ -28,6 +28,11 @@
   for back-compatibility.
 * ✓ (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym
   to gymnasium.
+* (Temporary Storage for Event Values): I think this will be cool if we can
+  temporarily store the submitted value of a virtual event and recall it in
+  later steps. This will enable interactions between heterochronic events. For
+  example, the task manager can note a piece of key information during
+  execution and compare it with a later response. This is cool.
 * (Non-ASCII character input through clipboard): I found that clipboard
   synching can copy UTF-8 strings. This may be an idea to enable non-ASCII
   character input.  The emulator gPRC has interfaces to operate clipboard.
