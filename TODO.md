@@ -47,6 +47,8 @@
   Window, maybe replace it with a custom module.
 * (Other problems on Windows): The main problem seems to lie on uiautomator, or
   the `adb shell`. Maybe change it to `adb exec-out` will solve.
+* (Tutorial of how to manage events): I need to supplement a tutorial of how to
+  manage events to the current document which simply lists all the fields out.
 * (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
   didn't find a ready-to-use IconNet implementation. Still need to train an own
   one. Found some candidates for icon detection,

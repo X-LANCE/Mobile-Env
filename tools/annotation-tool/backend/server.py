@@ -104,11 +104,11 @@ task_list = list(
             map(lambda t: os.path.splitext(t)[0],
                 filter(lambda t: t.endswith(".textproto"),
                     os.listdir(task_path)))))
-init_task = 0
-task_dict = {0: 0}
+#init_task = 0
+#task_dict = {0: 0}
 sbert_holder = SBERTHolder()
 task_manager_args: Dict[str, Any] = {"text_model": EasyOCRWrapper(lang_list=args.easyocr_lang_list)} if args.enable_easyocr  else {}
-android = android_env.load( os.path.join(task_path, task_list[0] + ".textproto")
+android = android_env.load( task_path #os.path.join(task_path, task_list[0] + ".textproto")
                           , avd_name=args.avd_name
                           , run_headless=not args.with_emulator_window
                           , mitm_config=None if args.mitm_method==None\
@@ -183,15 +183,17 @@ def reset():
 @app.route("/switchTask", methods=["POST"])
 def switch_task():
     task_index = request.json["task"]
-    if task_index not in task_dict:
-        task_id = len(task_dict)
-        task_dict[task_index] = task_id
-        android.add_task( os.path.join(task_path, task_list[task_index] + ".textproto")
-                        , get_sbert=sbert_holder.get_sbert
-                        , **task_manager_args
-                        )
+    #if task_index not in task_dict:
+        #task_id = len(task_dict)
+        #task_dict[task_index] = task_id
+        #android.add_task( os.path.join(task_path, task_list[task_index] + ".textproto")
+                        #, get_sbert=sbert_holder.get_sbert
+                        #, **task_manager_args
+                        #)
+    #with lock:
+        #timestep = android.switch_task(task_dict[task_index])
     with lock:
-        timestep = android.switch_task(task_dict[task_index])
+        timestep: TimeStep = android.switch_task(task_index)
 
     response = timestep_to_json(timestep)
     response["command"] = android.command()
