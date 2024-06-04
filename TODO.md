@@ -76,6 +76,12 @@
 * (Migration to 4.0): Update the annotation-tool to better work with new
   episode end mechanism of 4.0.
 
+### Template Toolkit
+
+* (Method to merge into new command): Add a mode to allow to keep only the
+  first command in the final result rather than concatenating all the
+  intructions.
+
 ### Task Sets
 
 * (OpenMoneyBox): I want to define a group of tasks based on OpenMoneyBox.
