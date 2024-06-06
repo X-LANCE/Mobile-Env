@@ -70,6 +70,10 @@
   set different initial state for tasks more easily.
 * (About autocasting in task event tree): Restrict the automatic casting (wrap
   function) to the root node?
+* (Simulator based on real mobile devices): Replace the implementation based on
+  the gRPC interfaces of Android Emulator in current EmulatorSimulator to pure
+  ADB implementations so as to form a simulator that can connect to real mobile
+  devices.
 
 ### Annotation Tool
 
