@@ -74,6 +74,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     TYPE = 3
     GOBACK = 4
     LONGTAP = 5
+    ADB = 6
   #  }}} Type Definition # 
 
   def __init__( self
@@ -158,7 +159,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
           {
             "action_type": NOTHING | GOBACK
           } or
-          { "action_type": TAP
+          { "action_type": TAP | LONGTAP
           , "touch_position": [float, float]
           } or
           { "action_type": SCROLL
@@ -167,6 +168,10 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
           } or
           { "action_type": TYPE
           , "text": str
+          } or
+          {
+            "action_type": ADB
+            "command": str
           }
           all the values in `action` are wrapped in np.ndarray.
 
@@ -186,6 +191,11 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         return [{"action_type": np.array(action_type.ActionType.REPEAT, dtype=np.int32)}]
     if action["action_type"]==TapActionWrapper.ActionType.GOBACK:
         return []
+    if action["action_type"]==TapActionWrapper.ActionType.ADB:
+          return [ { "action_type": np.array(action_type.ActionType.ADB, dtype=np.int32)
+                   , "command": action["command"]
+                   }
+                 ]
 
     actions: List[Dict[str, np.ndarray]] = []
 

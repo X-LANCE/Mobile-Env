@@ -92,6 +92,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         SCROLL = 3
         GOBACK = 4
         LONGCLICK = 5
+        ADB = 6
 
     class ScrollDirection(enum.IntEnum):
         LEFT = 0
@@ -223,6 +224,10 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
               {
                 "action_type": SCROLL
                 "direction": Direction
+              } or
+              {
+                "action_type": ADB
+                "command": str
               }
               all the values in `action` are wrapped in np.ndarray.
 
@@ -242,6 +247,11 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             return [{"action_type": np.array(action_type.ActionType.REPEAT, dtype=np.int32)}]
         if action["action_type"]==VhIoWrapper.ActionType.GOBACK:
             return []
+        if action["action_type"]==VhIoWrapper.ActionType.ADB:
+            return [ { "action_type": np.array(action_type.ActionType.ADB, dtype=np.int32)
+                     , "command": action["command"]
+                     }
+                   ]
 
         actions: List[Dict[str, np.ndarray]] = []
 
