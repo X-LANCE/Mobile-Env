@@ -359,7 +359,7 @@ class Coordinator():
     #  }}} method `change_task_manager` # 
   #  }}} Reset Interfaces # 
 
-  def _perform_actions(self, action_list: List[Dict[str, np.ndarray]]):
+  def _perform_actions(self, action_list: List[Dict[str, np.ndarray]]) -> List[Optional[bytes]]:
     #  method _perform_actions {{{ # 
     responses: Iterable[str] = filter( lambda rsp: rsp is not None and rsp != ""
                                      , map( lambda act: act.get("response", np.array("")).item()
@@ -374,7 +374,7 @@ class Coordinator():
     # 2 for TEXT (taskmanager)
     # 3 for ADB (adb via simulator)
     actions: Iterable[Tuple[int, Dict[str, np.ndarray]]] =\
-        map( lambda act: ( np.clip(act["action_type"]-1, 0, 2).item()
+        map( lambda act: ( np.clip(act["action_type"]-1, 0, None).item()
                          , act
                          )
            , action_list
@@ -384,6 +384,7 @@ class Coordinator():
                          , key=(lambda act: act[0])
                          )
 
+    adb_outputs: List[Optional[bytes]] = []
     for act_t, act in actions:
       if act_t==0:
         self._send_action_to_simulator(list(map(lambda t: t[1], act)))
@@ -392,7 +393,8 @@ class Coordinator():
           self._send_action_to_taskmanager(tkn)
       elif act_t==3:
         for _, cmd in act:
-          self._send_adb_command_to_simulator(cmd)
+          adb_outputs.append(self._send_adb_command_to_simulator(cmd))
+    return adb_outputs
     #  }}} method _perform_actions # 
 
   def execute_action( self
@@ -462,19 +464,20 @@ class Coordinator():
       return None, 0.0, {}, [], True, None
 
     if isinstance(action, list):
-      self._perform_actions(action)
+      adb_outputs: List[Optional[bytes]] = self._perform_actions(action)
 
       last_action: Optional[action_type_lib.ActionType] =\
           None if len(action)==0 else action[-1]["action_type"].item()
       #get_vh: bool = len(action)<=0 or action[-1]["action_type"].item()==action_type_lib.ActionType.LIFT
 
     elif action is not None:
-      self._perform_actions([action])
+      adb_outputs: List[Optional[bytes]] = self._perform_actions([action])
 
       last_action: Optional[action_type_lib.ActionType] = action["action_type"].item()
       #get_vh: bool = action["action_type"].item()==action_type_lib.ActionType.LIFT
 
     else:
+      adb_outputs: List[Optional[bytes]] = []
       last_action: Optional[action_type_lib.ActionType] = None
       #get_vh: bool = True
 
@@ -519,6 +522,8 @@ class Coordinator():
                                             )
       if self._with_view_hierarchy:
         observation["view_hierarchy"] = view_hierarchy
+      if len(adb_outputs)>0:
+        observation["adb_output"] = adb_outputs
 
       reward = self._task_manager.get_current_reward() # zdy
       task_extras = self._task_manager.get_current_extras()
@@ -575,10 +580,10 @@ class Coordinator():
       self._should_restart = True
     #  }}} method _send_action_to_simulator # 
 
-  def _send_adb_command_to_simulator(self, action: Dict[str, np.ndarray]):
+  def _send_adb_command_to_simulator(self, action: Dict[str, np.ndarray]) -> Optional[bytes]:
     #  method _send_adb_command_to_simulator {{{ # 
     command: List[str] = shlex.split(action["command"].item())
-    self._simulator.execute_adb_command(command)
+    return self._simulator.execute_adb_command(command)
     #  }}} method _send_adb_command_to_simulator # 
 
   def _check_timeout(self) -> bool:

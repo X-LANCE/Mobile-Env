@@ -20,7 +20,7 @@ Created by Danyang Zhang @X-Lance.
 from android_env.wrappers import base_wrapper
 
 from typing import Dict, List, Pattern, Tuple
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 from numbers import Number
 from android_env.interfaces import timestep as Tstep
 from android_env.interfaces import specs
@@ -370,6 +370,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
         elif action["action_type"]==VhIoWrapper.ActionType.GOBACK:
             self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_BACK")
+        if action["action_type"]==VhIoWrapper.ActionType.ADB:
+          adb_outputs: List[Optional[bytes]] = timestep.observation["adb_output"]
 
         appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
                                                                         , dtype=np.int32
@@ -406,6 +408,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         timestep: Tstep.TimeStep = self._process_timestep(timestep)
 
         self._instructions = instructions
+        if "adb_outputs" in locals():
+          timestep.observation["adb_output"] = adb_outputs
         return timestep._replace(reward=total_reward)
         #return Tstep.TimeStep( step_type=timestep.step_type
                              #, reward=total_reward

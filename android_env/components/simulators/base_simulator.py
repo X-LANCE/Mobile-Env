@@ -119,8 +119,12 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     """Sends the action to be executed to the simulator."""
     pass
 
-  def execute_adb_command(self, command: List[str]):
-    self._adb_controller._execute_command(command)
+  def execute_adb_command(self, command: List[str]) -> Optional[bytes]:
+    try:
+      output: Optional[bytes] = self._adb_controller._execute_command(command)
+      return output
+    except:
+      return None
 
   @abc.abstractmethod
   def _get_observation(self) -> Optional[List[np.ndarray]]:

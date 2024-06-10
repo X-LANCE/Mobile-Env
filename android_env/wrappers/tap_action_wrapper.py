@@ -33,7 +33,7 @@
 """Wraps the AndroidEnv environment to provide tap actions of a given duration."""
 
 from typing import Dict, List
-from typing import Union
+from typing import Union, Optional
 from numbers import Number
 
 #from android_env.environment import AndroidEnv
@@ -280,7 +280,6 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
       if timestep.reward>0.:
         total_reward += timestep.reward
 
-
       if timestep.last():
         self._instructions = instructions
         return timestep._replace(reward=total_reward)
@@ -293,7 +292,6 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
       for act in actions:
         timestep: Tstep.TimeStep = self._env.step(act)
         instructions += self._env.task_instructions()
-
         if timestep.reward>0.:
           total_reward += timestep.reward
 
@@ -310,6 +308,8 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_ENTER")
     elif action["action_type"]==TapActionWrapper.ActionType.GOBACK:
         self._env._coordinator._task_manager._adb_controller.input_key("KEYCODE_BACK")
+    if action["action_type"]==TapActionWrapper.ActionType.ADB:
+      adb_outputs: List[Optional[bytes]] = timestep.observation["adb_output"]
 
     appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
                                                                     , dtype=np.int32
@@ -343,6 +343,8 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         total_reward += timestep.reward
 
     self._instructions = instructions
+    if "adb_outputs" in locals():
+      timestep.observation["adb_output"] = adb_outputs
     return timestep._replace(reward=total_reward)
     #return Tstep.TimeStep( step_type=timestep.step_type
                          #, reward=total_reward

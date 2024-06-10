@@ -152,6 +152,7 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
           - [0, 0, 1, 0]: PORTRAIT  (180 degrees) ("upside down")
           - [0, 0, 0, 1]: LANDSCAPE (270 degrees clockwise)
         "view_hierarchy": specs.Array for the view hierarchy observation
+        "adb_output": specs.Array for the output of adb command
       }
   """
 
@@ -162,6 +163,8 @@ def base_observation_spec(height: int, width: int) -> Dict[str, specs.Array]:
          , 'timedelta': specs.Array(shape=(), dtype=np.int64, name='timedelta')
          , 'orientation': specs.Array(shape=np.array([4]), dtype=np.uint8, name='orientation')
          , 'view_hierarchy': specs.Array(shape=(), dtype=np.object_, name="view_hierarchy")
+          # Actually, the adb_output field will be a List of Optional[bytes], if present
+         , 'adb_output': specs.StringArray(shape=(), name="adb_output")
          }
 
 
