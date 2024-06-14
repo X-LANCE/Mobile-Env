@@ -54,10 +54,10 @@ Please see our [Change Log](Changelog) and [Document](docs/env-usage-en.md).
 Please see our [Change Log](Changelog), [Usage Document](docs/env-usage-en.md),
 and [Task Definition Document](docs/task-definition-en.md).
 
-# Mobile-Env: An Evaluation Platform and Benchmark for Interactive Agents in LLM Era 
+# Mobile-Env: Building Qualified Evaluation Benchmarks for GUI Interaction
 
-Mobile-Env is a interaction platform for evaluation and training of the
-interaction of information user interface (InfoUI). Our paper is available at
+Mobile-Env is a interaction platform for building evaluation benchmarks for GUI
+interaction and evaluating and training GUI agents.  Our paper is available at
 [arXiv](https://arxiv.org/abs/2305.08144).
 
 Mobile-Env is developed based on
@@ -223,11 +223,16 @@ the following BibTeX:
 
 ```bibtex
 @article{DanyangZhang2023_MobileEnv,
-  title     = {{Mobile-Env}: An Evaluation Platform and Benchmark for LLM-GUI Interaction},
+  title     = {{Mobile-Env}: Building Qualified Evaluation Benchmarks for LLM-GUI Interaction},
   author    = {Danyang Zhang and
-               Hongshen Xu and
+               Zhennan Shen and
+               Rui Xie and
+               Situo Zhang and
+               Tianbao Xie and
                Zihan Zhao and
+               Siyuan Chen and
                Lu Chen and
+               Hongshen Xu and
                Ruisheng Cao and
                Kai Yu},
   journal   = {CoRR},
