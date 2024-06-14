@@ -112,7 +112,7 @@ class _BuildPy(build_py):
 
 setup(
     name='mobile-env-rl',
-    version='4.0b',
+    version='4.0b1',
     description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
     author='Danyang Zhang @X-Lance',
