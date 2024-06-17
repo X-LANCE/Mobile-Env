@@ -276,6 +276,8 @@ message EventSlot {
     Type type = 1;
     int32 id = 2;
     repeated FakeSource events = 3;
+	// only when all the prerequisites have ever been triggered, this event can
+	// be triggered
     repeated int32 prerequisite = 4;
     // Python statement that could be evaluated by `exec` function. Use `x` to
     // indicate the input variable and `y` for the output variable. 
@@ -288,6 +290,10 @@ message EventSlot {
     // event
     repeated string transformation = 5;
 	Repeatability repeatability = 6;
+	// will cache the value and state for a while and not clear them until all
+	// the waited events are set simultaneously; -1 for never cleared and 0 for
+	// nothing waiting
+	repeated int cache_until = 7;
 }
 // }}} message `EventSlot` -
 

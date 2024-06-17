@@ -375,6 +375,11 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
 
         self._ever_set: bool = False
         self._prerequisites: List[Event] = []
+
+        self._waited_by: List[Event] = []
+        self._READY: bool = True
+        self._waiting_ready: bool = self._READY
+        self._value_cache: List[W] = []
         #  }}} method `__init__` # 
     def replace_sources(self, index: int, source: Event):
         #  method `append_sources` {{{ # 
@@ -412,9 +417,22 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         #  }}} method `add_prerequisites` # 
     def _satisfies_prerequisites(self) -> bool:
         return all(map(lambda evt: evt.is_ever_set(), self._prerequisites))
+    def add_notifyees(self, *notifyees: Iterable[Event]):
+        self._waited_by += notifyees
 
+    # set to False for cache_until=-1, a.k.a., never ready
+    def set_default_ready(self, ready: bool):
+        self._READY = ready
+    def notify(self, waiting_ready: bool):
+        self._waiting_ready = self._waiting_ready and waiting_ready
+    # This function is used to avoid repetitive set checking and guarantee
+    # correct repeatability behavior
+    # Just as snapshot and clear for event sources
     def set_new_step(self):
-        self._new_step = True
+        if self._waiting_ready:
+            self._new_step = True
+            self._value_cache = []
+        self._waiting_ready = self._READY
         for evt in self._sources:
             if hasattr(evt, "set_new_step"):
                 evt.set_new_step()
@@ -436,6 +454,12 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
                 self._set = set_
             else:
                 self._set = False
+
+            if self._set:
+                self._value_cache = self._get()
+            for evt in self._waited_by:
+                evt.notify(self._set)
+
         self._new_step = False
         return self._set
         #  }}} method `is_set` # 
@@ -451,9 +475,9 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         return list of the wrapped type
         """
 
-        if not self.is_set():
-            return []
-        return self._get()
+        if self._new_step:
+            self.is_set()
+        return self._value_cache
         #  }}} method `get` # 
     @abc.abstractclassmethod
     def _get(self) -> List[W]:
