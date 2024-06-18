@@ -429,18 +429,22 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     # correct repeatability behavior
     # Just as snapshot and clear for event sources
     def set_new_step(self):
-        if self._waiting_ready:
+        if not self._set or self._waiting_ready:
             self._new_step = True
+            self._set = False
             self._value_cache = []
         self._waiting_ready = self._READY
-        for evt in self._sources:
-            if hasattr(evt, "set_new_step"):
-                evt.set_new_step()
+        #for evt in self._sources:
+            #if hasattr(evt, "set_new_step"):
+                #evt.set_new_step()
 
+    # prerequisites & repeatability control whether set
+    # waiting/cache_until controls whethdr clear (set_new_step)
     def is_set(self):
         #  method `is_set` {{{ # 
         if self._new_step:
             if not self._satisfies_prerequisites():
+                self._last_set = False
                 self._set = False
             elif self._is_set():
                 if self._repeatability==Repeatability.UNLIMITED:
@@ -453,6 +457,7 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
                 self._last_set = True
                 self._set = set_
             else:
+                self._last_set = False
                 self._set = False
 
             if self._set:
@@ -492,8 +497,11 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         self._ever_set = False
         self._last_set = False
         self._set = False
-        for evt in self._sources:
-            evt.reset()
+        self._new_step = True
+        self._waiting_ready = self._READY
+        self._value_cache = []
+        #for evt in self._sources:
+            #evt.reset()
         #  }}} method `reset` # 
     #  }}} abstract class `EventSlot` # 
 

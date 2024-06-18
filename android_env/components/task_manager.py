@@ -164,6 +164,7 @@ class TaskManager():
     self._events_with_id: Dict[int, event_listeners.Event] = {}
     self._events_in_source: Dict[int, List[event_listeners.Event]] = {}
     self._events_in_need: Dict[int, List[event_listeners.Event]] = {}
+    self._events_in_waited: Dict[int, List[event_listeners.Event]] = {}
 
     # Event Sources
     self._text_events: List[event_listeners.TextEvent] = []
@@ -178,6 +179,8 @@ class TaskManager():
       self._parse_event_source(evt_s)
 
     # event slots
+    self._all_event_slots: List[event_listeners.EventSlot] = []
+
     self._score_event: event_listeners.EventSlot[Any, Any, float] =\
       self._parse_event_listeners(task.event_slots.score_listener, wrap=float)\
         if task.HasField("event_slots") and task.event_slots.HasField("score_listener")\
@@ -243,6 +246,11 @@ class TaskManager():
           update=functools.partial(_update_list, self._extras_max_buffer_size))\
         if task.HasField("event_slots") and task.event_slots.HasField("instruction_listener")\
         else event_listeners.EmptyEvent()
+
+    self._null_listener: event_listeners.EventSlot[Any, Any, Any]\
+        = self._parse_event_listeners(task.event_slots.null_listener)\
+       if task.HasField("event_slots") and task.event_slots.HasField("null_listener")\
+     else event_listeners.EmptyEvent()
 
     del self._events_with_id
     del self._events_in_need
@@ -465,19 +473,6 @@ class TaskManager():
     #  }}} Combined Events # 
 
     #  Handle the prerequisites {{{ # 
-    if event_definition.id!=0:
-      event_id = event_definition.id
-      self._events_with_id[event_id] = event
-
-      if event_id in self._events_in_need:
-        for evt in self._events_in_need[event_id]:
-          evt.add_prerequisites(event)
-        del self._events_in_need[event_id]
-
-      if event_id in self._events_in_source:
-        for i, evt in self._events_in_source[event_id]:
-          evt.replace_sources(i, event)
-        del self._events_in_source[event_id]
     if len(event_definition.prerequisite)>0:
       for evt_id in event_definition.prerequisite:
         if evt_id in self._events_with_id:
@@ -488,6 +483,42 @@ class TaskManager():
           self._events_in_need[evt_id].append(event)
     #  }}} Handle the prerequisites # 
 
+    #  Handle waiting {{{ # 
+    if len(event_definition.cache_until)>0:
+      for evt_id in event_definition.cache_until:
+        if evt_id==-1:
+          event.set_default_ready(False)
+          break
+        if evt_id in self._events_with_id:
+          event.add_notifyees(self._events_with_id[evt_id])
+        else:
+          if evt_id not in self._events_in_waited:
+            self._events_in_waited[evt_id] = []
+          self._events_in_waited[evt_id].append(event)
+    #  }}} Handle waiting # 
+
+    #  Handle previous needs {{{ # 
+    if event_definition.id!=0:
+      event_id = event_definition.id
+      self._events_with_id[event_id] = event
+
+      if event_id in self._events_in_source:
+        for i, evt in self._events_in_source[event_id]:
+          evt.replace_sources(i, event)
+        del self._events_in_source[event_id]
+
+      if event_id in self._events_in_need:
+        for evt in self._events_in_need[event_id]:
+          evt.add_prerequisites(event)
+        del self._events_in_need[event_id]
+
+      if event_id in self._events_in_waited:
+        for evt in self._events_in_waited[event_id]:
+          evt.add_notifyees(event)
+        del self._events_in_waited[event_id]
+    #  }}} Handle previous needs # 
+
+    self._all_event_slots.append(event)
     return event
     #  }}} method `_parse_event_listeners` # 
 
@@ -546,12 +577,14 @@ class TaskManager():
       self.clear_events()
 
       # reset event slots
-      self._score_event.reset()
-      self._reward_event.reset()
-      self._episode_end_event.reset()
-      self._extra_event.reset()
-      self._json_extra_event.reset()
-      self._instruction_event.reset()
+      #self._score_event.reset()
+      #self._reward_event.reset()
+      #self._episode_end_event.reset()
+      #self._extra_event.reset()
+      #self._json_extra_event.reset()
+      #self._instruction_event.reset()
+      for evt in self._all_event_slots:
+        evt.reset()
     #  }}} method `_reset_counters` # 
 
   def setup_task(self,
@@ -853,14 +886,15 @@ class TaskManager():
                                 , self._response_events
                                 ):
         evt.snapshot()
-      for evt in [ self._score_event
-                 , self._reward_event
-                 , self._episode_end_event
-                 , self._extra_event
-                 , self._json_extra_event
-                 , self._instruction_event
-                 ]:
-        evt.set_new_step()
+      #for evt in [ self._score_event
+                 #, self._reward_event
+                 #, self._episode_end_event
+                 #, self._extra_event
+                 #, self._json_extra_event
+                 #, self._instruction_event
+                 #]:
+        #evt.set_new_step()
+    self._null_listener.is_set()
 
     return view_hierarchy
     #  }}} method `snapshot_events` # 
@@ -876,6 +910,8 @@ class TaskManager():
                               , self._response_events
                               ):
       evt.clear()
+    for evt in self._all_event_slots:
+      evt.set_new_step()
     #  }}} method `clear_events` # 
 
   #  Deprecated `_check_player_exited` method {{{ # 

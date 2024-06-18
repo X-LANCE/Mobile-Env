@@ -28,7 +28,7 @@
   for back-compatibility.
 * ✓ (Migration to Gymnasium): Migrate GymInterfaceWrapper from deprecated gym
   to gymnasium.
-* (Temporary Storage for Event Values): I think this will be cool if we can
+* ✓ (Temporary Storage for Event Values): I think this will be cool if we can
   temporarily store the submitted value of a virtual event and recall it in
   later steps. This will enable interactions between heterochronic events. For
   example, the task manager can note a piece of key information during
@@ -59,7 +59,8 @@
   our own model when I have enough time. Maybe 1 year later, when I'm ready for
   graduation. (> <)
 * (Unit Tests): Have a thorough check to the original unit test codes.
-* (Task Debugger): Maybe a debugger for task definition composing?
+* (Task Debugger): Maybe a debugger for task definition composing? I think a
+  visualizer to the event trees is needed.
 * ✓ (Long Click): Long click action for VhIoWrapper.
 * (Keyboard Input for Annotation Tool): Supports free keyboard input for the
   web interface of annoatation tool.

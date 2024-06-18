@@ -1,3 +1,19 @@
+2024-06-18 Danyang Zhang <zdy004007@126.com>
+
+	Added cache_until field for event slots to enable more flexible control of
+	event clearing, so that now one can temporarily cache the flag and value
+	of an event for a while until the waited events are ready as well.
+
+	* android_env/proto/task.proto
+	* android_env/components/event_listeners.py
+	* android_env/components/task_manager.py
+
+	Added null_listener for convinience if one wants to calculate some
+	intermediate value without sending it to a real slot.
+
+	* android_env/proto/task.proto
+	* android_env/components/task_manager.py
+
 2024-06-10 Danyang Zhang <zdy004007@126.com>
 
 	v4.0b1

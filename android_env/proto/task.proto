@@ -293,7 +293,7 @@ message EventSlot {
 	// will cache the value and state for a while and not clear them until all
 	// the waited events are set simultaneously; -1 for never cleared and 0 for
 	// nothing waiting
-	repeated int cache_until = 7;
+	repeated int32 cache_until = 7;
 }
 // }}} message `EventSlot` -
 
@@ -359,6 +359,7 @@ message TaskEventSlots {
   EventSlot extra_listener = 4;
   EventSlot json_extra_listener = 5;
   EventSlot instruction_listener = 6;
+  EventSlot null_listener = 7;
 }
 
 // Description of a reinforcement learning task to be solved by an agent.
