@@ -1,8 +1,10 @@
 <!-- vim: set formatoptions+=a: -->
 <!-- vimc: syn match Incompleted /\(^\*\)\@<=\ \((\)\@=/: -->
 <!-- vimc: syn match Completed /\(^\*\)\@<=\ \(✓\)\@=/: -->
+<!-- vimc: syn match Failed /\(^\*\)\@<=\ \(✗\)\@=/: -->
 <!-- vimc: hi Incompleted ctermbg=yellow: -->
 <!-- vimc: hi Completed ctermbg=green: -->
+<!-- vimc: hi Failed ctermbg=red: -->
 
 ### Main Branch
 
@@ -36,7 +38,7 @@
 * (Non-ASCII character input through clipboard): I found that clipboard
   synching can copy UTF-8 strings. This may be an idea to enable non-ASCII
   character input.  The emulator gPRC has interfaces to operate clipboard.
-* (Non-ASCII character input through emulator gPRC): sendKey interface of the
+* ✗ (Non-ASCII character input through emulator gPRC): sendKey interface of the
   emulator may be explored to implement input of UTF-8 strings.
 * (Non-ASCII character input through a dedicated input method): Follow
   <https://blog.csdn.net/qq_37148270/article/details/109514727> to make a
