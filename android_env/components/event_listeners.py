@@ -358,6 +358,12 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         super(EventSlot, self).__init__()
 
         self._sources: List[Event[V]] = list(sources)
+        self._prerequisites: List[Event] = []
+        self._waited_by: List[EventSlot] = []
+
+        self._id: int = 0
+        self._repeatability: Repeatability = repeatability
+        self._READY: bool = True
 
         #self._cast: Callable[[V], C] = cast or (lambda x: x)
         self._transformation_str: List[str] = transformation or []
@@ -368,18 +374,16 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         #self._update: Callable[[Optional[W], W], W] = lambda x, y: update(x, y) if x is not None else y
         self._update: Callable[[W, W], W] = update
 
-        self._repeatability: Repeatability = repeatability
+        self._ever_set: bool = False
+        self._satisfied_prerequisites: bool = False
+
         self._last_set: bool = False
         self._set: bool = False
-        self._new_step: bool = True
-
-        self._ever_set: bool = False
-        self._prerequisites: List[Event] = []
-
-        self._waited_by: List[Event] = []
-        self._READY: bool = True
-        self._waiting_ready: bool = self._READY
         self._value_cache: List[W] = []
+
+        self._new_step: bool = True
+        self._waiting_ready: bool = self._READY
+        self._clearability: bool = True
         #  }}} method `__init__` # 
     def replace_sources(self, index: int, source: Event):
         #  method `append_sources` {{{ # 
@@ -416,9 +420,13 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         self._prerequisites += prerequisites
         #  }}} method `add_prerequisites` # 
     def _satisfies_prerequisites(self) -> bool:
-        return all(map(lambda evt: evt.is_ever_set(), self._prerequisites))
+        if not self._satisfied_prerequisites:
+            self._satisfied_prerequisites = all(map(lambda evt: evt.is_ever_set(), self._prerequisites))
+        return self._satisfied_prerequisites
     def add_notifyees(self, *notifyees: Iterable[Event]):
         self._waited_by += notifyees
+    def add_id(self, id_: int):
+        self._id = id_
 
     # set to False for cache_until=-1, a.k.a., never ready
     def set_default_ready(self, ready: bool):
@@ -429,10 +437,11 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     # correct repeatability behavior
     # Just as snapshot and clear for event sources
     def set_new_step(self):
-        if not self._set or self._waiting_ready:
-            self._new_step = True
-            self._set = False
-            self._value_cache = []
+        self._new_step = True
+        self._clearability = not self._set or self._waiting_ready
+        #if 
+            #self._set = False
+            #self._value_cache = []
         self._waiting_ready = self._READY
         #for evt in self._sources:
             #if hasattr(evt, "set_new_step"):
@@ -443,26 +452,45 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
     def is_set(self):
         #  method `is_set` {{{ # 
         if self._new_step:
-            if not self._satisfies_prerequisites():
+            if not self._clearability:
+                logging.debug("Event %d, not clear", self._id)
+                if self._is_set():
+                    self._value_cache = self._get()
+                    logging.debug("Event %d, refresh value to %s", self._id, str(self._value_cache))
+            elif not self._satisfies_prerequisites():
                 self._last_set = False
                 self._set = False
+                self._value_cache = []
+                logging.debug("Event %d, prerequisites not satified", self._id)
             elif self._is_set():
                 if self._repeatability==Repeatability.UNLIMITED:
+                    logging.debug("Event %d, triggered unlimitedly", self._id)
                     set_: bool = True
                 elif self._repeatability==Repeatability.LAST:
                     set_: bool = not self._last_set
+                    logging.debug("Event %d, triggered according to last state %s", self._id, str(set_))
                 else:
                     set_: bool = not self._ever_set
+                    logging.debug("Event %d, triggered according to ever state %s", self._id, str(set_))
                 self._ever_set = True
                 self._last_set = True
                 self._set = set_
+                self._value_cache = self._get() if set_ else []
+                logging.debug( "Event %d, %s triggered with %s"
+                             , self._id
+                             , "" if set_ else "not"
+                             , str(self._value_cache)
+                             )
             else:
                 self._last_set = False
                 self._set = False
+                self._value_cache = []
+                logging.debug("Event %d, not triggered", self._id)
 
-            if self._set:
-                self._value_cache = self._get()
+            #if self._set:
+                #self._value_cache = self._get()
             for evt in self._waited_by:
+                logging.debug("Event %d notifying event %d with %s", self._id, evt._id, str(self._set))
                 evt.notify(self._set)
 
         self._new_step = False
@@ -497,9 +525,10 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         self._ever_set = False
         self._last_set = False
         self._set = False
+        self._value_cache = []
         self._new_step = True
         self._waiting_ready = self._READY
-        self._value_cache = []
+        self._clearability = True
         #for evt in self._sources:
             #evt.reset()
         #  }}} method `reset` # 
@@ -593,7 +622,11 @@ class Or(EventSlot[V, T, W]):
         return bool
         """
 
-        return any(map(lambda x: x.is_set(), self._sources))
+        #return any(map(lambda x: x.is_set(), self._sources))
+        set_ = False
+        for evt in self._sources:
+            set_ = evt.is_set() or set_
+        return set_
         #  }}} method `_is_set` # 
 
     def _get(self) -> List[W]:
@@ -654,7 +687,11 @@ class And(EventSlot[V, T, W]):
 
         if len(self._sources)==0:
             return False
-        return all(map(lambda x: x.is_set(), self._sources))
+        set_ = True
+        for evt in self._sources:
+            set_ = evt.is_set() and set_
+        return set_
+        #return all(map(lambda x: x.is_set(), self._sources))
         #  }}} method `_is_set` # 
 
     def _get(self) -> List[W]:

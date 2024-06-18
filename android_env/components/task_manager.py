@@ -499,6 +499,7 @@ class TaskManager():
 
     #  Handle previous needs {{{ # 
     if event_definition.id!=0:
+      event.add_id(event_definition.id)
       event_id = event_definition.id
       self._events_with_id[event_id] = event
 
