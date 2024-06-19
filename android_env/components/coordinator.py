@@ -389,8 +389,11 @@ class Coordinator():
       if act_t==0:
         self._send_action_to_simulator(list(map(lambda t: t[1], act)))
       elif act_t==2:
+        text_events: List[Dict[str, str]] = []
         for _, tkn in act:
-          self._send_action_to_taskmanager(tkn)
+          #self._send_action_to_taskmanager(tkn)
+          text_events += self._task_manager.convert_token_to_keyevents(tkn)
+        self._send_text_event_to_simulator(text_events)
       elif act_t==3:
         for _, cmd in act:
           adb_outputs.append(self._send_adb_command_to_simulator(cmd))
@@ -579,6 +582,16 @@ class Coordinator():
       self._log_dict['restart_count_execute_action'] += 1
       self._should_restart = True
     #  }}} method _send_action_to_simulator # 
+
+  def _send_text_event_to_simulator(self, text_events: List[Dict[str, str]]):
+    #  method _send_text_event_to_simulator {{{ # 
+    try:
+      self._simulator.send_key_event(text_events)
+    except (socket.error, errors.SendActionError):
+      logging.exception('Unable to perform text event. Restarting simulator.')
+      self._log_dict['restart_count_execute_action'] += 1
+      self._should_restart = True
+    #  }}} method _send_text_event_to_simulator # 
 
   def _send_adb_command_to_simulator(self, action: Dict[str, np.ndarray]) -> Optional[bytes]:
     #  method _send_adb_command_to_simulator {{{ # 

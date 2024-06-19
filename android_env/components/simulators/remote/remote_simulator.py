@@ -205,6 +205,11 @@ class RemoteSimulator( base_simulator.BaseSimulator
 
         self._get_response("act", action_dicts)
         #  }}} method send_action # 
+    def send_key_event(self, keyevents: List[Dict[str, str]]):
+        #  method send_key_event {{{ # 
+        # TODO
+        pass
+        #  }}} method send_key_event # 
     def _get_observation(self) -> Optional[List[np.ndarray]]:
         #  method _get_observation {{{ # 
         """

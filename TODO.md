@@ -2,9 +2,11 @@
 <!-- vimc: syn match Incompleted /\(^\*\)\@<=\ \((\)\@=/: -->
 <!-- vimc: syn match Completed /\(^\*\)\@<=\ \(✓\)\@=/: -->
 <!-- vimc: syn match Failed /\(^\*\)\@<=\ \(✗\)\@=/: -->
+<!-- vimc: syn match Canceled /\(^\*\)\@<=\ \( \)\@=/: -->
 <!-- vimc: hi Incompleted ctermbg=yellow: -->
 <!-- vimc: hi Completed ctermbg=green: -->
 <!-- vimc: hi Failed ctermbg=red: -->
+<!-- vimc: hi Canceled ctermbg=white: -->
 
 ### Main Branch
 
@@ -40,9 +42,9 @@
   character input.  The emulator gPRC has interfaces to operate clipboard.
 * ✗ (Non-ASCII character input through emulator gPRC): sendKey interface of the
   emulator may be explored to implement input of UTF-8 strings.
-* (Non-ASCII character input through a dedicated input method): Follow
-  <https://blog.csdn.net/qq_37148270/article/details/109514727> to make a
-  solution.
+*  (Non-ASCII character input through a dedicated input method): Follow
+   <https://blog.csdn.net/qq_37148270/article/details/109514727> to make a
+   solution.
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
 * (Replace pexpect with a self-composing module): As pexpect doesn't work on

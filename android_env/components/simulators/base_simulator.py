@@ -119,6 +119,10 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     """Sends the action to be executed to the simulator."""
     pass
 
+  @abc.abstractmethod
+  def send_key_event(self, keyevents: List[Dict[str, str]]):
+    pass
+
   def execute_adb_command(self, command: List[str]) -> Optional[bytes]:
     try:
       output: Optional[bytes] = self._adb_controller._execute_command(command)

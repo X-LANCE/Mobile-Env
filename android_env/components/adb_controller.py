@@ -744,6 +744,7 @@ class AdbController():
                          , "KEYCODE_ESCAPE" # '\e'
                          , "KEYCODE_TAB" # '\t'
                          , "KEYCODE_GRAVE" # '`'
+                         , "KEYCODE_PASTE"
                          }
     assert key_code in accepted_key_codes, ('Rejected keycode: %r' % key_code)
 

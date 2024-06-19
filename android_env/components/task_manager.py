@@ -695,6 +695,61 @@ class TaskManager():
     self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
+  def convert_token_to_keyevents(self, token_id: int, ascii_only=False) -> List[Dict[str, str]]:
+    #  method convert_token_to_keyevents {{{ # 
+    keyevents: List[Dict[str, str]] = []
+
+    token = self._vocabulary[token_id]
+
+    if self._special_token_pattern.match(token):
+      return
+
+    logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
+
+    if self._non_start_mark_first:
+      is_non_start_token = token.startswith(self._non_start_token_mark)
+      is_start_token = not is_non_start_token and token.startswith(self._start_token_mark)
+    else:
+      is_start_token = token.startswith(self._start_token_mark)
+      is_non_start_token = not is_start_token and token.startswith(self._non_start_token_mark)
+
+    if is_start_token:
+      token = token[len(self._start_token_mark):]
+    elif is_non_start_token:
+      token = token[len(self._non_start_token_mark):]
+
+    if ascii_only and not token.isascii():
+      return []
+    if is_non_start_token:
+      keyevents.append({"type": "keycode", "value": "KEYCODE_DEL"})
+
+    if ascii_only:
+      for n_prtb, gr in itertools.groupby( token
+                                         , key=( lambda ch:
+                                                   ch in TaskManager.non_pritable_char_mapping
+                                               )
+                                         ):
+        if n_prtb:
+          for ch in gr:
+            keyevents.append( { "type": "keycode"
+                              , "value": TaskManager.non_pritable_char_mapping[ch]
+                              }
+                            )
+        else:
+          keyevents.append( { "type": "text"
+                            , "value": "\""\
+                                     + "".join(gr)\
+                                        .replace("\\", "\\\\")\
+                                        .replace("\"", "\\\"")\
+                                     + "\""
+                            }
+                          )
+    else:
+      keyevents.append({"type": "text", "value": token})
+
+    return keyevents
+    #  }}} method convert_token_to_keyevents # 
+
   def get_current_reward(self) -> float:
     #  method `get_current_reward` {{{ # 
     """

@@ -187,6 +187,12 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
       self._emulator_stub.sendTouch(
           emulator_controller_pb2.TouchEvent(touches=touches))
 
+  def send_key_event(self, keyevents: List[Dict[str, str]]):
+    #  method send_key_event {{{ # 
+    # TODO
+    pass
+    #  }}} method send_key_event # 
+
   def _get_observation(self) -> Optional[List[np.ndarray]]:
     """Fetches the latest observation from the emulator."""
     assert self._emulator_stub, 'Emulator stub has not been initialized yet.'
