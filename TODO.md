@@ -73,8 +73,6 @@
 * (Investigate the snapshot function of Android Emulator): I want to conduct an
   investigation on the snapshot funciton of Android Emulator. This may help to
   set different initial state for tasks more easily.
-* (About autocasting in task event tree): Restrict the automatic casting (wrap
-  function) to the root node?
 * (Simulator based on real mobile devices): Replace the implementation based on
   the gRPC interfaces of Android Emulator in current EmulatorSimulator to pure
   ADB implementations so as to form a simulator that can connect to real mobile
