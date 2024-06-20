@@ -80,6 +80,13 @@ class RemoteSimulator( base_simulator.BaseSimulator
                 "response": str
             }
           ]
+      + keyevents
+        + sends [
+            {
+                "type": str
+                "value": str
+            }
+          ]
       + observ
         + sends {
             "resize_to": [int, int] # W, H
@@ -207,8 +214,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
         #  }}} method send_action # 
     def send_key_event(self, keyevents: List[Dict[str, str]]):
         #  method send_key_event {{{ # 
-        # TODO
-        pass
+        self._get_response("keyevents", keyevents)
         #  }}} method send_key_event # 
     def _get_observation(self) -> Optional[List[np.ndarray]]:
         #  method _get_observation {{{ # 

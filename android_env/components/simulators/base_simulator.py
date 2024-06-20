@@ -121,6 +121,15 @@ class BaseSimulator(metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def send_key_event(self, keyevents: List[Dict[str, str]]):
+    """
+    Args:
+        keyevents (List[Dict[str, str]]): list of dict like
+          {
+            "type": "keycode" | "text"
+            "value": str as keycode name or text
+          }
+    """
+
     pass
 
   def execute_adb_command(self, command: List[str]) -> Optional[bytes]:

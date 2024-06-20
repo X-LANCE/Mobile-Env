@@ -48,6 +48,7 @@ import numpy as np
 import portpicker
 
 from android_env.proto import emulator_controller_pb2
+from google.protobuf import empty_pb2
 import time
 
 def is_existing_emulator_provided(launcher_args: Dict[str, Any]) -> bool:
@@ -189,8 +190,26 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
 
   def send_key_event(self, keyevents: List[Dict[str, str]]):
     #  method send_key_event {{{ # 
-    # TODO
-    pass
+    """
+    Args:
+        keyevents (List[Dict[str, str]]): list of dict like
+          {
+            "type": "keycode" | "text"
+            "value": str as keycode name or text
+          }
+    """
+
+    for evt in keyevents:
+      if evt["type"]=="keycode":
+        self._adb_controller.input_key(evt["value"])
+      elif evt["type"]=="text":
+        original_clipboard: emulator_controller_pb2.ClipData = self._emulator_stub.getClipboard(empty_pb2.Empty())
+        self._emulator_stub.setClipboard( emulator_controller_pb2.ClipData(
+                                           text=evt["value"]
+                                         )
+                                        )
+        adb_controller.input_key("KEYCODE_PASTE")
+        self._emulator_stub.setClipboard(original_clipboard)
     #  }}} method send_key_event # 
 
   def _get_observation(self) -> Optional[List[np.ndarray]]:

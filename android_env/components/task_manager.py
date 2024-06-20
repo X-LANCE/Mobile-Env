@@ -697,6 +697,19 @@ class TaskManager():
 
   def convert_token_to_keyevents(self, token_id: int, ascii_only=False) -> List[Dict[str, str]]:
     #  method convert_token_to_keyevents {{{ # 
+    """
+    Args:
+        token_id (int): int
+        ascii_only (bool): if only ASCII characters should be accepted
+
+    Returns:
+        List[Dict[str, str]]: list of dict like
+          {
+            "type": "keycode" | "text"
+            "value": str as keycode name or text
+          }
+    """
+
     keyevents: List[Dict[str, str]] = []
 
     token = self._vocabulary[token_id]

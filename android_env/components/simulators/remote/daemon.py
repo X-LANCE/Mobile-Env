@@ -250,6 +250,17 @@ def action() -> str:
     return "OK"
     #  }}} function action # 
 
+@app.route("/keyevents", methods=["POST"])
+def keyevents() -> str:
+    #  function keyevents {{{ # 
+    args: List[Dict[str, str]] = request.json
+
+    sid: int = session["sid"]
+    with manager[sid]["lock"]:
+        manager[sid]["simulator"].send_key_event(args)
+    return "OK"
+    #  }}} function keyevents # 
+
 @app.route("/observ", methods=["POST"])
 def observation() -> Dict[str, Union[str, List[int], int]]:
     #  function observation {{{ # 
