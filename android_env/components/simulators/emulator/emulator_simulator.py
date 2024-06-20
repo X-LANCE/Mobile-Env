@@ -208,7 +208,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
                                            text=evt["value"]
                                          )
                                         )
-        adb_controller.input_key("KEYCODE_PASTE")
+        self._adb_controller.input_key("KEYCODE_PASTE")
         self._emulator_stub.setClipboard(original_clipboard)
     #  }}} method send_key_event # 
 

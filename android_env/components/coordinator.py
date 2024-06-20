@@ -392,7 +392,7 @@ class Coordinator():
         text_events: List[Dict[str, str]] = []
         for _, tkn in act:
           #self._send_action_to_taskmanager(tkn)
-          text_events += self._task_manager.convert_token_to_keyevents(tkn)
+          text_events += self._task_manager.convert_token_to_keyevents(tkn["input_token"].item())
         self._send_text_event_to_simulator(text_events)
       elif act_t==3:
         for _, cmd in act:

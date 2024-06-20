@@ -66,8 +66,6 @@
 * (Task Debugger): Maybe a debugger for task definition composing? I think a
   visualizer to the event trees is needed.
 * ✓ (Long Click): Long click action for VhIoWrapper.
-* (Keyboard Input for Annotation Tool): Supports free keyboard input for the
-  web interface of annoatation tool.
 * (Accessibility Forwarding): Maybe have a try on the accessibility forwarder
   to ameliorate the efficiency of VH obtaining following AndroidWorld
 * (Investigate the snapshot function of Android Emulator): I want to conduct an
@@ -82,6 +80,8 @@
 
 * (Migration to 4.0): Update the annotation-tool to better work with new
   episode end mechanism of 4.0.
+* (Keyboard Input for Annotation Tool): Supports free keyboard input for the
+  web interface of annoatation tool.
 
 ### Template Toolkit
 
