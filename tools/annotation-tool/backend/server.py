@@ -27,7 +27,7 @@ import numpy as np
 #import lxml.etree
 from android_env.interfaces.timestep import TimeStep
 from typing import Dict
-from typing import Any
+from typing import Any, Optional
 import os
 from PIL import Image
 import io
@@ -56,7 +56,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("dump_file", type=str)
 parser.add_argument("task_path", type=str)
 parser.add_argument("--no-dump", action="store_false", dest="dump")
+
 parser.add_argument("--avd-name", default="Pixel_2_API_30_ga_x64", type=str)
+parser.add_argument("--with-emulator-window", action="store_true")
+
+parser.add_argument("--remote-simulator", action="store_true")
+parser.add_argument("--remote-address", default="127.0.0.1", type=str)
+parser.add_argument("--remote-port", type=int)
+parser.add_argument("--resize_for_transfer", nargs=2, default=(360, 640), type=int)
+parser.add_argument("--remote-resource-path", type=str)
+
 parser.add_argument("--enable-easyocr", action="store_true")
 parser.add_argument( "--easyocr-lang-list", action="store", nargs="+"
                    , default=["en"], type=str
@@ -68,7 +77,7 @@ parser.add_argument( "--mitm-method", nargs="?"
 parser.add_argument("--mitm-address", default="127.0.0.1", type=str)
 parser.add_argument("--mitm-port", default=8080, type=int)
 parser.add_argument("--frida-script", default="frida-script.js", type=str)
-parser.add_argument("--with-emulator-window", action="store_true")
+
 args: argparse.Namespace = parser.parse_args()
 #dump_file = sys.argv[1] if len(sys.argv)>1 else "../test_dump.pkl"
 #task_path = sys.argv[2] if len(sys.argv)>2 else "../../android_env/apps/wikihow/templates.miniout"
@@ -108,24 +117,42 @@ task_list = list(
 #task_dict = {0: 0}
 sbert_holder = SBERTHolder()
 task_manager_args: Dict[str, Any] = {"text_model": EasyOCRWrapper(lang_list=args.easyocr_lang_list)} if args.enable_easyocr  else {}
-android = android_env.load( task_path #os.path.join(task_path, task_list[0] + ".textproto")
-                          , avd_name=args.avd_name
-                          , run_headless=not args.with_emulator_window
-                          , mitm_config=None if args.mitm_method==None\
+mitm_args: Optional[Dict[str, str]] = None if args.mitm_method==None\
                                            else { "method": args.mitm_method
                                                 , "address": args.mitm_address
                                                 , "port": args.mitm_port
                                                 , "frida-script": args.frida_script
                                                 }
-                           #, text_model=EasyOCRWrapper()
-                          , sbert_holder=sbert_holder
-                          , with_view_hierarchy=True
-                          , coordinator_args={ "vh_check_control_method": EventCheckControl.TIME
-                                             , "screen_check_control_method": EventCheckControl.TIME
-                                             , "screen_check_control_value": 3.
-                                             }
-                          , **task_manager_args
-                          )
+
+if args.remote_simulator:
+    android = android_env.load_remote( task_path
+                                     , address=args.remote_address
+                                     , port=args.remote_port
+                                     , resize_for_transfer=args.resize_for_transfer
+                                     , mitm_config=mitm_args
+                                     , sbert_holder=sbert_holder
+                                     , with_view_hierarchy=True
+                                     , coordinator_args={ "vh_check_control_method": EventCheckControl.TIME
+                                                        , "screen_check_control_method": EventCheckControl.TIME
+                                                        , "screen_check_control_value": 3.
+                                                        }
+                                     , remote_path=args.remote_resource_path
+                                     , **task_manager_args
+                                     )
+else:
+    android = android_env.load( task_path #os.path.join(task_path, task_list[0] + ".textproto")
+                              , avd_name=args.avd_name
+                              , run_headless=not args.with_emulator_window
+                              , mitm_config=mitm_args
+                               #, text_model=EasyOCRWrapper()
+                              , sbert_holder=sbert_holder
+                              , with_view_hierarchy=True
+                              , coordinator_args={ "vh_check_control_method": EventCheckControl.TIME
+                                                 , "screen_check_control_method": EventCheckControl.TIME
+                                                 , "screen_check_control_value": 3.
+                                                 }
+                              , **task_manager_args
+                              )
 if args.dump:
     android = RecorderWrapper(android, dump_file=dump_file)
 
