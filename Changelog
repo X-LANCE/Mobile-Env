@@ -1,3 +1,19 @@
+2024-06-21 Danyang Zhang <zdy004007@126.com>
+
+	Enabled UTF-8 input
+
+	* android_env/components/adb_controller.py
+	* android_env/components/coordinator.py
+	* android_env/components/simulators/base_simulator.py
+	* android_env/components/simulators/emulator/emulator_simulator.py
+	* android_env/components/simulators/remote/remote_simulator.py
+	* android_env/components/simulators/remote/daemon.py
+	* android_env/components/task_manager.py
+
+	Updated server.py with new flags to work with RemoteSimulator
+
+	* tools/annotation-tool/backend/server.py
+
 2024-06-18 Danyang Zhang <zdy004007@126.com>
 
 	Added cache_until field for event slots to enable more flexible control of
