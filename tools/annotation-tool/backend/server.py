@@ -66,6 +66,7 @@ parser.add_argument("--remote-port", type=int)
 parser.add_argument("--resize_for_transfer", nargs=2, default=(360, 640), type=int)
 parser.add_argument("--remote-resource-path", type=str)
 
+parser.add_argument("--token-mode", default="BERT", type=str, choices=["BERT", "GPT", "PLAIN"])
 parser.add_argument("--enable-easyocr", action="store_true")
 parser.add_argument( "--easyocr-lang-list", action="store", nargs="+"
                    , default=["en"], type=str
@@ -84,6 +85,7 @@ args: argparse.Namespace = parser.parse_args()
 dump_file: str = args.dump_file
 task_path: str = args.task_path
 
+#  Logger Config {{{ # 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
@@ -107,6 +109,7 @@ logger.addHandler(debug_handler)
 logger.addHandler(stdout_handler)
 
 logger: logging.Logger = app.logger
+#  }}} Logger Config # 
 
 task_list = list(
         sorted(
@@ -123,6 +126,21 @@ mitm_args: Optional[Dict[str, str]] = None if args.mitm_method==None\
                                                 , "port": args.mitm_port
                                                 , "frida-script": args.frida_script
                                                 }
+if args.token_mode=="BERT":
+    token_mode_args: Dict[str, str] = { "start_token_mark": ""
+                                      , "non_start_token_mark": "##"
+                                      , "special_token_pattern": r"\[\w+\]"
+                                      }
+elif args.token_mode=="GPT":
+    token_mode_args: Dict[str, str] = { "start_token_mark": "Ġ"
+                                      , "non_start_token_mark": ""
+                                      , "special_token_pattern": r"<\w+>"
+                                      }
+else args.token_mode=="PLAIN":
+    token_mode_args: Dict[str, str] = { "start_token_mark": ""
+                                      , "non_start_token_mark": ""
+                                      , "special_token_pattern": ""
+                                      }
 
 if args.remote_simulator:
     android = android_env.load_remote( task_path
@@ -138,6 +156,7 @@ if args.remote_simulator:
                                                         }
                                      , remote_path=args.remote_resource_path
                                      , **task_manager_args
+                                     , **token_mode_args
                                      )
 else:
     android = android_env.load( task_path #os.path.join(task_path, task_list[0] + ".textproto")
@@ -152,6 +171,7 @@ else:
                                                  , "screen_check_control_value": 3.
                                                  }
                               , **task_manager_args
+                              , **token_mode_args
                               )
 if args.dump:
     android = RecorderWrapper(android, dump_file=dump_file)

@@ -53,6 +53,9 @@ import shlex
 import enum
 from numbers import Number
 
+from datetime import timedelta
+from datetime import datetime
+
 class EventCheckControl(enum.Flag):
   # Checks after each LIFT
   LIFT = enum.auto()
@@ -389,11 +392,14 @@ class Coordinator():
       if act_t==0:
         self._send_action_to_simulator(list(map(lambda t: t[1], act)))
       elif act_t==2:
+        start: datetime = datetime.now()
         text_events: List[Dict[str, str]] = []
         for _, tkn in act:
           #self._send_action_to_taskmanager(tkn)
           text_events += self._task_manager.convert_token_to_keyevents(tkn["input_token"].item())
         self._send_text_event_to_simulator(text_events)
+        end: datetime = datetime.now()
+        logging.info("DURATION: %.4f", (end-start).total_seconds())
       elif act_t==3:
         for _, cmd in act:
           adb_outputs.append(self._send_adb_command_to_simulator(cmd))

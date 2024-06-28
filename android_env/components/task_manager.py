@@ -655,7 +655,7 @@ class TaskManager():
 
     token = self._vocabulary[token_id]
 
-    if self._special_token_pattern.match(token):
+    if self._special_token_pattern.fullmatch(token):
       return
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
@@ -714,7 +714,7 @@ class TaskManager():
 
     token = self._vocabulary[token_id]
 
-    if self._special_token_pattern.match(token):
+    if self._special_token_pattern.fullmatch(token):
       return
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
@@ -735,6 +735,7 @@ class TaskManager():
       return []
     if is_non_start_token:
       keyevents.append({"type": "keycode", "value": "KEYCODE_DEL"})
+    token = token + " "
 
     if ascii_only:
       for n_prtb, gr in itertools.groupby( token
@@ -750,11 +751,7 @@ class TaskManager():
                             )
         else:
           keyevents.append( { "type": "text"
-                            , "value": "\""\
-                                     + "".join(gr)\
-                                        .replace("\\", "\\\\")\
-                                        .replace("\"", "\\\"")\
-                                     + "\""
+                            , "value": "".join(gr)
                             }
                           )
     else:
