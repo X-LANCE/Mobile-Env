@@ -197,15 +197,15 @@ The data are measured under the configuration below:
   * Memory: 8 GB
   * Screen size: 1080×1920
 
-|                           Item                          | Avg Time | Time Std Dev |
-|:-------------------------------------------------------:|:--------:|:------------:|
-|                      `TOUCH` action                     | 410.50µs |    64.71µs   |
-|                      `LIFT` action                      | 412.30µs |    84.18µs   |
-|                      `TEXT` action                      |   1.30s  |     0.28s    |
-|                   screenshot capturing                  |  19.94ms |    21.47ms   |
-| invocation of Sentence Transformer（all-MiniLM-L12-v2） |  8.51ms  |    0.17ms    |
-|                       VH capturing                      |   2.53s  |     1.90s    |
-|                  invocation of EasyOCR                  |   0.44s  |     0.08s    |
+|                           Item                          |     Avg Time     |    Time Std Dev   |
+|:-------------------------------------------------------:|:----------------:|:-----------------:|
+|                      `TOUCH` action                     |     410.50 µs    |      64.71 µs     |
+|                      `LIFT` action                      |     412.30 µs    |      84.18 µs     |
+|                      `TEXT` action                      | ~~1.30 s~~ 0.58s | ~~0.28 s~~ 0.03 s |
+|                   screenshot capturing                  |     19.94 ms     |      21.47 ms     |
+| invocation of Sentence Transformer（all-MiniLM-L12-v2） |      8.51 ms     |      0.17 ms      |
+|                       VH capturing                      |      2.53 s      |       1.90 s      |
+|                  invocation of EasyOCR                  |      0.44 s      |       0.08 s      |
 
 When only an [app of WikiHow
 2.9.6](https://apkcombo.com/zh/wikihow-how-to-do-anything/com.wikihow.wikihowapp/download/apk)
