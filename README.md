@@ -3,6 +3,27 @@
 
 ## NEWS!!
 
+* (2024-07-14 v4.0)
+  * Added new action and observation type of ADB
+  * Enabled input of common UTF-8 strings for `TEXT` action
+  * Enabled fuzzy match method for screen text events. Enabled triggering
+    threshold for fuzzy match modes.
+  * Migrated from `dm_env` to `android_env.interfaces` to distinguish
+    successful, failed, and truncated episode ends. Updated episode end events
+    to control its triggering in the task definition file more conviniently.
+  * Added `cache_until` field for event slots to correctly trigger an `AND`
+    node whose sub-events are expected to be triggered simultaneously.  Now an
+    activatated event can be cached temporarily until another triggered event
+    clears it.
+  * Added `null_listener` for target-less event nodes.
+  * Applied image compression in `RemoteSimulator`.
+  * Migrated from `gym` to `gymnasium`.
+  * Updates to `VhIoWrapper` and `TapActionWrapper`
+  * Minor updates to annotation tool.
+
+See our [Change Log](Changelog) for details. The documents will be revised
+soon. A new tutorial w.r.t. episode event management is on plan.
+
 * (2024-04-30 v3.6)
   * Updated function to load a remote simulator to enable providing the remote
     resources with a different path with the path of the local task definition
