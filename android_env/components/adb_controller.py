@@ -47,6 +47,7 @@ from absl import logging
 from android_env.components import errors
 from android_env.proto import adb_pb2
 import pexpect
+import shlex
 
 _MAX_INIT_RETRIES = 20
 _INIT_RETRY_SLEEP_SEC = 2.0
@@ -229,7 +230,8 @@ class AdbController():
     timeout = self._resolve_timeout(timeout)
     if not self._shell_is_ready:
       self._init_shell(timeout=timeout)
-    shell_args = ' '.join(args)
+    #shell_args = ' '.join(args)
+    shell_args: str = shlex.join(args)
     logging.info('Executing ADB shell command: %s', shell_args)
 
     num_tries = 0

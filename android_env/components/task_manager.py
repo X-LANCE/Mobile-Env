@@ -686,12 +686,13 @@ class TaskManager():
         for ch in gr:
           self._adb_controller.input_key(TaskManager.non_pritable_char_mapping[ch])
       else:
-        self._adb_controller.input_text( "\""\
-                                       + "".join(gr)\
-                                          .replace("\\", "\\\\")\
-                                          .replace("\"", "\\\"")\
-                                       + "\""
-                                       )
+        #self._adb_controller.input_text( "\""\
+            #+ "".join(gr)\
+            #.replace("\\", "\\\\")\
+            #.replace("\"", "\\\"")\
+            #+ "\""
+                                       #)
+        self._adb_controller.input_text("".join(gr))
     self._adb_controller.input_text("\" \"")
     #  }}} method `send_token` # 
 
