@@ -48,7 +48,7 @@
 * (FileSystem Events): Events arising from changes in Android file system. Just
   a conceptual idea.
 * (Replace pexpect with a self-composing module): As pexpect doesn't work on
-  Window, maybe replace it with a custom module.
+  Windows, maybe replace it with a custom module.
 * (Other problems on Windows): The main problem seems to lie on uiautomator, or
   the `adb shell`. Maybe change it to `adb exec-out` will solve.
 * (Tutorial of how to manage events): I need to supplement a tutorial of how to
