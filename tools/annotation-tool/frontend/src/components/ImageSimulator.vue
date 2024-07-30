@@ -74,8 +74,11 @@ Revised by Danyang Zhang @X-Lance based on a private repository at
                     + {{ incrementalReward }}
                 </span>
                 <br>
-                <b>过程是否完成：</b>
+                <b>历程结束否：</b>
                 <span :style="episodeEndLattern">{{ episodeEndString }}</span>
+				<br>
+				<b>成功与否</b>
+				<span :style="successLattern">{{ successString }}</span>
             </div>
         </el-card>
         <el-card>
@@ -140,6 +143,7 @@ export default {
              , accumulatedReward: 0.
              , incrementalReward: 0.
              , episodeEnd: false
+             , success: false
              , historyInstructions: []
              , newInstructions: []
              , noticingTime: 2000
@@ -158,6 +162,7 @@ export default {
            , "inputToken"
            , "response"
            , "repeat"
+           , "adbc"
            ],
 
     computed: {
@@ -179,6 +184,24 @@ export default {
         },
         episodeEndString() {
             return this.episodeEnd ? "是" : "否";
+        }
+
+        successLattern() {
+            return this.success ?
+                { fontWeight: "bold"
+                , color: "green"
+                } :
+                { fontWeight: "normal"
+                , color: "red"
+                };
+        },
+        successString() {
+			if(this.success)
+				return "是";
+			else if(this.success===null)
+				return "出错";
+			else
+				return "否";
         }
     },
 
@@ -223,10 +246,11 @@ export default {
             this.rewardFuture = setTimeout(() => {this.mergeReward();},
                     this.noticingTime);
         },
-        setEpisodeEnd() {
+        setEpisodeEnd(success) {
             if(this.episodeEndFuture!=null)
                 clearTimeout(this.episodeEndFuture);
             this.episodeEnd = true;
+			this.success = success;
             this.episodeEndFuture = setTimeout(() => {this.autoClearEpisodeEnd();},
                     this.noticingTime+1000);
         },
@@ -249,6 +273,7 @@ export default {
         },
         autoClearEpisodeEnd() {
             this.episodeEnd = false;
+			this.success = false;
             this.accumulatedReward = 0.;
             this.historyInstructions = [];
             this.episodeEndFuture = null;

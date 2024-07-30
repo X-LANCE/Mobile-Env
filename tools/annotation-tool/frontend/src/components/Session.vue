@@ -24,6 +24,7 @@ Created by Danyang Zhang @X-Lance.
     @inputToken="inputToken"
 	@response="sendResponse"
     @repeat="repeat"
+    @adbc="sendAdb"
     :task-list="taskList"
     ref="simulator"
   ></ImageSimulator>
@@ -50,6 +51,7 @@ export default {
            , actionLift: 1
            , actionRepeat: 2
            , actionText: 3
+           , actionADB: 4
            };
   },
 
@@ -99,6 +101,12 @@ export default {
                                , "touchPosition": [0, 0]
                                });
     },
+	sendAdb(command) {
+		return this.sendAction( { "actionType": this.actionADB
+								, "command": command
+								}
+							  );
+	}
 
     async sendAction(action) {
 		let timestamp = Date.now();
@@ -109,9 +117,10 @@ export default {
         if(response.instruction.length>0)
             this.$refs.simulator.newInstruction(
                 response.instruction);
+		// TODO: append ADB output
         if(response.episodeEnd)
         {
-            this.noticeEpisodeEnd(response.reward);
+            this.noticeEpisodeEnd(response.reward, response.succeeds);
             await this.switchTask(this.taskId);
             this.noticeReady();
         }
@@ -129,10 +138,16 @@ export default {
         this.$refs.simulator.setNotice("已就绪，请操作。");
         this.$refs.simulator.setLoading(false);
     },
-    noticeEpisodeEnd(reward) {
+    noticeEpisodeEnd(reward, succeeds) {
         this.$refs.simulator.newReward(reward);
-        this.$refs.simulator.setEpisodeEnd();
-        this.$refs.simulator.setNotice(`已成功达成任务目标，获得${reward}点分数。系统正在重置，请勿操作。`);
+        this.$refs.simulator.setEpisodeEnd(succeeds);
+		if(succeeds)
+			success_notifier = "已成功达成任务目标"
+		else if(succeeds===null)
+			success_notifier = "系统出错"
+		else
+			success_notifier = "任务失败"
+		this.$refs.simulator.setNotice(`${success_notifier}，共获得${reward}点分数。系统正在重置，请勿操作。`);
         this.$refs.simulator.setLoading(true);
     },
     noticeReward(reward) {

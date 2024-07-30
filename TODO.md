@@ -82,6 +82,8 @@
   episode end mechanism of 4.0.
 * (Keyboard Input for Annotation Tool): Supports free keyboard input for the
   web interface of annoatation tool.
+* (Internationalization): Replace hard-coded Chinese prompts with localized
+  languages.
 
 ### Template Toolkit
 

@@ -63,7 +63,7 @@ parser.add_argument("--with-emulator-window", action="store_true")
 parser.add_argument("--remote-simulator", action="store_true")
 parser.add_argument("--remote-address", default="127.0.0.1", type=str)
 parser.add_argument("--remote-port", type=int)
-parser.add_argument("--resize_for_transfer", nargs=2, default=(360, 640), type=int)
+parser.add_argument("--resize-for-transfer", nargs=2, default=(360, 640), type=int)
 parser.add_argument("--remote-resource-path", type=str)
 
 parser.add_argument("--token-mode", default="BERT", type=str, choices=["BERT", "GPT", "PLAIN"])
@@ -179,14 +179,19 @@ if args.dump:
 def timestep_to_json(timestep: TimeStep) -> Dict[str, Any]:
     with io.BytesIO() as bff:
         image = Image.fromarray(timestep.observation["pixels"])
-        image.save(bff, "png")
+        image.save(bff, "jpeg")
         bff.seek(0)
         png_data = bff.read()
         base64_data = base64.b64encode(png_data)
-    return { "observation": "data:image/png;base64," + base64_data.decode()
-           , "reward": timestep.reward
-           , "episodeEnd": timestep.last()
-           }
+    timestep_json: Dict[str, Any] =\
+            { "observation": "data:image/jpeg;base64," + base64_data.decode()
+            , "reward": timestep.reward
+            , "episodeEnd": timestep.last()
+            , "succeeds": timestep.succeeds
+            }
+    if "adb_output" in timestep.observation:
+        timestep_json["adbOutput"] = timestep.observation["adb_output"]
+    return timestep_json
 
 @app.route("/", methods=["GET"])
 def main():
@@ -204,6 +209,8 @@ def do_action():
     parsed_action["action_type"] = np.array(action["actionType"])
     if action["actionType"]==action_type.ActionType.TEXT:
         parsed_action["input_token"] = np.array(action["inputToken"])
+    elif action["actionType"]==action_type.ActionType.ADB:
+        parsed_action["command"] = np.array(action["command"]
     else:
         parsed_action["touch_position"] = np.array(action["touchPosition"])
     if "response" in action:
