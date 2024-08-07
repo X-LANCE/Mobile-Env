@@ -89,13 +89,22 @@ Revised by Danyang Zhang @X-Lance based on a private repository at
 		<el-card>
 			<el-input type="textarea"
 				:autosize="{minRows: 5, maxRows: 20}"
-				placeholder="请输入给用户的响应"
+				placeholder="请输入给用户的回复"
 				v-model="response"
 				:disabled="loading"
 				>
 			</el-input>
 			<br>
-			<el-button :disabled="loading" @click="sendResponse(response)">发送</el-button>
+			<el-button :disabled="loading" @click="sendResponse(response)">发送回复</el-button>
+		</el-card>
+		<el-card>
+			<!-- TODO: add adb history, maybe a fixed-size div to implement scroll -->
+			<el-input
+				placeholder="请输入要执行的ADB命令，如：install xxx.apk"
+				v-model="adb_command" :disabled="loading"
+				>
+			</el-input>
+			<el-button :disabled="loading" @click="sendAdbc(adb_command)">发送命令</el-button>
 		</el-card>
         <el-card>
             <div>
@@ -134,6 +143,7 @@ export default {
              , loading: false
              , notice: ""
              , response: ""
+		  	 , adb_command: ""
 
              , lastTouchTime: Date.now()
              , lastActionTime: Date.now()
@@ -162,7 +172,7 @@ export default {
            , "inputToken"
            , "response"
            , "repeat"
-           , "adbc"
+           , "adbc" // TODO
            ],
 
     computed: {
