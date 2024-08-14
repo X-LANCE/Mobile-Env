@@ -31,7 +31,7 @@
 	* android_env/components/event_listeners.py
 	* android_env/components/task_manager.py
 
-	Added null_listener for convinience if one wants to calculate some
+	Added null_listener for convenience if one wants to calculate some
 	intermediate value without sending it to a real slot.
 
 	* android_env/proto/task.proto
