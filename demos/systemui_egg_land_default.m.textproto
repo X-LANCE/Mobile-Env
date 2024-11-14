@@ -37,7 +37,7 @@ description: "Flappy droid 'Marshmallow Land' from AOSP SystemUI."
 
 setup_steps: [
   {
-    adb_request: {
+    adb_call: {
       install_apk: {
         filesystem: {
           path: "2020.02.05-systemui-egg-land-debug.apk"
@@ -52,22 +52,18 @@ setup_steps: [
     }
   },
   {  # Put the device in portrait mode.
-    adb_request: {
-      settings: {
-        name_space: SYSTEM
-        put: { key: "user_rotation" value: "0" }
-      }
+    adb_call: {
+      rotate: { orientation: PORTRAIT_0 }
     }
   }
 ]
 
 reset_steps: [
-  { adb_request: { force_stop: { package_name: "com.android.systemui.egg" } } },
-  { adb_request: { package_manager: { clear: { package_name: "com.android.systemui.egg" } } } },
+  { adb_call: { force_stop: { package_name: "com.android.systemui.egg" } } },
+  { adb_call: { clear_cache: { package_name: "com.android.systemui.egg" } } } },
   {
-    adb_request: {
+    adb_call: {
       start_activity: {
-        force_stop: true
         full_activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
         extra_args: [
             "--ez", '"RL_TASK_ENABLED"', '"true"',
@@ -88,7 +84,7 @@ reset_steps: [
     }
   },
   {
-    adb_request: {
+    adb_call: {
       start_screen_pinning: {
         full_activity: "com.android.systemui.egg/com.android.systemui.egg.MLandActivity"
       }
