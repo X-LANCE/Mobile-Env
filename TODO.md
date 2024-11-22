@@ -75,6 +75,12 @@
   the gRPC interfaces of Android Emulator in current EmulatorSimulator to pure
   ADB implementations so as to form a simulator that can connect to real mobile
   devices.
+* (Upgrade set-up and reset steps): Maybe I can try to regard the setup step
+  intepreter as an agent and leverage the event system to manage the success
+  condition. This will make it much more flexible and powerful.
+* (Next-Generation Mobile-Env): Make Mobile-Env automatically includes event
+  information in the extras to enable agent designers to engineering rewards by
+  themselves.
 
 ### Annotation Tool
 
