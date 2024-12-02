@@ -715,7 +715,7 @@ class TaskManager():
     token = self._vocabulary[token_id]
 
     if self._special_token_pattern.fullmatch(token):
-      return
+      return []
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
 
