@@ -79,7 +79,7 @@
   intepreter as an agent and leverage the event system to manage the success
   condition. This will make it much more flexible and powerful.
 * (Next-Generation Mobile-Env): Make Mobile-Env automatically includes event
-  information in the extras to enable agent designers to engineering rewards by
+  information in the extras to enable agent designers to engineer rewards by
   themselves.
 
 ### Annotation Tool
@@ -100,3 +100,13 @@
 ### Task Sets
 
 * (OpenMoneyBox): I want to define a group of tasks based on OpenMoneyBox.
+
+### Documents
+
+* (Migration to 4.0): Update documents with new features of 4.0
+* (Detailed documents of more frequent APIs): Add API documents for
+  frequently-used wrappers and other APIs.
+* (Typical issues): Add a part for typical use issues. Some candidates:
+  * When resetting, the episode end event is triggered ahead mistakenly owing
+    to the latency of state reset on the emulator. Currently, a workaround is
+    to call `reset` once again after the first `reset` or `switch_task`.
