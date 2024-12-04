@@ -715,7 +715,8 @@ class TaskManager():
     token = self._vocabulary[token_id]
 
     if self._special_token_pattern.fullmatch(token):
-      return
+      logging.warning("Unexpected special token: %s", token)
+      return []
 
     logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
 
@@ -732,6 +733,9 @@ class TaskManager():
       token = token[len(self._non_start_token_mark):]
 
     if ascii_only and not token.isascii():
+      logging.warning( "Encountered non-ASCII characters (%s) in ASCII-only mode. Have ignored it."
+                     , token
+                     )
       return []
     if is_non_start_token:
       keyevents.append({"type": "keycode", "value": "KEYCODE_DEL"})
