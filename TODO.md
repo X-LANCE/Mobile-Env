@@ -61,6 +61,7 @@
   our own model when I have enough time. Maybe 1 year later, when I'm ready for
   graduation. (> <)
 * (Unit Tests): Have a thorough check to the original unit test codes.
+* (Auto Efficiency Test): Enable automatic efficiency test.
 * (Task Debugger): Maybe a debugger for task definition composing? I think a
   visualizer to the event trees is needed.
 * ✓ (Long Click): Long click action for VhIoWrapper.
