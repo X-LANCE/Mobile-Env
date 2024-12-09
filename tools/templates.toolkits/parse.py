@@ -98,21 +98,25 @@ def main():
     parser.add_argument("--task", type=str, required=True)
     parser.add_argument("--template-path", "-p", default="templates", type=str)
     parser.add_argument("--output", "-o", type=str)
+    parser.add_argument("--no-autocat-commands", action="store_true")
     args = parser.parse_args()
 
     extra_setup_steps: Set[int] = set() # index-1
     extra_reset_steps: Set[int] = set() # index-1
+    extra_command_steps: Set[int] = set() # index-1
 
     with open(args.task) as f:
         conf_list: List[str] = []
         for i, l in enumerate(f):
             items: List[str] = l.strip().split()
             conf_list.append(items[0])
-            if i>0 and len(items)>=1:
+            if i>0 and len(items)>1:
                 if "s" in items[1]:
                     extra_setup_steps.add(i-1)
                 if "r" in items[1]:
                     extra_reset_steps.add(i-1)
+                if args.no_autocat_commands and "c" in items[1]:
+                    extra_command_steps.add(i-1)
 
     conf_path = os.path.dirname(args.task)
 
@@ -240,10 +244,13 @@ def main():
         #  }}} merge event slots # 
 
         target_task.extras_spec.extend(t.extras_spec)
-        t.command[0] = "Then, "\
-                     + t.command[0][0].lower()\
-                     + t.command[0][1:]
-        target_task.command.extend(t.command)
+
+        if not args.no_autocat_commands or i in extra_command_steps:
+            t.command[0] = "Then, "\
+                         + t.command[0][0].lower()\
+                         + t.command[0][1:]
+            target_task.command.extend(t.command)
+
         target_task.vocabulary.extend(t.vocabulary)
 
     target_task.event_slots.episode_end_listener.CopyFrom(
