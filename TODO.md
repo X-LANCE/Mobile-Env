@@ -85,7 +85,7 @@
 
 ### Template Toolkit
 
-* (Method to merge into new command): Add a mode to allow to keep only the
+* ✓ (Method to merge into new command): Add a mode to allow to keep only the
   first command in the final result rather than concatenating all the
   intructions.
 
