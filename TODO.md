@@ -51,6 +51,10 @@
   Windows, maybe replace it with a custom module.
 * (Other problems on Windows): The main problem seems to lie on uiautomator, or
   the `adb shell`. Maybe change it to `adb exec-out` will solve.
+* (Merge commands and intructions into `TimeStep` object): Merging commands and
+  instructions into `TimeStep` object should make use more convinient.
+* (VhIoWrapper): Update VhIoWrapper to provide element filtering results
+  directly to improve the usage experience.
 * (Icon Model): The embedded icon model. Maybe I can just use IconNet. But, I
   didn't find a ready-to-use IconNet implementation. Still need to train an own
   one. Found some candidates for icon detection,
