@@ -34,21 +34,31 @@
 from android_env.wrappers import discrete_action_wrapper
 from android_env.wrappers import flat_interface_wrapper
 from android_env.wrappers import float_pixels_wrapper
-from android_env.wrappers import gym_wrapper
 from android_env.wrappers import image_rescale_wrapper
 from android_env.wrappers import last_action_wrapper
 from android_env.wrappers import vh_io_wrapper
 from android_env.wrappers import recorder_wrapper
 from android_env.wrappers import tap_action_wrapper
-from android_env.wrappers import dmenv_wrapper
+
+from absl import logging
 
 DiscreteActionWrapper = discrete_action_wrapper.DiscreteActionWrapper
 FlatInterfaceWrapper = flat_interface_wrapper.FlatInterfaceWrapper
 FloatPixelsWrapper = float_pixels_wrapper.FloatPixelsWrapper
-GymInterfaceWrapper = gym_wrapper.GymInterfaceWrapper
 ImageRescaleWrapper = image_rescale_wrapper.ImageRescaleWrapper
 LastActionWrapper = last_action_wrapper.LastActionWrapper
 VhIoWrapper = vh_io_wrapper.VhIoWrapper
 TapActionWrapper = tap_action_wrapper.TapActionWrapper
 RecorderWrapper = recorder_wrapper.RecorderWrapper
-DMEnvInterfaceWrapper = dmenv_wrapper.DMEnvInterfaceWrapper
+
+try:
+    from android_env.wrappers import gym_wrapper
+    GymInterfaceWrapper = gym_wrapper.GymInterfaceWrapper
+except ModuleNotFoundError:
+    logging.warning("Gymnasium is not found. `pip install gymnasium` to enable GymInterfaceWrapper.")
+
+try:
+    from android_env.wrappers import dmenv_wrapper
+    DMEnvInterfaceWrapper = dmenv_wrapper.DMEnvInterfaceWrapper
+except ModuleNotFoundError:
+    logging.warning("DM-Env is not found. `pip install dm-env` to enable DMEnvInterfaceWrapper.")
