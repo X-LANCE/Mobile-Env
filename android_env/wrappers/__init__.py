@@ -41,9 +41,10 @@ from android_env.wrappers import recorder_wrapper
 from android_env.wrappers import tap_action_wrapper
 
 #from absl import logging
-import logging
+#import logging
+import warnings
 
-logger = logging.getLogger("mobile_env.wrapper")
+#logger = logging.getLogger("mobile_env.wrapper")
 
 DiscreteActionWrapper = discrete_action_wrapper.DiscreteActionWrapper
 FlatInterfaceWrapper = flat_interface_wrapper.FlatInterfaceWrapper
@@ -58,10 +59,16 @@ try:
     from android_env.wrappers import gym_wrapper
     GymInterfaceWrapper = gym_wrapper.GymInterfaceWrapper
 except ModuleNotFoundError:
-    logger.warning("Gymnasium is not found. `pip install gymnasium` to enable GymInterfaceWrapper.")
+    #logger.warning("Gymnasium is not found. `pip install gymnasium` to enable GymInterfaceWrapper.")
+    warnings.warn( "Gymnasium is not found. `pip install gymnasium` to enable GymInterfaceWrapper."
+                 , ImportWarning
+                 )
 
 try:
     from android_env.wrappers import dmenv_wrapper
     DMEnvInterfaceWrapper = dmenv_wrapper.DMEnvInterfaceWrapper
 except ModuleNotFoundError:
-    logger.warning("DM-Env is not found. `pip install dm-env` to enable DMEnvInterfaceWrapper.")
+    #logger.warning("DM-Env is not found. `pip install dm-env` to enable DMEnvInterfaceWrapper.")
+    warnings.warn( "DM-Env is not found. `pip install dm-env` to enable DMEnvInterfaceWrapper."
+                 , ImportWarning
+                 )
