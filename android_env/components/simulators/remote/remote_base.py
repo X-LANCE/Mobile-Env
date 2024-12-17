@@ -19,7 +19,10 @@ import requests
 from typing import Optional, Any, Union
 from typing import Dict, Tuple
 
-from absl import logging
+#from absl import logging
+import logging
+
+logger = logging.getLogger("mobile_env.simulator.remote_base")
 
 class RemoteBase(abc.ABC):
     _session: requests.Session
@@ -49,7 +52,7 @@ class RemoteBase(abc.ABC):
                                          )
             if response.status_code==200:
                 return response
-            logging.debug( "Remote Simulator Response Error %d: %d"
+            logger.debug( "Remote Simulator Response Error %d: %d"
                          , i, response.status_code
                          )
         raise ResponseError("Remote Simulator Response Error: {:d}"\

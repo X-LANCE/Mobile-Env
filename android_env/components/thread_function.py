@@ -1,4 +1,20 @@
 # coding=utf-8
+# Copyright 2024 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# Revised by Danyang Zhang @X-Lance based on
+# 
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +37,10 @@ import queue
 import threading
 from typing import Optional
 
-from absl import logging
+#from absl import logging
+import logging
 
+logger = logging.getLogger("mobile_env.thread_function")
 
 class ThreadFunction(metaclass=abc.ABCMeta):
   """Base class that encapsulates long-lived functions in a separate thread."""
@@ -85,7 +103,7 @@ class ThreadFunction(metaclass=abc.ABCMeta):
 
   def kill(self):
     """Shorthand for clients to terminate this thread."""
-    logging.info('Killing %s thread', self._name)
+    logger.info('Killing %s thread', self._name)
     # Sending a kill signal to clean up blocked read_values.
     self.write(ThreadFunction.Signal.KILL, block=True)
     # Stopping the _run loop.
@@ -93,10 +111,10 @@ class ThreadFunction(metaclass=abc.ABCMeta):
 
   def _run(self):
     """'Private' method that reruns main() until explicit termination."""
-    logging.info('Starting %s thread.', self._name)
+    logger.info('Starting %s thread.', self._name)
     while self._should_run:
       self.main()
-    logging.info('Finished %s thread.', self._name)
+    logger.info('Finished %s thread.', self._name)
 
   def _read_value(self):
     """'Protected' method for subclasses to read values from their input."""

@@ -33,7 +33,10 @@ from typing import Generic, TypeVar, Callable, Optional, Any, Union
 from typing import Tuple, List, Pattern, Dict, Match
 from typing import Iterable, ClassVar
 
-from absl import logging
+#from absl import logging
+import logging
+
+logger = logging.getLogger("mobile_env.event_listeners")
 
 # The whole data flow for the event flag classes:
 # value -> verification -> transform -> wrap -> update
@@ -113,13 +116,13 @@ class TextMatcher:
         if self._mode==TextMatcher.CheckMode.REGEX:
             match_: Match[str] = self._match(received)
             if match_ is not None:
-                logging.debug( "\x1b[5;31mText Matcher: %s for REGEX %s\x1b[0m"
+                logger.debug( "\x1b[5;31mText Matcher: %s for REGEX %s\x1b[0m"
                              , received, self._pattern
                              )
                 return True, match_.groups()
             return False, None
         score: float = self._match(received)
-        logging.debug( "\x1b[5;31mText Matcher: %.4f @ %s for %s %s\x1b[0m"
+        logger.debug( "\x1b[5;31mText Matcher: %.4f @ %s for %s %s\x1b[0m"
                      , score, received
                      , self._mode.name, self._pattern
                      )
@@ -453,30 +456,30 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         #  method `is_set` {{{ # 
         if self._new_step:
             if not self._clearability:
-                logging.debug("Event %d, not clear", self._id)
+                logger.debug("Event %d, not clear", self._id)
                 if self._is_set():
                     self._value_cache = self._get()
-                    logging.debug("Event %d, refresh value to %s", self._id, str(self._value_cache))
+                    logger.debug("Event %d, refresh value to %s", self._id, str(self._value_cache))
             elif not self._satisfies_prerequisites():
                 self._last_set = False
                 self._set = False
                 self._value_cache = []
-                logging.debug("Event %d, prerequisites not satified", self._id)
+                logger.debug("Event %d, prerequisites not satified", self._id)
             elif self._is_set():
                 if self._repeatability==Repeatability.UNLIMITED:
-                    logging.debug("Event %d, triggered unlimitedly", self._id)
+                    logger.debug("Event %d, triggered unlimitedly", self._id)
                     set_: bool = True
                 elif self._repeatability==Repeatability.LAST:
                     set_: bool = not self._last_set
-                    logging.debug("Event %d, triggered according to last state %s", self._id, str(set_))
+                    logger.debug("Event %d, triggered according to last state %s", self._id, str(set_))
                 else:
                     set_: bool = not self._ever_set
-                    logging.debug("Event %d, triggered according to ever state %s", self._id, str(set_))
+                    logger.debug("Event %d, triggered according to ever state %s", self._id, str(set_))
                 self._ever_set = True
                 self._last_set = True
                 self._set = set_
                 self._value_cache = self._get() if set_ else []
-                logging.debug( "Event %d, %s triggered with %s"
+                logger.debug( "Event %d, %s triggered with %s"
                              , self._id
                              , "" if set_ else "not"
                              , str(self._value_cache)
@@ -485,12 +488,12 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
                 self._last_set = False
                 self._set = False
                 self._value_cache = []
-                logging.debug("Event %d, not triggered", self._id)
+                logger.debug("Event %d, not triggered", self._id)
 
             #if self._set:
                 #self._value_cache = self._get()
             for evt in self._waited_by:
-                logging.debug("Event %d notifying event %d with %s", self._id, evt._id, str(self._set))
+                logger.debug("Event %d notifying event %d with %s", self._id, evt._id, str(self._set))
                 evt.notify(self._set)
 
         self._new_step = False
@@ -790,7 +793,7 @@ class TextEvent(RegionEvent[Optional[str], List[str]]):
         matches, values = self._text_matcher(text)
 
         if matches:
-            logging.info("\x1b[5;31mText Event: %s (%s)\x1b[0m", text, values)
+            logger.info("\x1b[5;31mText Event: %s (%s)\x1b[0m", text, values)
         return matches, values
         #  }}} method `_verify` # 
     #  }}} class `TextEvent` # 
@@ -1072,7 +1075,7 @@ class ViewHierarchyEvent(EventSource[List, List[Any]]):
 
         if all(map(lambda p: p[0].match(p[1]),
                 itertools.zip_longest(self._vh_properties, values))):
-            logging.debug( "\x1b[5;31mVH Event\x1b[0m: %s for %s.%s"
+            logger.debug( "\x1b[5;31mVH Event\x1b[0m: %s for %s.%s"
                          , str(values)
                          , self._selector_str
                          , str(self._property_names)
@@ -1128,7 +1131,7 @@ class LogEvent(EventSource[str, List[str]]):
 
         match_ = self._pattern.search(line)
         if match_ is not None:
-            logging.debug( "\x1b[5;31mLog Event\x1b[0m: %s for %s"
+            logger.debug( "\x1b[5;31mLog Event\x1b[0m: %s for %s"
                          , line
                          , self._pattern.pattern
                          )
@@ -1171,7 +1174,7 @@ class ResponseEvent(EventSource[str, Union[List[str], float]]):
         values: Optional[Union[List[str], float]]
         matches, values = self._text_matcher(response)
         if matches:
-            logging.info( "\x1b[5;31mResponse Event: %s (%s)\x1b[0m"
+            logger.info( "\x1b[5;31mResponse Event: %s (%s)\x1b[0m"
                         , response, values
                         )
         return matches, values

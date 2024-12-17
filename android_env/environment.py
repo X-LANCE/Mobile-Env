@@ -34,7 +34,8 @@
 
 from typing import Any, Union, Optional
 from typing import Dict, List
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import coordinator as coordinator_lib
 from android_env.components import task_manager as task_manager_lib
 from android_env.utils import fix_path
@@ -44,6 +45,8 @@ import os.path
 from android_env import interfaces
 import numpy as np
 from lxml.etree import _Element
+
+logger = logging.getLogger("mobile_env.environment")
 
 class AndroidEnv(interfaces.env.Environment):
   """An RL environment that interacts with Android apps."""
@@ -58,9 +61,9 @@ class AndroidEnv(interfaces.env.Environment):
     self._latest_instruction = []
     self._reset_next_step = True
 
-    logging.info('Action spec: %s', self.action_spec())
-    logging.info('Observation spec: %s', self.observation_spec())
-    logging.info('Task extras spec: %s', self.task_extras_spec())
+    logger.info('Action spec: %s', self.action_spec())
+    logger.info('Observation spec: %s', self.observation_spec())
+    logger.info('Task extras spec: %s', self.task_extras_spec())
 
   #  Informational Interfaces {{{ # 
   def action_spec(self) -> Dict[str, interfaces.specs.Array]:
@@ -137,7 +140,7 @@ class AndroidEnv(interfaces.env.Environment):
 
   def switch_task(self, index: int) -> interfaces.timestep.TimeStep:
     #  method `change_task` {{{ # 
-    logging.info('Changing Task to {:d}...'.format(index))
+    logger.info('Changing Task to {:d}...'.format(index))
 
     # Change the task and reset state of the environment.
     self._coordinator.switch_task_manager(index)
@@ -159,8 +162,8 @@ class AndroidEnv(interfaces.env.Environment):
     self._latest_action = {}
     self._reset_next_step = False
 
-    logging.info('Done Changing Task.')
-    logging.info('************* NEW EPISODE *************')
+    logger.info('Done Changing Task.')
+    logger.info('************* NEW EPISODE *************')
 
     return interfaces.timestep.restart(observation=self._latest_observation)
     #  }}} method `change_task` # 
@@ -168,7 +171,7 @@ class AndroidEnv(interfaces.env.Environment):
   def reset(self) -> interfaces.timestep.TimeStep:
     """Resets the environment for a new RL episode."""
 
-    logging.info('Resetting AndroidEnv...')
+    logger.info('Resetting AndroidEnv...')
 
     # Reset state of the environment.
     self._coordinator.reset_environment_state()
@@ -190,8 +193,8 @@ class AndroidEnv(interfaces.env.Environment):
     self._latest_action = {}
     self._reset_next_step = False
 
-    logging.info('Done resetting AndroidEnv.')
-    logging.info('************* NEW EPISODE *************')
+    logger.info('Done resetting AndroidEnv.')
+    logger.info('************* NEW EPISODE *************')
 
     return interfaces.timestep.restart(observation=self._latest_observation)
 
@@ -277,10 +280,10 @@ class AndroidEnv(interfaces.env.Environment):
 
   def close(self) -> None:
     """Cleans up running processes, threads and local files."""
-    logging.info('Cleaning up AndroidEnv...')
+    logger.info('Cleaning up AndroidEnv...')
     if hasattr(self, '_coordinator'):
       self._coordinator.close()
-    logging.info('Done cleaning up AndroidEnv.')
+    logger.info('Done cleaning up AndroidEnv.')
 
   def __del__(self) -> None:
     self.close()

@@ -26,8 +26,11 @@ import torch
 #import torchvision.ops as tvops
 import torchvision.io as tvio
 
-from absl import logging
+#from absl import logging
+import logging
 import traceback
+
+logger = logging.getLogger("mobile_env.thread.screen_analyzer")
 
 from typing import Callable
 from typing import List, Tuple
@@ -238,8 +241,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                         #logging.info("ZDY_DEBUG: {:}".format(type(rslt)))
                         lstn.set(rslt)
         except Exception as e:
-            logging.error("Error occurred during text recognition!")
-            logging.error(str(e))
+            logger.error("Error occurred during text recognition!")
+            logger.error(str(e))
             traceback.print_exc()
         #  }}} method `match_text_events` # 
 
@@ -274,8 +277,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                                 #logging.info("Icon Event Set!")
                                 break
         except Exception as e:
-            logging.error("Error occurred during icon detection!")
-            logging.error(str(e))
+            logger.error("Error occurred during icon detection!")
+            logger.error(str(e))
 
         # then, for pure recognize
         try:
@@ -295,8 +298,8 @@ class ScreenAnalyzerThread(thread_function.ThreadFunction):
                     for lstn, rslt in zip(self._icon_recog_event_listeners, results):
                         lstn.set(rslt)
         except Exception as e:
-            logging.error("Error occurred during icon recognition!")
-            logging.error(str(e))
+            logger.error("Error occurred during icon recognition!")
+            logger.error(str(e))
         #  }}} method `match_icon_events` # 
 
     @torch.no_grad()

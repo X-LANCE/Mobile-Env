@@ -38,7 +38,8 @@ import time
 from typing import Any, Optional, Iterable, Union
 from typing import Dict, Tuple, List
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import action_type as action_type_lib
 from android_env.components import errors
 from android_env.components import specs
@@ -50,10 +51,12 @@ import lxml.etree
 import itertools
 import shlex
 
+logger = logging.getLogger("mobile_env.coordinator")
+
 import enum
 from numbers import Number
 
-from datetime import timedelta
+#from datetime import timedelta
 from datetime import datetime
 
 class EventCheckControl(enum.Flag):
@@ -159,7 +162,7 @@ class Coordinator():
     self._elapsed_step_from_screen_check: int = -1
     self._elapsed_step_from_vh_check: int = -1
 
-    logging.info('Starting the simulator...')
+    logger.info('Starting the simulator...')
     self._restart_simulator()
     #  }}} method `__init__` # 
 
@@ -239,7 +242,7 @@ class Coordinator():
       self._task_manager.reset_task()
       self._simulator.update_device_orientation() # ZDY_COMMENT: device orientation updated only during reset
     except errors.StepCommandError:
-      logging.exception('Failed to reset the task. Restarting simulator.')
+      logger.exception('Failed to reset the task. Restarting simulator.')
       self._log_dict['restart_count_simulator_reset'] += 1
       self._should_restart = True
 
@@ -270,9 +273,9 @@ class Coordinator():
 
     if self._periodic_restart_time_min and self._simulator_start_time:
       sim_alive_time = (time.time() - self._simulator_start_time) / 60.0
-      logging.info('Simulator has been running for %f mins', sim_alive_time)
+      logger.info('Simulator has been running for %f mins', sim_alive_time)
       if sim_alive_time > self._periodic_restart_time_min:
-        logging.info('Maximum alive time reached. Restarting simulator.')
+        logger.info('Maximum alive time reached. Restarting simulator.')
         self._log_dict['restart_count_periodic'] += 1
         return True
     return False
@@ -294,9 +297,9 @@ class Coordinator():
     num_tries = 1
     while True:
       if num_tries > max_retries:
-        logging.error('Maximum number of restarts reached.')
+        logger.error('Maximum number of restarts reached.')
         raise errors.TooManyRestartsError
-      logging.info('Simulator launch attempt %d of %d', num_tries, max_retries)
+      logger.info('Simulator launch attempt %d of %d', num_tries, max_retries)
 
       # Launch the simulator (will restart if already launched).
       try:
@@ -308,7 +311,7 @@ class Coordinator():
           self._adb_controller = self._simulator.create_adb_controller()
         log_stream = self._simulator.get_log_stream()
       except errors.AdbControllerError:
-        logging.error('Error launching the simulator.')
+        logger.error('Error launching the simulator.')
         self._log_dict['restart_count_simulator_launch'] += 1
         num_tries += 1
         continue
@@ -323,7 +326,7 @@ class Coordinator():
             #image_format=self._simulator.image_format, # zdy
             log_stream=log_stream)
       except errors.StepCommandError:
-        logging.error('Failed to set up the task. Restarting simulator.')
+        logger.error('Failed to set up the task. Restarting simulator.')
         self._log_dict['restart_count_setup_steps'] += 1
         num_tries += 1
         continue
@@ -354,7 +357,7 @@ class Coordinator():
             #image_format=self._simulator.image_format, # zdy
             log_stream=self._simulator.get_log_stream())
       except errors.StepCommandError:
-        logging.error('Failed to set up the task. Restarting simulator.')
+        logger.error('Failed to set up the task. Restarting simulator.')
         self._log_dict['restart_count_setup_steps'] += 1
         self._should_restart = True
 
@@ -399,7 +402,7 @@ class Coordinator():
           text_events += self._task_manager.convert_token_to_keyevents(tkn["input_token"].item())
         self._send_text_event_to_simulator(text_events)
         end: datetime = datetime.now()
-        logging.info("DURATION: %.4f", (end-start).total_seconds())
+        logger.info("DURATION: %.4f", (end-start).total_seconds())
       elif act_t==3:
         for _, cmd in act:
           adb_outputs.append(self._send_adb_command_to_simulator(cmd))
@@ -546,7 +549,7 @@ class Coordinator():
       return observation, reward, task_extras, instructions, episode_end, succeeds
 
     except (errors.ReadObservationError, socket.error):
-      logging.exception('Unable to fetch observation. Restarting simulator.')
+      logger.exception('Unable to fetch observation. Restarting simulator.')
       self._log_dict['restart_count_fetch_observation'] += 1
       self._should_restart = True
       return None, 0.0, {}, [], True, None
@@ -584,7 +587,7 @@ class Coordinator():
     try:
       self._simulator.send_action(action)
     except (socket.error, errors.SendActionError):
-      logging.exception('Unable to execute action. Restarting simulator.')
+      logger.exception('Unable to execute action. Restarting simulator.')
       self._log_dict['restart_count_execute_action'] += 1
       self._should_restart = True
     #  }}} method _send_action_to_simulator # 
@@ -594,7 +597,7 @@ class Coordinator():
     try:
       self._simulator.send_key_event(text_events)
     except (socket.error, errors.SendActionError):
-      logging.exception('Unable to perform text event. Restarting simulator.')
+      logger.exception('Unable to perform text event. Restarting simulator.')
       self._log_dict['restart_count_execute_action'] += 1
       self._should_restart = True
     #  }}} method _send_text_event_to_simulator # 
@@ -621,7 +624,7 @@ class Coordinator():
         and self._step_timeout_sec and self._latest_observation_time:
       time_since_last_obs = self._get_time_since_last_observation()
       if time_since_last_obs > self._step_timeout_sec:
-        logging.exception('Time between steps exceeded %f',
+        logger.exception('Time between steps exceeded %f',
                           self._step_timeout_sec)
         self._log_dict['restart_count_step_timeout'] += 1
         self._should_restart = True

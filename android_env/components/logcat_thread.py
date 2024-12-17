@@ -37,14 +37,16 @@ import threading
 # `typing.Pattern` has been deprecated in Python 3.9 in favor of `re.Pattern`,
 # but it is not available even in slightly older Python versions.
 # Please see https://www.python.org/dev/peps/pep-0585/
-from typing import Callable, Match, NamedTuple, Optional, Pattern, Iterable
+from typing import Optional, Iterable
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import log_stream as log_stream_lib
 from android_env.components import thread_function
-from android_env.proto import task_pb2
+#from android_env.proto import task_pb2
 from android_env.components import event_listeners
 
+logger = logging.getLogger("mobile_env.thread.logcat")
 
 #class EventListener(NamedTuple):
   #regexp: Pattern[str]
@@ -110,7 +112,7 @@ class LogcatThread(thread_function.ThreadFunction):
     try:
       self._listeners.remove(event_listener)
     except ValueError:
-      logging.error('Event: %r is not registered.', event_regexp)
+      logger.error('Event: %r is not registered.', event_listener.pattern)
 
   # ZDY_COMMENT: will response to the events happened before the invocation but
   # not being handled yet as well

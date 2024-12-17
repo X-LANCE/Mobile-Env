@@ -1,4 +1,20 @@
 # coding=utf-8
+# Copyright 2024 SJTU X-Lance Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# Revised by Danyang Zhang @X-Lance based on
+# 
 # Copyright 2021 DeepMind Technologies Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,12 +36,14 @@ import threading
 import time
 from typing import Dict, List, Optional, Tuple
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import adb_controller
 from android_env.components import log_stream
 from android_env.components.simulators import base_simulator
 import numpy as np
 
+logger = logging.getLogger("mobile_env.simulator.fake")
 
 class FakeStream():
   """This class simulates the logs coming from ADB."""
@@ -140,7 +158,7 @@ class FakeSimulator(base_simulator.BaseSimulator):
     self._screen_dimensions = screen_dimensions
     self._fake_activity = fake_activity
     self._adb_controller = self.create_adb_controller()
-    logging.info('Created FakeSimulator.')
+    logger.info('Created FakeSimulator.')
 
   def adb_device_name(self) -> str:
     return 'fake_simulator'

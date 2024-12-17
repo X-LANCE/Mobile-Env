@@ -35,7 +35,10 @@
 import enum
 import threading
 
-from absl import logging
+#from absl import logging
+import logging
+
+logger = logging.getLogger("mobile_env.thread.dumpsys")
 
 from android_env.components import app_screen_checker as screen_checker
 from android_env.components import thread_function
@@ -133,11 +136,11 @@ class DumpsysThread(thread_function.ThreadFunction):
     # We were unable to determine the current activity.
     if outcome == AppScreenChecker.Outcome.FAILED_ACTIVITY_EXTRACTION:
       self._num_failed_activity_extraction += 1
-      logging.info('self._num_failed_activity_extraction: %s',
+      logger.info('self._num_failed_activity_extraction: %s',
                    self._num_failed_activity_extraction)
       if (self._num_failed_activity_extraction >=
           self._max_failed_activity_extraction):
-        logging.error('Maximum number of failed activity extraction reached.')
+        logger.error('Maximum number of failed activity extraction reached.')
         self._num_failed_activity_extraction = 0
         self._write_value(DumpsysThread.Signal.USER_EXITED_ACTIVITY)
         return

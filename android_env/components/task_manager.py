@@ -45,8 +45,11 @@ import functools
 import itertools
 import operator
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import adb_controller as adb_control
+
+logger = logging.getLogger("mobile_env.task_manager")
 
 from android_env.components import app_screen_checker
 from android_env.components import dumpsys_thread
@@ -222,7 +225,7 @@ class TaskManager():
       try:
         extra = dict(json.loads(extra))
       except ValueError:
-        logging.error('JSON string could not be parsed: %s', extra)
+        logger.error('JSON string could not be parsed: %s', extra)
         extra = {}
       return extra
       #  }}} function `_parse_json` # 
@@ -596,12 +599,12 @@ class TaskManager():
                  ) -> None:
     """Starts the given task along with all relevant processes."""
 
-    logging.info("#Text Events: {:d}".format(len(self._text_events)))
-    logging.info("#Icon Events: {:d}".format(len(self._icon_events)))
-    logging.info("#Icon Match Events: {:d}".format(len(self._icon_match_events)))
-    logging.info("#VH Events: {:d}".format(len(self._view_hierarchy_events)))
-    logging.info("#Log Events: {:d}".format(len(self._log_events)))
-    logging.info("#Response Events: {:d}".format(len(self._response_events)))
+    logger.info("#Text Events: {:d}".format(len(self._text_events)))
+    logger.info("#Icon Events: {:d}".format(len(self._icon_events)))
+    logger.info("#Icon Match Events: {:d}".format(len(self._icon_match_events)))
+    logger.info("#VH Events: {:d}".format(len(self._view_hierarchy_events)))
+    logger.info("#Log Events: {:d}".format(len(self._log_events)))
+    logger.info("#Response Events: {:d}".format(len(self._response_events)))
 
     self._adb_controller: adb_control.AdbController = adb_controller
     #self._emulator_stub = emulator_stub
@@ -622,19 +625,19 @@ class TaskManager():
 
   def pause_task(self) -> None:
     self._stop_dumpsys_thread()
-    logging.debug("## Stopped dumpsys ##")
+    logger.debug("## Stopped dumpsys ##")
     self._stop_screen_analyzer_thread() # zdy
-    logging.debug("## Stopped screen analyzer ##")
+    logger.debug("## Stopped screen analyzer ##")
     self._stop_vh_analyzer_thread()
-    logging.debug("## Stopped vh analyzer ##")
+    logger.debug("## Stopped vh analyzer ##")
 
   def _resume_task(self) -> None:
     self._start_dumpsys_thread()
-    logging.debug("## Started dumpsys ##")
+    logger.debug("## Started dumpsys ##")
     self._start_screen_analyzer_thread() # zdy
-    logging.debug("## Started screen analyzer ##")
+    logger.debug("## Started screen analyzer ##")
     self._start_vh_analyzer_thread()
-    logging.debug("## Started vh analyzer ##")
+    logger.debug("## Started vh analyzer ##")
 
   def setup_flag(self) -> bool:
     return self._setup_flag
@@ -658,7 +661,7 @@ class TaskManager():
     if self._special_token_pattern.fullmatch(token):
       return
 
-    logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
+    logger.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
 
     if self._non_start_mark_first:
       is_non_start_token = token.startswith(self._non_start_token_mark)
@@ -715,10 +718,10 @@ class TaskManager():
     token = self._vocabulary[token_id]
 
     if self._special_token_pattern.fullmatch(token):
-      logging.warning("Unexpected special token: %s", token)
+      logger.warning("Unexpected special token: %s", token)
       return []
 
-    logging.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
+    logger.info("\x1b[31;42mINPUT: \x1b[31m{:}\x1b[0m".format(self._vocabulary[token_id]))
 
     if self._non_start_mark_first:
       is_non_start_token = token.startswith(self._non_start_token_mark)
@@ -733,7 +736,7 @@ class TaskManager():
       token = token[len(self._non_start_token_mark):]
 
     if ascii_only and not token.isascii():
-      logging.warning( "Encountered non-ASCII characters (%s) in ASCII-only mode. Have ignored it."
+      logger.warning( "Encountered non-ASCII characters (%s) in ASCII-only mode. Have ignored it."
                      , token
                      )
       return []
@@ -826,7 +829,7 @@ class TaskManager():
       try:
         json_extras = json.loads(json_extras)
       except ValueError:
-        logging.error('JSON string could not be parsed: %s', json_extras)
+        logger.error('JSON string could not be parsed: %s', json_extras)
         json_extras = {}
 
     for k in json_extras:
@@ -878,8 +881,8 @@ class TaskManager():
     #if self._check_player_exited():
     if self._latest_values["player_exited"]:
       self._log_dict['reset_count_player_exited'] += 1
-      logging.warning('Player exited the game. Ending episode.')
-      logging.info('************* END OF EPISODE *************')
+      logger.warning('Player exited the game. Ending episode.')
+      logger.info('************* END OF EPISODE *************')
       return True, None
 
     # Check if episode has ended
@@ -887,16 +890,16 @@ class TaskManager():
       #if self._latest_values['episode_end']: # zdy
     if self._episode_end_event.is_set() and self._episode_end_event.get()[0] is not None:
       self._log_dict['reset_count_episode_end'] += 1
-      logging.info('End of episode from episode end event! Ending episode.')
-      logging.info('************* END OF EPISODE *************')
+      logger.info('End of episode from episode end event! Ending episode.')
+      logger.info('************* END OF EPISODE *************')
       return True, self._episode_end_event.get()[0]
 
     # Check if step limit or time limit has been reached
     if self._task.max_num_steps > 0:
       if self._episode_steps > self._task.max_num_steps:
         self._log_dict['reset_count_max_duration_reached'] += 1
-        logging.info('Maximum task duration (steps) reached. Ending episode.')
-        logging.info('************* END OF EPISODE *************')
+        logger.info('Maximum task duration (steps) reached. Ending episode.')
+        logger.info('************* END OF EPISODE *************')
         return True, None
 
     if not with_view_hierarchy and self._task.max_duration_sec > 0.0:
@@ -904,8 +907,8 @@ class TaskManager():
       max_duration_sec = self._task.max_duration_sec
       if task_duration > datetime.timedelta(seconds=int(max_duration_sec)):
         self._log_dict['reset_count_max_duration_reached'] += 1
-        logging.info('Maximum task duration (sec) reached. Ending episode.')
-        logging.info('************* END OF EPISODE *************')
+        logger.info('Maximum task duration (sec) reached. Ending episode.')
+        logger.info('************* END OF EPISODE *************')
         return True, None
 
     return False, None
@@ -939,7 +942,7 @@ class TaskManager():
                                                 if get_vh\
                                               else None
     if get_vh and view_hierarchy is None:
-      logging.warning("Fetched View Hierarchy Observation FAILED!")
+      logger.warning("Fetched View Hierarchy Observation FAILED!")
     self._run_vh_analyzer(view_hierarchy, screen.shape[:2], check_vh)
 
     try:
@@ -1041,9 +1044,9 @@ class TaskManager():
     try:
       status = self._screen_analyzer_thread.read(block=False, timeout=0.05) # TODO: maybe a better timeout value could be tuned to
       if status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.CHECK_ERROR:
-        logging.error("Screen Analyzer Error!")
+        logger.error("Screen Analyzer Error!")
       elif status==screen_analyzer_thread.ScreenAnalyzerThread.Signal.DID_NOT_CHECK:
-        logging.info("Screen Analyzer did not check, maybe owing to the kill signal.")
+        logger.info("Screen Analyzer did not check, maybe owing to the kill signal.")
     except queue.Empty:
       #logging.warning("Screen Analyzer exceeds time limit!")
       pass
@@ -1077,9 +1080,9 @@ class TaskManager():
       status: vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal\
           = self._vh_analyzer_thread.read(block=False, timeout=0.05) # TODO: maybe non-block
       if status==vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal.CHECK_ERROR:
-        logging.error("VH Analyzer Error!")
+        logger.error("VH Analyzer Error!")
       elif status==vh_analyzer_thread.ViewHierarchyAnalyzerThread.Signal.DID_NOT_CHECK:
-        logging.error("VH Analyzer did not check.")
+        logger.error("VH Analyzer did not check.")
     except queue.Empty:
       #logging.warning("VH Analyzer exceeds time limit!")
       pass
@@ -1185,17 +1188,17 @@ class TaskManager():
     we restart the simulation in the hope of returning the simulation
     to a good state.
     """
-    logging.warning('Bad state detected.')
+    logger.warning('Bad state detected.')
     if self._max_bad_states:
       self._is_bad_episode = True
       self._bad_state_counter += 1
-      logging.warning('Bad state counter: %d.', self._bad_state_counter)
+      logger.warning('Bad state counter: %d.', self._bad_state_counter)
       if self._bad_state_counter >= self._max_bad_states:
-        logging.error('Too many consecutive bad states. Restarting simulator.')
+        logger.error('Too many consecutive bad states. Restarting simulator.')
         self._log_dict['restart_count_max_bad_states'] += 1
         self._should_restart = True
     else:
-      logging.warning('Max bad states not set, bad states will be ignored.')
+      logger.warning('Max bad states not set, bad states will be ignored.')
 
   # ZDY_COMMENT: I think it is time to obsolete this method
   def _logcat_listeners(self):
@@ -1271,7 +1274,7 @@ class TaskManager():
           # ZDY_COMMENT: oh, got it, maybe a list of basic type elements
         # Except all to avoid unnecessary crashes, only log error.
         except Exception:  # pylint: disable=broad-except
-          logging.exception('Could not parse extra: %s', extra)
+          logger.exception('Could not parse extra: %s', extra)
       else:
         # No extra value provided for boolean extra. Setting value to True.
         extra = 1
@@ -1289,7 +1292,7 @@ class TaskManager():
       try:
         extra = dict(json.loads(extra_data))
       except ValueError:
-        logging.error('JSON string could not be parsed: %s', extra_data)
+        logger.error('JSON string could not be parsed: %s', extra_data)
         return
       for extra_name, extra_value in extra.items():
         _process_extra(extra_name, extra_value)

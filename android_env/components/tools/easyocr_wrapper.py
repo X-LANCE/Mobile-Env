@@ -26,9 +26,12 @@ import threading
 import torch
 import numpy as np
 
-from absl import logging
+#from absl import logging
+import logging
 import traceback
 import io
+
+logger = logging.getLogger("mobile_env.screen_model.easyocr_wrapper")
 
 def in_bbox(bbox0: torch.Tensor, bbox1: torch.Tensor) -> torch.Tensor:
     """
@@ -121,7 +124,7 @@ class EasyOCRWrapper(TextModel):
         """
 
         try:
-            logging.debug("EasyOCR Starts.")
+            logger.debug("EasyOCR Starts.")
 
             screen = self._convert_screen(screen) # (H, W, 3)
             with self._lock:
@@ -131,14 +134,14 @@ class EasyOCRWrapper(TextModel):
                                     ]
                              ] = self._reader.readtext(screen) # get all results
 
-            logging.debug("Screen begins")
+            logger.debug("Screen begins")
             for bbox, t, _ in results:
-                logging.debug( "[%.2f, %.2f, %.2f, %.2f]: %s"
+                logger.debug( "[%.2f, %.2f, %.2f, %.2f]: %s"
                              , bbox[0][0], bbox[0][1]
                              , bbox[1][0], bbox[2][1]
                              , t
                              )
-            logging.debug("Screen ends")
+            logger.debug("Screen ends")
 
             # check the bboxes
             target_bboxes = torch.cat(bboxes) # (N, 4); N is nb_bboxes
@@ -160,11 +163,11 @@ class EasyOCRWrapper(TextModel):
             for m in region_mask:
                 final_returns.append([t for t, m_ in zip(result_texts, m) if m_])
 
-            logging.debug("EasyOCR Ends.")
+            logger.debug("EasyOCR Ends.")
         except Exception as e:
             with io.StringIO() as bfr:
                 traceback.print_exc(file=bfr)
-                logging.debug("%s", bfr.getvalue())
+                logger.debug("%s", bfr.getvalue())
             raise e
         return final_returns
         #  }}} method text_detector # 

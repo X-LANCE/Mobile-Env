@@ -36,9 +36,12 @@ import subprocess
 import time
 from typing import Optional
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import errors
 import grpc
+
+logger = logging.getLogger("mobile_env.simulator.emulator_launcher")
 
 from android_env.proto import emulator_controller_pb2
 from android_env.proto import emulator_controller_pb2_grpc
@@ -116,7 +119,7 @@ class EmulatorLauncher():
   def launch(self) -> None:
     """Launches the emulator."""
 
-    logging.info('Booting the emulator [%s]', self._emulator_path)
+    logger.info('Booting the emulator [%s]', self._emulator_path)
 
     # Set necessary environment variables.
     base_lib_dir = self._emulator_path[:-8] + 'lib64/'
@@ -136,7 +139,7 @@ class EmulatorLauncher():
         'QT_DEBUG_PLUGINS': '1',
         'QT_XKB_CONFIG_ROOT': str(self._emulator_path[:-8] + 'qt_config/'),
     }
-    logging.info('extra_env_vars: %s', str(extra_env_vars))
+    logger.info('extra_env_vars: %s', str(extra_env_vars))
     env_vars = dict(os.environ).copy()
     env_vars.update(extra_env_vars)
 
@@ -156,7 +159,7 @@ class EmulatorLauncher():
         '-verbose',
         '-avd', self._avd_name,
     ] + grpc_port + run_headless + writable_system + ports + proxy
-    logging.info('Emulator launch command: %s', ' '.join(command))
+    logger.info('Emulator launch command: %s', ' '.join(command))
 
     # Prepare logfile.
     emulator_logfile = os.path.join(self._local_tmp_dir, 'emulator_output')
@@ -177,7 +180,7 @@ class EmulatorLauncher():
     success = False
     while time.time() < deadline:
       emu_status = self._emulator_stub.getStatus(empty_pb2.Empty())
-      logging.info('Waiting for emulator to start. Emulator uptime: %rms',
+      logger.info('Waiting for emulator to start. Emulator uptime: %rms',
                    emu_status.uptime)
       if emu_status.booted:
         success = True
@@ -190,13 +193,13 @@ class EmulatorLauncher():
           'The emulator failed to boot after %r seconds' %
           self._startup_wait_time_sec)
 
-    logging.info('Done booting the emulator (in %f seconds).', elapsed_time)
+    logger.info('Done booting the emulator (in %f seconds).', elapsed_time)
 
   def restart(self) -> None:
-    logging.info('Restarting the emulator...')
+    logger.info('Restarting the emulator...')
     self._kill_emulator_process()
     self.launch()
-    logging.info('Done restarting the emulator.')
+    logger.info('Done restarting the emulator.')
 
   @classmethod
   def create_emulator_stub(
@@ -205,7 +208,7 @@ class EmulatorLauncher():
       use_async: bool = False,
   ) -> emulator_controller_pb2_grpc.EmulatorControllerStub:
     """Returns a stub to the EmulatorController service."""
-    logging.info('Creating gRPC channel to the emulator on port %r', grpc_port)
+    logger.info('Creating gRPC channel to the emulator on port %r', grpc_port)
     port = f'localhost:{grpc_port}'
     options = [('grpc.max_send_message_length', -1),
                ('grpc.max_receive_message_length', -1),
@@ -216,7 +219,7 @@ class EmulatorLauncher():
     else:
       channel = grpc.secure_channel(port, creds, options=options)
     grpc.channel_ready_future(channel).result()  # Wait for channel to be ready.
-    logging.info('Added gRPC channel for the Emulator on port %s', port)
+    logger.info('Added gRPC channel for the Emulator on port %s', port)
     return emulator_controller_pb2_grpc.EmulatorControllerStub(channel)
 
   def get_emulator_stub(
@@ -227,22 +230,22 @@ class EmulatorLauncher():
   def _kill_emulator_process(self) -> None:
     """Shuts down the emulator process."""
     if self._emulator:
-      logging.info('Killing the emulator process...')
+      logger.info('Killing the emulator process...')
       self._emulator_stub.setVmState(
           emulator_controller_pb2.VmRunState(
               state=emulator_controller_pb2.VmRunState.RunState.SHUTDOWN))
-      logging.info('Will wait 30s for it to finish gracefully...')
+      logger.info('Will wait 30s for it to finish gracefully...')
       try:
         self._emulator.wait(timeout=30.0)
       except subprocess.TimeoutExpired:
-        logging.exception(
+        logger.exception(
             'The emulator process did not finish after 30s. '
             'returncode: %s. Will now try to kill() it.',
             self._emulator.returncode)
         self._emulator.kill()
       self._emulator = None
       self._emulator_output.close()
-      logging.info('Done killing the emulator process.')
+      logger.info('Done killing the emulator process.')
 
   def close(self):
     """Clean up launcher files and processes."""

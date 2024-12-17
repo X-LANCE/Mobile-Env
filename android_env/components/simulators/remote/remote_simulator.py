@@ -30,8 +30,11 @@ import base64
 from PIL import Image
 import io
 
-from absl import logging
+#from absl import logging
+import logging
 import traceback
+
+logger = logging.getLogger("mobile_env.simulator.remote")
 
 # ZDY_COMMENT: adb_root and frida_server arguments are ignored here
 # they should be configured directly on launching the daemon on server
@@ -156,7 +159,7 @@ class RemoteSimulator( base_simulator.BaseSimulator
         try:
             self._get_response("close", timeout=self._launch_timeout)
         except:
-            logging.exception("Response Error During Closing RemoteSimulator")
+            logger.exception("Response Error During Closing RemoteSimulator")
             traceback.print_exc()
         self._session.close()
         super(RemoteSimulator, self).close()

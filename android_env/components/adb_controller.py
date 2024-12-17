@@ -43,10 +43,13 @@ from typing import List, Tuple, Dict
 from typing import Optional, Sequence
 import lxml.etree
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import errors
 from android_env.proto import adb_pb2
 import pexpect
+
+logger = logging.getLogger("mobile_env.adb_controller.basic")
 
 _MAX_INIT_RETRIES = 20
 _INIT_RETRY_SLEEP_SEC = 2.0
@@ -158,13 +161,13 @@ class AdbController():
 
   def close(self) -> None:
     """Closes internal threads and processes."""
-    logging.info('Closing ADB controller...')
+    logger.info('Closing ADB controller...')
     if self._adb_shell is not None:
-      logging.info('Killing ADB shell')
+      logger.info('Killing ADB shell')
       self._adb_shell.close(force=True)
       self._adb_shell = None
       self._shell_is_ready = False
-    logging.info('Done closing ADB controller.')
+    logger.info('Done closing ADB controller.')
     if hasattr(self, "_frida_processes"):
       for prcss in self._frida_processes.values():
         prcss.terminate()
@@ -196,7 +199,7 @@ class AdbController():
         adb_output = self._execute_shell_command(args[1:], timeout=timeout)
       else:
         adb_output = self._execute_normal_command(args, timeout=timeout)
-    logging.debug('ADB output: %s', adb_output)
+    logger.debug('ADB output: %s', adb_output)
     return adb_output
 
   def _execute_normal_command(
@@ -207,16 +210,16 @@ class AdbController():
 
     timeout = self._resolve_timeout(timeout)
     command = self.command_prefix() + args
-    logging.info('Executing ADB command: %s', command)
+    logger.info('Executing ADB command: %s', command)
 
     try:
       cmd_output = subprocess.check_output(
           command, stderr=subprocess.STDOUT, timeout=timeout)
-      logging.info('Done executing ADB command: %s', command)
+      logger.info('Done executing ADB command: %s', command)
       return cmd_output
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
-      logging.exception('Failed to execute ADB command %s', command)
-      logging.error('Error output: %r', error.output)
+      logger.exception('Failed to execute ADB command %s', command)
+      logger.error('Error output: %r', error.output)
       raise error
 
   def _execute_shell_command(
@@ -230,7 +233,7 @@ class AdbController():
     if not self._shell_is_ready:
       self._init_shell(timeout=timeout)
     shell_args = ' '.join(args)
-    logging.info('Executing ADB shell command: %s', shell_args)
+    logger.info('Executing ADB shell command: %s', shell_args)
 
     num_tries = 0
     while num_tries < max_num_retries:
@@ -238,15 +241,15 @@ class AdbController():
       try:
         self._adb_shell.sendline(shell_args)
         self._adb_shell.expect(self._prompt, timeout=timeout)
-        logging.info('Done executing ADB shell command: %s', shell_args)
+        logger.info('Done executing ADB shell command: %s', shell_args)
         output = self._adb_shell.before.partition('\n'.encode('utf-8'))[2]
         return output
       except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT):
-        logging.exception('Shell command failed. Reinitializing the shell.')
-        logging.warning('self._adb_shell.before: %r', self._adb_shell.before)
+        logger.exception('Shell command failed. Reinitializing the shell.')
+        logger.warning('self._adb_shell.before: %r', self._adb_shell.before)
         self._init_shell(timeout=timeout)
 
-    logging.exception('Reinitializing the shell did not solve the issue.')
+    logger.exception('Reinitializing the shell did not solve the issue.')
     raise errors.AdbControllerPexpectError()
 
   def _init_shell(self, timeout: Optional[float] = None) -> None:
@@ -262,26 +265,26 @@ class AdbController():
 
     timeout = self._resolve_timeout(timeout)
     command = ' '.join(self.command_prefix() + ['shell'])
-    logging.info('Initialising ADB shell with command: %s', command)
+    logger.info('Initialising ADB shell with command: %s', command)
 
     num_tries = 0
     while num_tries < _MAX_INIT_RETRIES:
       num_tries += 1
       try:
-        logging.info('Spawning ADB shell...')
+        logger.info('Spawning ADB shell...')
         self._adb_shell = pexpect.spawn(command, use_poll=True, timeout=timeout)
         # Setting this to None prevents a 50ms wait for each sendline.
         self._adb_shell.delaybeforesend = None
         self._adb_shell.delayafterread = None
-        logging.info('Done spawning ADB shell. Consuming first prompt...')
+        logger.info('Done spawning ADB shell. Consuming first prompt...')
         self._adb_shell.expect(self._prompt, timeout=timeout)
-        logging.info('Done consuming first prompt.')
+        logger.info('Done consuming first prompt.')
         self._shell_is_ready = True
         return
       except (pexpect.ExceptionPexpect, ValueError) as e:
-        logging.exception(e)
-        logging.error('self._adb_shell.before: %r', self._adb_shell.before)
-        logging.error('Could not start ADB shell. Try %r of %r.',
+        logger.exception(e)
+        logger.error('self._adb_shell.before: %r', self._adb_shell.before)
+        logger.error('Could not start ADB shell. Try %r of %r.',
                       num_tries, _MAX_INIT_RETRIES)
         time.sleep(_INIT_RETRY_SLEEP_SEC)
 
@@ -310,10 +313,10 @@ class AdbController():
     while num_tries < max_tries:
       ready = self._check_device_is_ready(timeout=timeout)
       if ready:
-        logging.info('Device is ready.')
+        logger.info('Device is ready.')
         return
       time.sleep(sleep_time)
-      logging.error('Device is not ready.')
+      logger.error('Device is not ready.')
     raise errors.AdbControllerDeviceTimeoutError('Device timed out.')
 
   def _check_device_is_ready(self, timeout: Optional[float] = None) -> bool:
@@ -324,11 +327,11 @@ class AdbController():
           ['shell', 'service', 'check', service],
           timeout=timeout)
       if not check_output:
-        logging.error('Check for service "%s" failed.', service)
+        logger.error('Check for service "%s" failed.', service)
         return False
       check_output = check_output.decode('utf-8').strip()
       if check_output != f'Service {service}: found':
-        logging.error(check_output)
+        logger.error(check_output)
         return False
     return True
 
@@ -389,9 +392,9 @@ class AdbController():
     packages = packages.decode('utf-8').split()
     # Remove 'package:' prefix for each package.
     packages = [pkg[8:] for pkg in packages if pkg[:8] == 'package:']
-    logging.info('Installed packages: %r', packages)
+    logger.info('Installed packages: %r', packages)
     if package_name in packages:
-      logging.info('Package %s found.', package_name)
+      logger.info('Package %s found.', package_name)
       return True
     return False
 
@@ -471,7 +474,7 @@ class AdbController():
                         permissions: Sequence[str],
                         timeout: Optional[float] = None):
     for permission in permissions:
-      logging.info('Granting permission: %r', permission)
+      logger.info('Granting permission: %r', permission)
       self._execute_command(
           ['shell', 'pm', 'grant', package, permission], timeout=timeout)
 
@@ -492,12 +495,12 @@ class AdbController():
       view_hierarchy_output = view_hierarchy_output[:rindex+1] if rindex!=-1\
           else view_hierarchy_output
       #logging.info("Fetched View Hierarchy XML: {:}".format(view_hierarchy_output.decode("utf-8")))
-      logging.info("Fetched View Hierarchy XML")
+      logger.info("Fetched View Hierarchy XML")
       try:
         root = lxml.etree.fromstring(view_hierarchy_output)
         #logging.info("Parsed View Hierarchy XML")
       except lxml.etree.XMLSyntaxError:
-        logging.error("View Hierarchy XML Parsing Error!")
+        logger.error("View Hierarchy XML Parsing Error!")
         root = None
       return root
     return None
@@ -535,7 +538,7 @@ class AdbController():
       am_stack_list = self._execute_command(
           ['shell', 'am', 'stack', 'list'],
           timeout=timeout)
-      logging.error('Empty visible_task. `am stack list`: %r', am_stack_list)
+      logger.error('Empty visible_task. `am stack list`: %r', am_stack_list)
       return None
 
     visible_task = visible_task.decode('utf-8')
@@ -550,7 +553,7 @@ class AdbController():
     p = re.compile(r'.*\{(.*)\}')
     matches = p.search(visible_task)
     if matches is None:
-      logging.error(
+      logger.error(
           'Could not extract current activity. Will return nothing. '
           '`am stack list`: %r',
           self._execute_command(['shell', 'am', 'stack', 'list'],
@@ -564,7 +567,7 @@ class AdbController():
                            timeout: Optional[float] = None):
     current_task_id = self._fetch_current_task_id(full_activity, timeout)
     if current_task_id == -1:
-      logging.info('Could not find task ID for activity [%r]', full_activity)
+      logger.info('Could not find task ID for activity [%r]', full_activity)
       raise errors.AdbControllerScreenPinningError
     self._execute_command(
         ['shell', 'am', 'task', 'lock', str(current_task_id)], timeout=timeout)
@@ -596,8 +599,8 @@ class AdbController():
         current_task_id = int(current_task_id_str)
         return current_task_id
       except ValueError:
-        logging.info('Failed to parse task ID [%r].', current_task_id_str)
-    logging.error('Could not find current activity in stack list: %r',
+        logger.info('Failed to parse task ID [%r].', current_task_id_str)
+    logger.error('Could not find current activity in stack list: %r',
                   stack_utf8)
     # At this point if we could not find a task ID, there's nothing we can do.
     return -1
@@ -605,7 +608,7 @@ class AdbController():
   def get_screen_dimensions(self,
                             timeout: Optional[float] = None) -> Tuple[int, int]:
     """Returns a (height, width)-tuple representing a screen size in pixels."""
-    logging.info('Fetching screen dimensions...')
+    logger.info('Fetching screen dimensions...')
     self._wait_for_device(timeout=timeout)
     adb_output = self._execute_command(['shell', 'wm', 'size'], timeout=timeout)
     assert adb_output, 'Empty response from ADB for screen size.'
@@ -616,20 +619,20 @@ class AdbController():
     dims_match = override or physical
     assert dims_match, f'Failed to match the screen dimensions. {adb_output}'
     dims = dims_match.group(1)
-    logging.info('width x height: %s', dims)
+    logger.info('width x height: %s', dims)
     width, height = tuple(map(int, dims.split('x')))  # Split between W & H
-    logging.info('Done fetching screen dimensions: (H x W) = (%r, %r)',
+    logger.info('Done fetching screen dimensions: (H x W) = (%r, %r)',
                  height, width)
     return (height, width)
 
   def get_orientation(self, timeout: Optional[float] = None) -> Optional[str]:
     """Returns the device orientation."""
-    logging.info('Getting orientation...')
+    logger.info('Getting orientation...')
     dumpsys = self._execute_command(
         ['shell', 'dumpsys', 'input'], timeout=timeout)
     #logging.info('dumpsys: %r', dumpsys)
     if not dumpsys:
-      logging.error('Empty dumpsys.')
+      logger.error('Empty dumpsys.')
       return None
     dumpsys = dumpsys.decode('utf-8')
     lines = dumpsys.split('\n')  # Split by lines.
@@ -646,10 +649,10 @@ class AdbController():
         if skip_next:
           continue
         orientation = surface_orientation.group(1)
-        logging.info('Done getting orientation: %r', orientation)
+        logger.info('Done getting orientation: %r', orientation)
         return orientation
 
-    logging.error('Could not get the orientation. Returning None.')
+    logger.error('Could not get the orientation. Returning None.')
     return None
 
   def rotate_device(self,
@@ -665,8 +668,8 @@ class AdbController():
                            pointer_location: bool = True,
                            timeout: Optional[float] = None) -> None:
     """Sends command to turn touch indicators on/off."""
-    logging.info('Setting show_touches indicator to %r', show_touches)
-    logging.info('Setting pointer_location indicator to %r', pointer_location)
+    logger.info('Setting show_touches indicator to %r', show_touches)
+    logger.info('Setting pointer_location indicator to %r', pointer_location)
     show_touches = 1 if show_touches else 0
     pointer_location = 1 if pointer_location else 0
     self._wait_for_device(timeout=timeout)

@@ -37,7 +37,8 @@ import tempfile
 from typing import Any, Optional, Union
 from typing import Dict, List
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import adb_controller
 from android_env.components import adb_log_stream
 from android_env.components import errors
@@ -46,6 +47,8 @@ from android_env.components.simulators import base_simulator
 from android_env.components.simulators.emulator import emulator_launcher
 import numpy as np
 import portpicker
+
+logger = logging.getLogger("mobile_env.simulator.emulator")
 
 from android_env.proto import emulator_controller_pb2
 from google.protobuf import empty_pb2
@@ -78,7 +81,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
       self._adb_port = emulator_launcher_args['adb_port']
       self._console_port = emulator_launcher_args['emulator_console_port']
       self._grpc_port = emulator_launcher_args['grpc_port']
-      logging.info('Connecting to existing emulator "%r"', self._adb_port)
+      logger.info('Connecting to existing emulator "%r"', self._adb_port)
     else:
       self._existing_emulator_provided = False
       self._adb_port = portpicker.pick_unused_port()
@@ -99,13 +102,13 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     self._tmp_dir = tmp_dir or tempfile.gettempdir()
     self._local_tmp_dir_handle = tempfile.TemporaryDirectory(dir=self._tmp_dir)
     self._local_tmp_dir = self._local_tmp_dir_handle.name
-    logging.info('Simulator local_tmp_dir: %s', self._local_tmp_dir)
+    logger.info('Simulator local_tmp_dir: %s', self._local_tmp_dir)
 
     # Initialize own ADB controller
     self._adb_controller_args = adb_controller_args
     self._adb_controller = self.create_adb_controller()
     self._adb_controller.init_server()
-    logging.info('Initialized simulator with ADB server port %r.',
+    logger.info('Initialized simulator with ADB server port %r.',
                  self._adb_controller_args['adb_server_port'])
 
     # Create EmulatorLauncher.
@@ -116,7 +119,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
         'local_tmp_dir': self._local_tmp_dir,
         'grpc_port': self._grpc_port,
     })
-    logging.info('emulator_launcher_args: %r', emulator_launcher_args)
+    logger.info('emulator_launcher_args: %r', emulator_launcher_args)
     if not self._existing_emulator_provided:
       self._launcher = emulator_launcher.EmulatorLauncher(
           **emulator_launcher_args)
@@ -159,10 +162,10 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     super()._post_launch_setup()
     if self._adb_root:
       self._adb_controller.get_root()
-      logging.info("Inited root adb daemon...")
+      logger.info("Inited root adb daemon...")
     if self._frida_server:
       self._adb_controller.init_frida_server(self._frida_server)
-      logging.info("Inited frida server...")
+      logger.info("Inited frida server...")
     self._emulator_stub = self._get_emulator_stub()
     self._image_format = emulator_controller_pb2.ImageFormat(
         format=emulator_controller_pb2.ImageFormat.ImgFormat.RGB888,

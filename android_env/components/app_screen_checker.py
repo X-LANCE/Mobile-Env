@@ -37,7 +37,10 @@ import re
 from typing import Callable, Optional, Sequence
 from typing import List, Pattern
 
-from absl import logging
+#from absl import logging
+import logging
+
+logger = logging.getLogger("mobile_env.app_screen_checker")
 
 from android_env.components import adb_controller as adb_control
 from android_env.proto import task_pb2
@@ -78,7 +81,7 @@ class DumpsysNode():
     try:
       return next(x for x in self.children if predicate(x))
     except StopIteration:
-      logging.info('Failed to find child. max_levels: %i.', max_levels)
+      logger.info('Failed to find child. max_levels: %i.', max_levels)
       # Search children.
       if max_levels:
         for child in self.children:
@@ -93,7 +96,7 @@ class DumpsysNode():
 
   def print_tree(self, indent: int = 2):
     """Prints this tree in logging.info()."""
-    logging.info(' ' * indent + self.data)
+    logger.info(' ' * indent + self.data)
     for c in self.children:
       c.print_tree(indent + 2)
 
@@ -162,10 +165,10 @@ def matches_path(dumpsys_activity_output: str,
   view_hierarchy = root.find_child(
       lambda x: x.data.startswith('View Hierarchy'), max_levels)
   if view_hierarchy is None:
-    logging.error(
+    logger.error(
         'view_hierarchy is None. Dumpsys activity output: %s. tree: %r',
         str(dumpsys_activity_output), root.print_tree())
-    logging.error('Tree root: %s', str(root))
+    logger.error('Tree root: %s', str(root))
     return None
 
   current_node = view_hierarchy
@@ -177,10 +180,10 @@ def matches_path(dumpsys_activity_output: str,
 
     child = current_node.find_child(regex_predicate)
     if child is None:
-      logging.error('Mismatched regex (%i, %s). current_node: %s', i,
+      logger.error('Mismatched regex (%i, %s). current_node: %s', i,
                     regex.pattern, current_node)
-      logging.error('Dumpsys activity output: %s', str(dumpsys_activity_output))
-      logging.error('Tree root: %s', str(root))
+      logger.error('Dumpsys activity output: %s', str(dumpsys_activity_output))
+      logger.error('Tree root: %s', str(root))
       return None
     else:
       current_node = child
@@ -287,7 +290,7 @@ class AppScreenChecker():
       return AppScreenChecker.Outcome.FAILED_ACTIVITY_EXTRACTION
 
     if current_activity != self._expected_activity:
-      logging.error('current_activity: %s,  expected_activity: %s',
+      logger.error('current_activity: %s,  expected_activity: %s',
                     current_activity, self._expected_activity)
       return AppScreenChecker.Outcome.UNEXPECTED_ACTIVITY
 

@@ -22,7 +22,10 @@ from typing import Optional
 from typing import List, Dict
 import base64
 
-from absl import logging
+#from absl import logging
+import logging
+
+logger = logging.getLogger("mobile_env.adb_controller.remote")
 
 # ZDY_COMMENT: adb and frida arguments are left to server daemon
 
@@ -83,7 +86,7 @@ class RemoteAdbController( AdbController
         output: Optional[str] = response["output"]
         if isinstance(output, str):
             output: Optional[bytes] = base64.b64decode(output.encode())
-        logging.debug( "Remote ADB response for %d from %d: %s"
+        logger.debug( "Remote ADB response for %d from %d: %s"
                      , self._remote_id, response["id"]
                      , output
                      )

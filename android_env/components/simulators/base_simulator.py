@@ -36,11 +36,14 @@ import abc
 from typing import Optional, Union
 from typing import List, Dict, Tuple
 
-from absl import logging
+#from absl import logging
+import logging
 from android_env.components import action_type as action_type_lib
 from android_env.components import adb_controller
 from android_env.components import log_stream
 from android_env.components import utils
+
+logger = logging.getLogger("mobile_env.simulator.base")
 
 import numpy as np
 
@@ -168,11 +171,11 @@ class BaseSimulator(metaclass=abc.ABCMeta):
 
   def restart(self) -> None:
     """Restarts the simulator."""
-    logging.info('Restarting the simulator...')
+    logger.info('Restarting the simulator...')
     self._adb_controller.close()
     self._restart_impl()
     self._post_launch_setup()
-    logging.info('Done restarting the simulator.')
+    logger.info('Done restarting the simulator.')
 
   def _post_launch_setup(self) -> None:
     """Performs necessary steps after the simulator has been launched."""
@@ -200,12 +203,12 @@ class BaseSimulator(metaclass=abc.ABCMeta):
 
     # Skip fetching the orientation if we already have it.
     if not np.all(self._orientation == np.zeros(4)):
-      logging.info('self._orientation already set, not setting it again')
+      logger.info('self._orientation already set, not setting it again')
       return
 
     orientation = self._adb_controller.get_orientation()
     if orientation not in {'0', '1', '2', '3'}:
-      logging.error('Got bad orientation: %r', orientation)
+      logger.error('Got bad orientation: %r', orientation)
       return
 
     # Transform into one-hot format.
