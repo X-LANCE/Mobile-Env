@@ -93,3 +93,11 @@
 ### Task Sets
 
 * (OpenMoneyBox): I want to define a group of tasks based on OpenMoneyBox.
+
+### Documents
+
+* (Implementation Details): Notes implementation details. Will help future
+  maintenance and possible contribution.
+  * Structure of `event_listeners` module
+  * Implementation of remote assets
+  * Logging system
