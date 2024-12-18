@@ -1,3 +1,35 @@
+2024-12-18 Danyang Zhang <zdy004007@126.com>
+
+	v4.1
+
+	Fixed a few essential bugs.
+
+	* (cache_until mechanism): The roles of waiting nodes and notifier nodes
+	in cache_until mechanism are in reverse. Fixed.
+	  * android_env/components/task_manager.py
+	* (Event sources resetting): Event sources are not correctly reset during
+	task resetting. Fixed.
+	  * android_env/components/task_manager.py
+	* (Events resetting): Events may be triggered mistakenly by the stale
+	emulator status owing to the delay of emulator. Fixed.
+	  * android_env/components/coordinator.py
+	  * android_env/environment.py
+
+	Fixed minor bugs.
+
+	* (Requirements of Gymnasium and dm-env): Gymnasium and dm-env are marked
+	as optional dependences, however they are imported in the wrappers module
+	as required sections. Fixed.
+	  * android_env/wrappers/__init__.py
+	* (Crash when meeting unseen special tokens): The old behavior will crash
+	when meeting special tokens from the tokenizer. Now the new behavior is to
+	ignore them directly.
+	  * android_env/components/task_manager.py
+
+	Migrated logging system from absl to the embedded logging module.
+	Updated the template toolkit to enable non-automatic concatenation of
+	sub-task commands.
+
 2024-07-14 Danyang Zhang <zdy004007@126.com>
 
 	v4.0
