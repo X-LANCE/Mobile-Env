@@ -25,6 +25,11 @@ from android_env.components.event_listeners import ViewHierarchyEvent
 from lxml.etree import Element, _Element
 import re
 from android_env.components.adb_controller import AdbController
+#import functools
+
+import logging
+
+logger = logging.getLogger("mobile_env.thread.vh_analyzer")
 
 class ViewHierarchyAnalyzerThread(thread_function.ThreadFunction):
     #  class ViewHierarchyAnalyzerThread {{{ # 
@@ -79,12 +84,26 @@ class ViewHierarchyAnalyzerThread(thread_function.ThreadFunction):
         #if view_hierarchy is None:
           #return
 
-        for evnt in self._event_listeners:
+        for i, evnt in enumerate(self._event_listeners):
             # 1. match the path
             #matches, leaf_node = match_path2(view_hierarchy, evnt.path)
             #if not matches:
               #continue
             leaf_nodes: List[Element] = evnt.selector(view_hierarchy)
+            logger.debug( "Match VH nodes (Evt #%d: %s): %s"
+                        , i, evnt._selector_str
+                        , list( map( lambda elm:\
+                                        '#"{:}"."{:}"$"{:}"@{:}:{:}'\
+                                            .format( elm.get("resource-id")
+                                                   , elm.get("class")
+                                                   , elm.get("package")
+                                                   , elm.get("index")
+                                                   , elm.get("text")
+                                                   )
+                                  , leaf_nodes
+                                  )
+                              )
+                        )
             if len(leaf_nodes)==0:
                 continue
 

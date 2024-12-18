@@ -361,7 +361,7 @@ class Coordinator():
         self._log_dict['restart_count_setup_steps'] += 1
         self._should_restart = True
 
-    self.reset_environment_state()
+    #self.reset_environment_state()
     #  }}} method `change_task_manager` # 
   #  }}} Reset Interfaces # 
 
@@ -402,7 +402,7 @@ class Coordinator():
           text_events += self._task_manager.convert_token_to_keyevents(tkn["input_token"].item())
         self._send_text_event_to_simulator(text_events)
         end: datetime = datetime.now()
-        logger.info("DURATION: %.4f", (end-start).total_seconds())
+        logger.info("TEXT DURATION: %.4f", (end-start).total_seconds())
       elif act_t==3:
         for _, cmd in act:
           adb_outputs.append(self._send_adb_command_to_simulator(cmd))
@@ -475,6 +475,7 @@ class Coordinator():
     if self._should_restart or self._check_timeout():
       return None, 0.0, {}, [], True, None
 
+    logger.debug("Executing Actions: %s", str(action))
     if isinstance(action, list):
       adb_outputs: List[Optional[bytes]] = self._perform_actions(action)
 
@@ -511,6 +512,7 @@ class Coordinator():
                                           , last_time=self._last_screen_check_time
                                           , elapsed_step=self._elapsed_step_from_screen_check
                                           )
+    logger.debug("Check VH: %s, Check Screen: %s", check_vh, check_screen)
 
     # Sleep to maintain a steady interaction rate.
     if self._max_steps_per_sec > 0.0:

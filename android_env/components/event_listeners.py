@@ -426,14 +426,16 @@ class EventSlot(Event[W], abc.ABC, Generic[V, T, W]):
         if not self._satisfied_prerequisites:
             self._satisfied_prerequisites = all(map(lambda evt: evt.is_ever_set(), self._prerequisites))
         return self._satisfied_prerequisites
+    # When set, **this event** will notify the notifyees.
     def add_notifyees(self, *notifyees: Iterable[Event]):
         self._waited_by += notifyees
     def add_id(self, id_: int):
         self._id = id_
 
-    # set to False for cache_until=-1, a.k.a., never ready
+    # set to False for cache_until=-1, a.k.a., never ready to clear
     def set_default_ready(self, ready: bool):
         self._READY = ready
+    # if any one waiting for notifies False, _waiting_ready will turn to False
     def notify(self, waiting_ready: bool):
         self._waiting_ready = self._waiting_ready and waiting_ready
     # This function is used to avoid repetitive set checking and guarantee
@@ -978,7 +980,9 @@ class ViewHierarchyEvent(EventSource[List, List[Any]]):
             return bool
             """
 
-            return self._pattern.search(value) is not None
+            match_: bool = self._pattern.search(value) is not None
+            logger.debug("VH String Prop[%s](%s): %s -> %s", self.name, self._pattern.pattern, value, match_)
+            return match_
             #  }}} method `match` # 
         #  }}} class `StringProperty` # 
 

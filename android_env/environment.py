@@ -65,6 +65,8 @@ class AndroidEnv(interfaces.env.Environment):
     logger.info('Observation spec: %s', self.observation_spec())
     logger.info('Task extras spec: %s', self.task_extras_spec())
 
+    self._max_reset_rounds: int = 10
+
   #  Informational Interfaces {{{ # 
   def action_spec(self) -> Dict[str, interfaces.specs.Array]:
     return self._coordinator.action_spec()
@@ -145,22 +147,7 @@ class AndroidEnv(interfaces.env.Environment):
     # Change the task and reset state of the environment.
     self._coordinator.switch_task_manager(index)
 
-    # Execute selected action (None when resetting).
-    obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
-    #reward: float
-    extras: Dict[str, Any]
-    instructions: List[str]
-    #episode_end: bool
-    #succeeds: Optional[bool]
-    obs, _, extras, instructions, _, _ = self._coordinator.execute_action(action=None)
-
-    # Process relevant information.
-    if obs is not None:
-      self._latest_observation = obs.copy()
-    self._latest_extras = extras.copy()
-    self._latest_instruction = instructions.copy()
-    self._latest_action = {}
-    self._reset_next_step = False
+    self.reset()
 
     logger.info('Done Changing Task.')
     logger.info('************* NEW EPISODE *************')
@@ -173,25 +160,30 @@ class AndroidEnv(interfaces.env.Environment):
 
     logger.info('Resetting AndroidEnv...')
 
-    # Reset state of the environment.
-    self._coordinator.reset_environment_state()
+    for i in range(self._max_reset_rounds):
+      # Reset state of the environment.
+      self._coordinator.reset_environment_state()
 
-    # Execute selected action (None when resetting).
-    obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
-    #reward: float
-    extras: Dict[str, Any]
-    instructions: List[str]
-    #episode_end: bool
-    #succeeds: Optional[bool]
-    obs, _, extras, instructions, _, _ = self._coordinator.execute_action(action=None)
+      # Execute selected action (None when resetting).
+      obs: Dict[str, Union[np.ndarray, Optional[_Element]]]
+      reward: float
+      extras: Dict[str, Any]
+      instructions: List[str]
+      episode_end: bool
+      #succeeds: Optional[bool]
+      obs, reward, extras, instructions, episode_end, _ = self._coordinator.execute_action(action=None)
 
-    # Process relevant information.
-    if obs is not None:
-      self._latest_observation = obs.copy()
-    self._latest_extras = extras.copy()
-    self._latest_instruction = instructions.copy()
-    self._latest_action = {}
-    self._reset_next_step = False
+      if reward==0 and not episode_end:
+        # Process relevant information.
+        if obs is not None:
+          self._latest_observation = obs.copy()
+        self._latest_extras = extras.copy()
+        self._latest_instruction = instructions.copy()
+        self._latest_action = {}
+        self._reset_next_step = False
+        break
+      else:
+        logger.info("Events cleared with errors! Resetting again for %d times!", i+1)
 
     logger.info('Done resetting AndroidEnv.')
     logger.info('************* NEW EPISODE *************')

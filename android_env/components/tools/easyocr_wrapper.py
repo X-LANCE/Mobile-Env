@@ -127,6 +127,7 @@ class EasyOCRWrapper(TextModel):
             logger.debug("EasyOCR Starts.")
 
             screen = self._convert_screen(screen) # (H, W, 3)
+            logger.debug("Screen Size (H, W): %s", screen.shape[:2])
             with self._lock:
                 results: List[ Tuple[ List[List[float]] # [x1, y1], [x2, y1], [x2, y2], [x1, y2]
                                     , str

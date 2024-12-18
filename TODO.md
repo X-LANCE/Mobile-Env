@@ -99,5 +99,6 @@
 * (Implementation Details): Notes implementation details. Will help future
   maintenance and possible contribution.
   * Structure of `event_listeners` module
+  * A figure explaining `cache_until` mechanism
   * Implementation of remote assets
   * Logging system

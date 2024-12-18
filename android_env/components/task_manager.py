@@ -493,7 +493,10 @@ class TaskManager():
           event.set_default_ready(False)
           break
         if evt_id in self._events_with_id:
-          event.add_notifyees(self._events_with_id[evt_id])
+          # A cache_until B means A waiting_for B, or B waited_by A
+          # B should notify A
+          #event.add_notifyees(self._events_with_id[evt_id]) # NOTE: Seems to be in reverse
+          self._events_with_id[evt_id].add_notifyees(event)
         else:
           if evt_id not in self._events_in_waited:
             self._events_in_waited[evt_id] = []
@@ -518,7 +521,8 @@ class TaskManager():
 
       if event_id in self._events_in_waited:
         for evt in self._events_in_waited[event_id]:
-          evt.add_notifyees(event)
+          #evt.add_notifyees(event)
+          event.add_notifyees(evt)
         del self._events_in_waited[event_id]
     #  }}} Handle previous needs # 
 
@@ -579,6 +583,14 @@ class TaskManager():
 
       # clear event sources
       self.clear_events()
+      for evt in itertools.chain( self._text_events
+                                , self._icon_events
+                                , self._icon_match_events
+                                , self._view_hierarchy_events
+                                , self._log_events
+                                , self._response_events
+                                ):
+        evt.reset()
 
       # reset event slots
       #self._score_event.reset()
