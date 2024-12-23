@@ -125,7 +125,6 @@ setup(
         'grpcio-tools',
     ],
     install_requires=[
-        "absl-py>=0.1.0",
         "grpcio",
         "mock",
         "numpy",

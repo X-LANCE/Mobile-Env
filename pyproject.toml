@@ -12,7 +12,6 @@ keywords = ["InfoUI interaction"]
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-	"absl-py>=0.1.0",
 	"grpcio",
 	"mock",
 	"numpy",
