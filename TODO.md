@@ -76,6 +76,12 @@
   the gRPC interfaces of Android Emulator in current EmulatorSimulator to pure
   ADB implementations so as to form a simulator that can connect to real mobile
   devices.
+* (Task File Format): Maybe desert ProtoBuf and turn to use JSON or YAML.
+* (Emulator Metrics): In the future version, Android Emulator may require to
+  explicitly specify the whether to collect usage metric data by
+  `-metrics-collection` or `-no-metrics` flags.
+* (Other Android Emulator Changes): Possible requirement of `-grpc` flag.
+  Obsoletion of `-no-skin` flag.
 
 ### Annotation Tool
 
