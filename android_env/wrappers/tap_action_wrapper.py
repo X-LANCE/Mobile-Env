@@ -48,6 +48,10 @@ from transformers import PreTrainedTokenizer
 import enum
 import time
 
+import logging
+
+logger = logging.getLogger("mobile_env.wrapper.tapactionwrapper")
+
 #ActionType = action_type.ActionType
 
 class TapActionWrapper(base_wrapper.BaseWrapper):
@@ -269,6 +273,8 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
   def step(self, action: Dict[str, np.ndarray]) -> Tstep.TimeStep:
     #  method step {{{ # 
     """Takes a step in the environment."""
+
+    logger.debug("Executing Tap Action %s...", str(action))
     actions = self._process_action(action)
     self._env_steps += len(actions)+1
 

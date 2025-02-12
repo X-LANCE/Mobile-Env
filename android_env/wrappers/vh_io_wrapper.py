@@ -34,7 +34,9 @@ import lxml.etree
 import re
 import time
 
-#import logging
+import logging
+
+logger = logging.getLogger("mobile_env.wrapper.vhiowrapper")
 
 def filter_elements(tree: lxml.etree._Element)\
         -> Tuple[ List[lxml.etree.Element]
@@ -48,6 +50,11 @@ def filter_elements(tree: lxml.etree._Element)\
         n.set( "clickable"
              , str(  n.get("clickable")=="true"\
                   or n.getparent().get("clickable")=="true"
+                  ).lower()
+             )
+        n.set( "long-clickable"
+             , str( n.get("long-clickable")=="true"\
+                 or n.getparent().get("long-clickable")=="true"
                   ).lower()
              )
         if n.get("bounds")=="[0,0][0,0]":
@@ -325,6 +332,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             Tstep.TimeStep
         """
 
+        logger.debug("Executing VH Action %s...", str(action))
         actions: List[Dict[str, np.ndarray]] = self._process_action(action)
         self._env_steps += len(actions)+1
 
