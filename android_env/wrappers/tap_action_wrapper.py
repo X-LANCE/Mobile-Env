@@ -283,7 +283,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
     if self._action_batch:
       timestep: Tstep.TimeStep = self._env.step(actions)
       instructions += self._env.task_instructions()
-      if timestep.reward>0.:
+      if timestep.reward!=0.:
         total_reward += timestep.reward
 
       if timestep.last():
@@ -298,7 +298,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
       for act in actions:
         timestep: Tstep.TimeStep = self._env.step(act)
         instructions += self._env.task_instructions()
-        if timestep.reward>0.:
+        if timestep.reward!=0.:
           total_reward += timestep.reward
 
         if timestep.last():
@@ -330,7 +330,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
         appended_lift["response"] = action["response"]
     timestep = self._env.step(appended_lift)
     instructions += self._env.task_instructions()
-    if timestep.reward>0.:
+    if timestep.reward!=0.:
         total_reward += timestep.reward
     if timestep.last():
       return timestep._replace(reward=total_reward)
@@ -345,7 +345,7 @@ class TapActionWrapper(base_wrapper.BaseWrapper):
                                            }
     timestep = self._env.step(appended_lift)
     instructions += self._env.task_instructions()
-    if timestep.reward>0.:
+    if timestep.reward!=0.:
         total_reward += timestep.reward
 
     self._instructions = instructions

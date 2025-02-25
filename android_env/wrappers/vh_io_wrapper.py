@@ -117,6 +117,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 , nb_scroll_frmaes: int = 10
                 , nb_long_click_frames: int = 10
                 , wait_sec: float = 0.
+                , retry_for_empty_view_hierarchy: int = 0
                 , action_batch: bool = False
                 , filter_elements: Callable[ [lxml.etree._Element]
                                            , Tuple[ List[lxml.etree._Element]
@@ -136,8 +137,25 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
               the SCROLL iteraction
             nb_long_click_frames (int): the duration the TOUCH action will last for
               the LONGCLICK iteraction
-            wait_sec (float): waiting time after each action performed
-            action_batch (bool): if actions are combined in a batch
+
+            wait_sec (float): waiting time after each action performed. as the
+              VM system may take a little delay to execute, you can set a
+              `wait_sec` to wait for a little while, so that the internal
+              execution can end and the view hierarchy of the resulted new page
+              can be fetched.
+            retry_for_empty_view_hierarchy (int): sometimes the resulted view
+              hierarchy may be empty owing to execution delay or temporary
+              internal error in the VM, and it can be retrieved after several
+              retries. sometimes this may be caused by VM limitation on some
+              sensitive pages. default value 0 will disable the automatic
+              check. set to a positive number to check and retry for at most
+              some times. set to a negative number to retry forever until a
+              view hierarchy is obtained. this may cause infinite loop if the
+              system enters a sensitive page whose VH is forbidden.
+
+            action_batch (bool): if actions are combined in a batch. this can
+              be used to reduce times of observation transfer when using remote
+              simulator.
             filter_elements (Callable[[lxml.etree._Element], Tuple[List[lxml.etree._Element], List[List[int]]]]):
               custom method to filter_elements
         """
@@ -152,6 +170,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         self._nb_scroll_frames: int = nb_scroll_frmaes
         self._nb_long_click_frames: int = nb_long_click_frames
         self._wait_sec: float = wait_sec
+        self._retry_for_empty_vh: int = retry_for_empty_view_hierarchy
         self._action_batch: bool = action_batch
 
         self._filter_elements: Callable[ [lxml.etree._Element]
@@ -317,9 +336,31 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
 
     def _process_timestep(self, timestep: Tstep.TimeStep) -> Tstep.TimeStep:
         #  method _process_timestep {{{ # 
+        total_reward: float = timestep.reward
+        if self._retry_for_empty_vh!=0:
+            retry_counter: int = self._retry_for_empty_vh
+            retry_delta: int = self._retry_for_empty_vh>0
+            appended_lift: Dict[str, np.ndarray] = { "action_type": np.array( action_type.ActionType.LIFT
+                                                                            , dtype=np.int32
+                                                                            )
+                                                   , "touch_position": np.array( [0., 0.]
+                                                                               , dtype=np.float32
+                                                                               )
+                                                   }
+            while retry_counter!=0:
+                if timestep.observation["view_hierarchy"] is not None:
+                    break
+                timestep = self._env.step(appended_lift)
+                self._instructions += self._env.task_instructions()
+                if timestep.reward!=0.:
+                    total_reward += timestep.reward
+                if timestep.last():
+                    return timestep._replace(reward=total_reward)
+                retry_counter -= retry_delta
+
         if timestep.observation["view_hierarchy"] is not None:
             self._bbox_list: List[List[int]] = self._filter_elements(timestep.observation["view_hierarchy"])[1]
-        return timestep
+        return timestep._replace(reward=total_reward)
         #  }}} method _process_timestep # 
 
     def step(self, action: Dict[str, np.ndarray]) -> Tstep.TimeStep:
@@ -341,7 +382,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         if self._action_batch:
             timestep: Tstep.TimeStep = self._env.step(actions)
             instructions += self._env.task_instructions()
-            if timestep.reward>0.:
+            if timestep.reward!=0.:
                 total_reward += timestep.reward
 
             if timestep.last():
@@ -362,7 +403,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 timestep: Tstep.TimeStep = self._env.step(act)
                 instructions += self._env.task_instructions()
 
-                if timestep.reward>0.:
+                if timestep.reward!=0.:
                     total_reward += timestep.reward
 
                 if timestep.last():
@@ -394,7 +435,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             appended_lift["response"] = action["response"]
         timestep = self._env.step(appended_lift)
         instructions += self._env.task_instructions()
-        if timestep.reward>0.:
+        if timestep.reward!=0.:
             total_reward += timestep.reward
         if timestep.last():
           return timestep._replace(reward=total_reward)
@@ -410,15 +451,17 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                                                    }
             timestep = self._env.step(appended_lift)
             instructions += self._env.task_instructions()
-            if timestep.reward>0.:
+            if timestep.reward!=0.:
                 total_reward += timestep.reward
-
-        timestep: Tstep.TimeStep = self._process_timestep(timestep)
+            if timestep.last():
+                return timestep._replace(reward=total_reward)
 
         self._instructions = instructions
+        timestep: Tstep.TimeStep = self._process_timestep(timestep._replace(reward=total_reward))
+
         if "adb_outputs" in locals():
           timestep.observation["adb_output"] = adb_outputs
-        return timestep._replace(reward=total_reward)
+        return timestep
         #return Tstep.TimeStep( step_type=timestep.step_type
                              #, reward=total_reward
                              #, discount=timestep.discount
