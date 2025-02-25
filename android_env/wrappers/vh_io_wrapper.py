@@ -354,6 +354,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
                 self._instructions += self._env.task_instructions()
                 if timestep.reward!=0.:
                     total_reward += timestep.reward
+                self._env_steps += 1
                 if timestep.last():
                     return timestep._replace(reward=total_reward)
                 retry_counter -= retry_delta
@@ -453,6 +454,7 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
             instructions += self._env.task_instructions()
             if timestep.reward!=0.:
                 total_reward += timestep.reward
+            self._env_steps += 1
             if timestep.last():
                 return timestep._replace(reward=total_reward)
 
