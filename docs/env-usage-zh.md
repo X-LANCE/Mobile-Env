@@ -133,12 +133,12 @@ env = android_env.load( task_path
     - `syscert` - 伪装系统证书
     - `frida` - 采用注入工具[Frida](https://github.com/frida/frida)在运行时替换应用程序的证书验证器
     - `packpatch` - 修改软件包配置，以解除其固定证书
-    具体内容请参考[证书固定问题及解决方案](dynamic-app-zh.md)；其中`frida`方案可以在词典中指定三个额外参数：
-    - `frida-server` - 安卓系统上frida服务端程序的路径，默认为`/data/local/tmp/frida-server`
-    - `frida` - 宿主系统上frida客户端程序的路径，默认为`frida`
-    - `frida-script` - 宿主系统上用来替换手机应用的证书验证器的frida脚本的路径，默认为`frida-script.js`
-    `packpatch`方案同样带有一个可配置的参数：
-    - `patch-suffix` - 该参数定义一个后缀`$suffix`，若任务定义文件中指定的安装包文件名为`$package.apk`，则平台会认为修改过的软件包文件名为`$package-$suffix.apk`，并按之寻找；该参数默认值为`patched`
+  具体内容请参考[证书固定问题及解决方案](dynamic-app-zh.md)；其中`frida`方案可以在词典中指定三个额外参数：
+  - `frida-server` - 安卓系统上frida服务端程序的路径，默认为`/data/local/tmp/frida-server`
+  - `frida` - 宿主系统上frida客户端程序的路径，默认为`frida`
+  - `frida-script` - 宿主系统上用来替换手机应用的证书验证器的frida脚本的路径，默认为`frida-script.js`
+  `packpatch`方案同样带有一个可配置的参数：
+  - `patch-suffix` - 该参数定义一个后缀`$suffix`，若任务定义文件中指定的安装包文件名为`$package.apk`，则平台会认为修改过的软件包文件名为`$package-$suffix.apk`，并按之寻找；该参数默认值为`patched`
 * `start_token_mark` - `str`，指定词表中起始词元（token）的前缀；起始词元输入时会通过空格与之前的文本隔开，默认为空串`""`。
 * `non_start_token_mark` - `str`，指定词表中非起始词元的前缀；非起始词元输入时会直接接在之前的文本后面，默认为BERT系列词表的前缀`##`。
 * `special_token_pattern` - `str`，正则表达式，指定词表中特殊词元的模式，默认为`r"\[\w+\]"`，识别BERT系列词表中`[CLS]`等特殊词元。

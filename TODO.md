@@ -120,3 +120,6 @@
   * `android_env.components.coordinator.EventCheckControl`
 * (Default arguments of `coordinator_args`): The defaul values of parameters in
   `coordinator_args`
+* (Action Batch Function): Action batch function for remote simulator.
+* (`gap_sec` parameter for remote simulator): `gap_sec` parameter for remote
+  simulator daemon.

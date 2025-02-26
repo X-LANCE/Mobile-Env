@@ -94,7 +94,7 @@ class EmulatorSimulator(base_simulator.BaseSimulator):
     self._adb_root: bool = adb_root
     self._frida_server: Optional[str] = frida_server
 
-    self._gap_sec: float = 0.05
+    self._gap_sec: float = gap_sec
 
     super().__init__(**kwargs)
 

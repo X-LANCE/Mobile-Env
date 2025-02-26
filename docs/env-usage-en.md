@@ -188,20 +188,20 @@ The parameters are
       instrument tool [Frida](https://github.com/frida/frida).
     - `packpatch` - Modifying the config inside the app package to unpin its
       certificate
-    The details are presented in [Certificate Pinning Problem &
-    Solutions](docs/dynamic-app-en.md). If `frida` solution is adopted, then
-    three extra parameters can be set in the dict:
-    - `frida-server` - The path to the frida server on the Android system,
-      defaults to `/data/local/tmp/frida-server`.
-    - `frida` - The path to the frida client on the host system, defaults to
-      `frida`
-    - `frida-script` - The path to the frida script on the host system which is
-      used to replace the app's certificate verifier, defaults to `frida-script.js`
-    `packpatch` will enable an extra parameter as well:
-    - `patch-suffix` - This parameter defines a suffix `$suffix`. If the
-      package file name defined in the task definition file is `$package.apk`,
-      then the platform will seek `$package-$suffix.apk` for the patched
-      package file. The prameter defaults to `patched`.
+  The details are presented in [Certificate Pinning Problem &
+  Solutions](docs/dynamic-app-en.md). If `frida` solution is adopted, then
+  three extra parameters can be set in the dict:
+  - `frida-server` - The path to the frida server on the Android system,
+    defaults to `/data/local/tmp/frida-server`.
+  - `frida` - The path to the frida client on the host system, defaults to
+    `frida`
+  - `frida-script` - The path to the frida script on the host system which is
+    used to replace the app's certificate verifier, defaults to `frida-script.js`
+  `packpatch` will enable an extra parameter as well:
+  - `patch-suffix` - This parameter defines a suffix `$suffix`. If the
+    package file name defined in the task definition file is `$package.apk`,
+    then the platform will seek `$package-$suffix.apk` for the patched
+    package file. The prameter defaults to `patched`.
 * `start_token_mark` - `str`. The prefix of the beginning tokens in the
   vocabulary. The typed beginning tokens will be separated with the preceding
   texts by a white space. This parameter defaults to the empty string `""`.
