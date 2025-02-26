@@ -108,3 +108,14 @@
   * A figure explaining `cache_until` mechanism
   * Implementation of remote assets
   * Logging system
+* (Frequently-used components): API docs for FUCs.
+  * `android_env.load` & `android_env.load_remote`
+  * `android_env.environment.AndroidEnv`
+  * `android_env.interfaces.timestep` & `android_env.interfaces.env`
+  * `android_env.wrappers.BaseWrapper`, `android_env.wrappers.VhIoWrapper`,
+    `android_env.wrappers.TapActionWrapper`
+  * `android_env.components.tools.easyocr_wrapper.EasyOCRWrapper`,
+    `android_env.components.tools.sbert_holder.SBERTHolder`,
+    `android_env.components.tools.types`
+* (Default arguments of `coordinator_args`): The defaul values of parameters in
+  `coordinator_args`
