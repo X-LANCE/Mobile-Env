@@ -117,5 +117,6 @@
   * `android_env.components.tools.easyocr_wrapper.EasyOCRWrapper`,
     `android_env.components.tools.sbert_holder.SBERTHolder`,
     `android_env.components.tools.types`
+  * `android_env.components.coordinator.EventCheckControl`
 * (Default arguments of `coordinator_args`): The defaul values of parameters in
   `coordinator_args`
