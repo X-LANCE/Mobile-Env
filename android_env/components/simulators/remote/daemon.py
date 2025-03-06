@@ -165,6 +165,7 @@ def close() -> str:
         if "adb_controller" in manager[sid]:
             for adb_ctrl in manager[sid]["adb_controller"]:
                 adb_ctrl.close()
+        session["is_launched"] = False
     return "OK"
     #  }}} function close # 
 

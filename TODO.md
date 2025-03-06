@@ -82,6 +82,8 @@
   `-metrics-collection` or `-no-metrics` flags.
 * (Other Android Emulator Changes): Possible requirement of `-grpc` flag.
   Obsoletion of `-no-skin` flag.
+* (Complete remote environment): A complete remote environment rather than only
+  place simulator on a remote machine
 
 ### Annotation Tool
 

@@ -42,31 +42,38 @@ class Environment(abc.ABC):
     def action_spec(self) -> specs.Array:
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def command(self) -> List[str]:
-        return []
+        raise NotImplementedError()
 
+    @abc.abstractmethod
     def vocabulary(self) -> List[str]:
-        return []
+        raise NotImplementedError()
 
     @property
+    @abc.abstractmethod
     def nb_tasks(self) -> int:
-        return 0
+        raise NotImplementedError()
 
     @property
+    @abc.abstractmethod
     def task_index(self) -> int:
-        return 0
+        raise NotImplementedError()
 
     @property
+    @abc.abstractmethod
     def task_id(self) -> str:
-        return ""
+        raise NotImplementedError()
 
     @property
+    @abc.abstractmethod
     def task_name(self) -> str:
-        return 0
+        raise NotImplementedError()
 
     @property
+    @abc.abstractmethod
     def task_description(self) -> str:
-        return ""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def task_instructions(self, latest_only: bool = False) -> Union[str, List[str]]:
