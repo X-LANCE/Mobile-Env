@@ -84,6 +84,9 @@
   Obsoletion of `-no-skin` flag.
 * (Complete remote environment): A complete remote environment rather than only
   place simulator on a remote machine
+* (Better Demo and Test Codes): Add better demo and test codes for quick try.
+  * web interface
+  * commandline interface
 
 ### Annotation Tool
 

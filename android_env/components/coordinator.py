@@ -36,7 +36,8 @@ import copy
 import socket
 import time
 from typing import Any, Optional, Iterable, Union
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, OrderedDict
+import collections
 
 #from absl import logging
 import logging
@@ -87,6 +88,7 @@ class Coordinator():
               , vh_check_control_value: Optional[Union[float, int]] = 3.
               , screen_check_control_method: EventCheckControl = EventCheckControl.LIFT
               , screen_check_control_value: Optional[Union[float, int]] = 1.
+              , max_cached_task_managers: int = 40
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
@@ -125,6 +127,10 @@ class Coordinator():
     self._task_manager_list: List[task_manager_lib.TaskManager] = list(task_managers)
     self._task_manager_index: int = 0
     self._task_manager: task_manager_lib.TaskManager = self._task_manager_list[self._task_manager_index]
+    self._cached_task_manager_index: OrderedDict[int, None] =\
+        collections.OrderedDict.fromkeys(range(len(self._task_manager_list)))
+    self._max_cached_task_managers: int = max_cached_task_managers
+    #self._nb_cached_task_managers: int = 0
 
     self._step_timeout_sec = step_timeout_sec
     self._max_steps_per_sec = max_steps_per_sec
@@ -325,6 +331,9 @@ class Coordinator():
             #emulator_stub=self._simulator.get_emulator_stub(), # zdy
             #image_format=self._simulator.image_format, # zdy
             log_stream=log_stream)
+        #if self._task_manager_index not in self._cached_task_manager_index:
+        self._cached_task_manager_index[self._task_manager_index] = None
+        self._cached_task_manager_index.move_to_end(self._task_manager_index)
       except errors.StepCommandError:
         logger.error('Failed to set up the task. Restarting simulator.')
         self._log_dict['restart_count_setup_steps'] += 1
@@ -341,13 +350,21 @@ class Coordinator():
         task_manager: task_manager_lib.TaskManager
     """
 
-    self._task_manager_list.append(task_manager)
+    self._task_manager_list[len(self._task_manager_list)] = task_manager
     #  }}} method `add_task_manager` # 
 
   def switch_task_manager(self, index: int):
     #  method `change_task_manager` {{{ # 
     self._task_manager_index = index
     self._task_manager = self._task_manager_list[self._task_manager_index]
+
+    if len(self._cached_task_manager_index)>=self._max_cached_task_managers:
+      for _ in range(len(self._cached_task_manager_index)-self._max_cached_task_managers+1):
+        uncached_index: int
+        uncached_index, _ = self._cached_task_manager_index.popitem(last=False)
+        self._task_manager_list[uncached_index].close()
+        self._task_manager_list[uncached_index].clear_setup_flag()
+        logger.debug("Cleared task manager cache %s", uncached_index)
 
     if not self._task_manager.setup_flag():
       try:
@@ -356,6 +373,8 @@ class Coordinator():
             #emulator_stub=self._simulator.get_emulator_stub(), # zdy
             #image_format=self._simulator.image_format, # zdy
             log_stream=self._simulator.get_log_stream())
+        self._cached_task_manager_index[self._task_manager_index] = None
+        self._cached_task_manager_index.move_to_end(self._task_manager_index)
       except errors.StepCommandError:
         logger.error('Failed to set up the task. Restarting simulator.')
         self._log_dict['restart_count_setup_steps'] += 1
