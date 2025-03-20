@@ -1339,5 +1339,5 @@ class TaskManager():
     # zdy
     if hasattr(self, "_screen_analyzer_thread"):
       self._screen_analyzer_thread.kill()
-    if hasattr(self, "_adb_controller"):
-      self._adb_controller.close()
+    #if hasattr(self, "_adb_controller"):
+      #self._adb_controller.close()

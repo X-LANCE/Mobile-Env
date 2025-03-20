@@ -127,8 +127,7 @@ class Coordinator():
     self._task_manager_list: List[task_manager_lib.TaskManager] = list(task_managers)
     self._task_manager_index: int = 0
     self._task_manager: task_manager_lib.TaskManager = self._task_manager_list[self._task_manager_index]
-    self._cached_task_manager_index: OrderedDict[int, None] =\
-        collections.OrderedDict.fromkeys(range(len(self._task_manager_list)))
+    self._cached_task_manager_index: OrderedDict[int, None] = collections.OrderedDict()
     self._max_cached_task_managers: int = max_cached_task_managers
     #self._nb_cached_task_managers: int = 0
 
@@ -712,3 +711,5 @@ class Coordinator():
       self._task_manager.close()
     if hasattr(self, '_simulator'):
       self._simulator.close()
+    if hasattr(self, "_adb_controller"):
+      self._adb_controller.close()
