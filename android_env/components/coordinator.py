@@ -323,6 +323,7 @@ class Coordinator():
 
       # Start the task.
       for t_mng in self._task_manager_list:
+        t_mng.close()
         t_mng.clear_setup_flag()
       try:
         self._task_manager.setup_task(
@@ -354,6 +355,7 @@ class Coordinator():
 
   def switch_task_manager(self, index: int):
     #  method `change_task_manager` {{{ # 
+    self._task_manager.pause_task()
     self._task_manager_index = index
     self._task_manager = self._task_manager_list[self._task_manager_index]
 

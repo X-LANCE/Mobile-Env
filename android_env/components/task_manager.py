@@ -1177,19 +1177,23 @@ class TaskManager():
   def _stop_logcat_thread(self):
     if hasattr(self, '_logcat_thread'):
       self._logcat_thread.kill()
+      del self._logcat_thread
 
   def _stop_dumpsys_thread(self):
     if hasattr(self, '_dumpsys_thread'):
       self._dumpsys_thread.kill()
+      del self._dumpsys_thread
 
   # zdy
   def _stop_screen_analyzer_thread(self):
     if hasattr(self, "_screen_analyzer_thread"):
       self._screen_analyzer_thread.kill()
+      del self._screen_analyzer_thread
 
   def _stop_vh_analyzer_thread(self):
     if hasattr(self, "_vh_analyzer_thread"):
       self._vh_analyzer_thread.kill()
+      del self._vh_analyzer_thread
   #  }}} Methods to Start and Stop the Assistant Threads # 
 
   def _increment_bad_state(self) -> None:
@@ -1332,12 +1336,16 @@ class TaskManager():
     #  }}} method `_logcat_listeners` # 
 
   def close(self):
-    if hasattr(self, '_logcat_thread'):
-      self._logcat_thread.kill()
-    if hasattr(self, '_dumpsys_thread'):
-      self._dumpsys_thread.kill()
-    # zdy
-    if hasattr(self, "_screen_analyzer_thread"):
-      self._screen_analyzer_thread.kill()
+    self._stop_logcat_thread()
+    self._stop_dumpsys_thread()
+    self._stop_screen_analyzer_thread()
+    self._stop_vh_analyzer_thread()
+    #if hasattr(self, '_logcat_thread'):
+      #self._logcat_thread.kill()
+    #if hasattr(self, '_dumpsys_thread'):
+      #self._dumpsys_thread.kill()
+    ## zdy
+    #if hasattr(self, "_screen_analyzer_thread"):
+      #self._screen_analyzer_thread.kill()
     #if hasattr(self, "_adb_controller"):
       #self._adb_controller.close()
