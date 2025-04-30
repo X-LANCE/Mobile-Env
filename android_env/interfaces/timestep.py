@@ -93,7 +93,7 @@ class TimeStep(NamedTuple):
     return self.step_type == StepType.LAST
 
   def is_success(self) -> bool:
-    return self.last() and self.succeeds
+    return self.last() and bool(self.succeeds)
 
   def is_failure(self) -> bool:
     return self.last() and self.succeeds is not None and not self.succeeds
