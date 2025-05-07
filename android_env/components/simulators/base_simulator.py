@@ -89,7 +89,7 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     self._last_obs_timestamp = 0
     self._launched = False
     self._adb_controller = None
-    self._log_stream = None
+    #self._log_stream = None
 
   def num_fingers(self) -> int:
     return self._num_fingers
@@ -187,7 +187,7 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     self._adb_controller.set_bar_visibility(
         navigation=self._show_navigation_bar,
         status=self._show_status_bar)
-    self._log_stream = self._create_log_stream()
+    #self._log_stream = self._create_log_stream()
 
   def screen_dimensions(self) -> np.ndarray:
     """Returns the screen dimensions in pixels.
@@ -275,4 +275,5 @@ class BaseSimulator(metaclass=abc.ABCMeta):
     self._adb_controller.close()
 
   def get_log_stream(self):
-    return self._log_stream
+    #return self._log_stream
+    return self._create_log_stream()

@@ -1108,16 +1108,11 @@ class TaskManager():
         logcat=self._logcat_thread)
 
   def _start_logcat_thread(self, log_stream: log_stream_lib.LogStream):
-    #self._logcat_thread = logcat_thread.LogcatThread(
-        #log_stream=log_stream,
-        #log_parsing_config=self._task.log_parsing_config)
-    # zdy
     self._logcat_thread = logcat_thread.LogcatThread(
         log_stream=log_stream,
         log_filter=self._log_filters,
         lock=self._lock)
 
-    #for event_listener in self._logcat_listeners():
     for event_listener in self._log_events: # zdy
       self._logcat_thread.add_event_listener(event_listener)
 

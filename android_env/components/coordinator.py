@@ -350,7 +350,8 @@ class Coordinator():
         task_manager: task_manager_lib.TaskManager
     """
 
-    self._task_manager_list[len(self._task_manager_list)] = task_manager
+    #self._task_manager_list[len(self._task_manager_list)] = task_manager
+    self._task_manager_list.append(task_manager)
     #  }}} method `add_task_manager` # 
 
   def switch_task_manager(self, index: int):
@@ -359,15 +360,15 @@ class Coordinator():
     self._task_manager_index = index
     self._task_manager = self._task_manager_list[self._task_manager_index]
 
-    if len(self._cached_task_manager_index)>=self._max_cached_task_managers:
-      for _ in range(len(self._cached_task_manager_index)-self._max_cached_task_managers+1):
-        uncached_index: int
-        uncached_index, _ = self._cached_task_manager_index.popitem(last=False)
-        self._task_manager_list[uncached_index].close()
-        self._task_manager_list[uncached_index].clear_setup_flag()
-        logger.debug("Cleared task manager cache %s", uncached_index)
-
     if not self._task_manager.setup_flag():
+      if len(self._cached_task_manager_index)>=self._max_cached_task_managers:
+        for _ in range(len(self._cached_task_manager_index)-self._max_cached_task_managers+1):
+          uncached_index: int
+          uncached_index, _ = self._cached_task_manager_index.popitem(last=False)
+          self._task_manager_list[uncached_index].close()
+          self._task_manager_list[uncached_index].clear_setup_flag()
+          logger.debug("Cleared task manager cache %s", uncached_index)
+
       try:
         self._task_manager.setup_task(
             adb_controller=self._adb_controller,
