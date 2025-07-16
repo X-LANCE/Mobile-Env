@@ -1,3 +1,19 @@
+2025-05-07 Danyang Zhang <zdy004007@126.com>
+
+	Interface updates
+
+	* Updated interfaces for android_env.interfaces.env.Environment
+
+	New mechanisms
+
+	* Added cached TaskManager cleaning mechanism in Coordinator
+
+	Other fixes
+
+	* android_env/components/simulators/remote/daemon.py
+	* android_env/interfaces/timestep.py
+	* (Logcat thread cleaning): android_env/components/simulators/base_simulator.py
+
 2025-02-26 Danyang Zhang <zdy004007@126.com>
 
 	Fixed bugs in TapActionWrapper and VhIoWrapper
