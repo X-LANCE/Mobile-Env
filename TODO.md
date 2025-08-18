@@ -87,6 +87,7 @@
 * (Better Demo and Test Codes): Add better demo and test codes for quick try.
   * web interface
   * commandline interface
+* (Agent Template): Add agent template and demo agent classes
 
 ### Annotation Tool
 
