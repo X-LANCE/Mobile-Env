@@ -142,3 +142,9 @@ def convert_vh_to_html_list(node: _Element) -> str:
 
     return "\n".join(result_list)
     #  }}} function convert_vh_to_html_list # 
+
+def convert_raw_img_to_jpeg_base64(image: np.ndarray) -> str:
+    #  function convert_raw_img_to_jpeg_base64 {{{ # 
+    # TODO
+    pass
+    #  }}} function convert_raw_img_to_jpeg_base64 # 
