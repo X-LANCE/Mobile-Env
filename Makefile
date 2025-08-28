@@ -15,7 +15,7 @@
 
 # Created by Danyang Zhang @X-Lance.
 
-.PHONY: mobile-env
+.PHONY: mobile-env docker-test-dir
 
 docker_dir := build-docker
 
@@ -29,3 +29,8 @@ mobile-env: $(docker_dir)/real.dockerfile
 
 $(docker_dir)/real.dockerfile: $(docker_dir)/Dockerfile $(docker_dir)/proxy.dockerfile
 	zpp -m C $< -o $@
+
+docker-test-dir:
+	mkdir -p docker_tests
+	rsync -ruvth --delete --exclude=__pycache__ android_env setup.py pyproject.toml LICENSE docker_tests/mobile-env/
+	mkdir -p docker_tests/android_avds
