@@ -1,63 +1,35 @@
 <!-- vimc: call SyntaxRange#Include('```sh', '```', 'sh', 'NonText'): -->
+<!-- vimc: call SyntaxRange#Include('```dockerfile', '```', 'dockerfile', 'NonText'): -->
 
 0. Download the package of [Android Commandline
    Tools](https://developer.android.com/studio) to this directory and rename it
-   to `commandlinetools-linux-latest.zip`. Download version 14.2.2 of the
-   compressed client program of [Frida
-   server](https://github.com/frida/frida/releases) to this directory.
+to `commandlinetools-linux-latest.zip`.
 
-1. Build `base` image.
+1. Create `proxy.dockerfile` under this directory. If no proxy is needed, you
+   can just create an empty file. If proxy is needed, declare needed
+environment variables in the following way:
 
-```sh
-make base
+```dockerfile
+# HTTP proxy
+ARG http_proxy=http://somewhere.xyz:port
+ARG HTTP_PROXY=http://somewhere.xyz:port
+
+# HTTPS proxy (the protocol may be either HTTP or HTTPS, depending on the proxy)
+ARG https_proxy=http://somewhere.xyz:port
+ARG HTTPS_PROXY=http://somewhere.xyz:port
+
+# SOCKS5 proxy (if it is expected that DNS is also proxied，change socks5 to socks5h)
+ARG all_proxy=socks5://somewhere.xyz:port
+ARG ALL_PROXY=socks5://somewhere.xyz:port
 ```
 
-2. Build the partial version of `syscert` image.
+2. [zpp](https://github.com/zdy023/z-nixtools/tree/master/toy-preprocessor) is
+   used to preprocess dockerfiles in Makefile. You can also insert the contents
+of `proxy.dockerfile` into the corresponding position in `Dockerfile` and save
+it as `real.dockerfile` manually.
+
+3. Create the image.
 
 ```sh
-make syscert
-```
-
-3. Modify and commit for a new image.
-
-```sh
-docker run -it --device /dev/kvm zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0.part /bin/bash
-```
-
-Execute in the container:
-
-```sh
-mitmproxy # then press 'q' to exit
-./setup_image.sh syscert
-exit
-```
-
-Then commit the modified container:
-
-```sh
-docker commit <container-id> zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0
-```
-4. Build the partial version of `frida` image.
-
-```sh
-make frida
-```
-
-5. Modify and commit for a new image.
-
-```sh
-docker run -it --device /dev/kvm zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2.part /bin/bash
-```
-
-Execute in the container:
-
-```sh
-./setup_image.sh frida
-exit
-```
-
-Then commit the modified container:
-
-```sh
-docker commit <container-id> zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2
+cd .. && make moobile-env
 ```
