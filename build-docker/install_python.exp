@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+spawn apt install -y python3 python3-pip python-is-python3
+set install_process $spawn_id
+expect {
+	"Geographic area:" {
+		send "6\r"
+		exp_continue
+	}
+	"Time zone:" {
+		send "70\r"
+		exp_continue
+	}
+	timeout exp_continue
+}
+wait -i $install_process

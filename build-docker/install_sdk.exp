@@ -18,6 +18,7 @@
 set android_home /root/Android/Sdk
 set timeout 300
 spawn $android_home/cmdline-tools/bin/sdkmanager --sdk_root=$android_home --package_file=android-package.list
+set install_process $spawn_id
 expect {
     (y/N) {
         send "y\r"
@@ -25,3 +26,4 @@ expect {
     }
     timeout exp_continue
 }
+wait -i $install_process
