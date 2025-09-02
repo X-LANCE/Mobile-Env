@@ -23,11 +23,11 @@ import numpy as np
 
 class Environment(abc.ABC):
     @abc.abstractmethod
-    def switch_task(self, index: int) -> timestep.TimeStep:
+    def switch_task(self, index: int, **kwargs) -> timestep.TimeStep:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def reset(self) -> timestep.TimeStep:
+    def reset(self, **kwargs) -> timestep.TimeStep:
         raise NotImplementedError()
 
     @abc.abstractmethod

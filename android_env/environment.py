@@ -140,14 +140,14 @@ class AndroidEnv(interfaces.env.Environment):
     self._coordinator.add_task_manager(task_manager)
     #  }}} method `add_task` # 
 
-  def switch_task(self, index: int) -> interfaces.timestep.TimeStep:
+  def switch_task(self, index: int, *, restart_simulator: bool = False) -> interfaces.timestep.TimeStep:
     #  method `change_task` {{{ # 
     logger.info('Changing Task to {:d}...'.format(index))
 
     # Change the task and reset state of the environment.
     self._coordinator.switch_task_manager(index)
 
-    self.reset()
+    self.reset(restart_simulator=restart_simulator)
 
     logger.info('Done Changing Task.')
     logger.info('************* NEW EPISODE *************')
@@ -155,14 +155,14 @@ class AndroidEnv(interfaces.env.Environment):
     return interfaces.timestep.restart(observation=self._latest_observation)
     #  }}} method `change_task` # 
 
-  def reset(self) -> interfaces.timestep.TimeStep:
+  def reset(self, *, restart_simulator: bool = False) -> interfaces.timestep.TimeStep:
     """Resets the environment for a new RL episode."""
 
     logger.info('Resetting AndroidEnv...')
 
     for i in range(self._max_reset_rounds):
       # Reset state of the environment.
-      self._coordinator.reset_environment_state()
+      self._coordinator.reset_environment_state(restart_simulator=restart_simulator)
 
       # Execute selected action (None when resetting).
       obs: Dict[str, Union[np.ndarray, Optional[_Element]]]

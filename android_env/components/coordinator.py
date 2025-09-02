@@ -89,6 +89,7 @@ class Coordinator():
               , screen_check_control_method: EventCheckControl = EventCheckControl.LIFT
               , screen_check_control_value: Optional[Union[float, int]] = 1.
               , max_cached_task_managers: int = 40
+              , restart_simulator_at_reset: bool = False
   ):
     #  method `__init__` {{{ # 
     """Handles communication between AndroidEnv and its components.
@@ -121,6 +122,18 @@ class Coordinator():
       screen_check_control_method (EventCheckControl): control method
       screen_check_control_value (Optional[Union[float, int]]): the seconds or
         steps of check gap for TIME and STEP
+
+      max_cached_task_managers (int): the Coordinator can hold multiple
+        TaskManagers so that they can be quickly switched. the default number
+        is 40. however, TaskManager also occupies resources (mainly through
+        `adb logcat`), thus, a smaller value will be adequate when resources
+        are limited. meanwhile, usually, in test time, you only need to switch
+        to new tasks without going back. in such cases, you can just set this
+        value to 1 to save memories.
+      restart_simulator_at_reset (bool): by default, to accelerate task reset,
+        simulator is not restarted during `reset`. however, some tasks may need
+        a thorough restart to restore the simulator state. in such cases, set
+        this flag to True to restart simulator during `reset` automatically.
     """
 
     self._simulator: base_simulator.BaseSimulator = simulator
@@ -135,6 +148,7 @@ class Coordinator():
     self._max_steps_per_sec = max_steps_per_sec
     self._periodic_restart_time_min = periodic_restart_time_min
     self._force_simulator_launch = force_simulator_launch
+    self._restart_simulator_at_reset: bool = restart_simulator_at_reset
 
     self._with_view_hierarchy: bool = with_view_hierarchy
     self._vh_check_control_method: EventCheckControl = vh_check_control_method
@@ -216,7 +230,7 @@ class Coordinator():
   #  }}} Informational Interfaces # 
 
   #  Reset Interfaces {{{ # 
-  def reset_environment_state(self):
+  def reset_environment_state(self, restart_simulator: bool = False):
     """Resets the state of the simulation for a new RL episode.
 
     This involves resetting relevant counters and performing reset steps
@@ -226,7 +240,8 @@ class Coordinator():
     """
 
     # Restart the simulation if neccessary.
-    if self._should_restart or self._should_periodic_restart():
+    if restart_simulator or self._restart_simulator_at_reset\
+        or self._should_restart or self._should_periodic_restart():
       self._restart_simulator()
 
     # Reset counters.
