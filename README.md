@@ -146,10 +146,8 @@ interaction with the following features:
 #pip insall mobile-env-rl
 ```
 
-~~or clone the repository and build locally.~~
-
-Clone the repository and build locally (the proto files need to be compiled
-locally).
+~~or clone the repository and build locally.~~ Clone the repository and build
+locally (the proto files need to be compiled locally):
 
 ```sh
 git clone https://github.com/X-LANCE/Mobile-Env
