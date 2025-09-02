@@ -58,3 +58,5 @@ VOLUME /root/.android
 	#sed -i.bak -e 's#^\(image\.sysdir\.1[[:space:]]*=[[:space:]]*\)Sdk/#\1#g' config.ini
 
 ENV ADB_MDNS=0
+
+RUN apt install -y libpulse0
