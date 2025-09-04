@@ -4,3 +4,7 @@ frida-server-*.*.*-android-x86_64.xz
 android_env
 frida_setup.sh
 syscert_setup.exp
+
+real.dockerfile
+proxy.dockerfile
+proxy.dockerfile.bak

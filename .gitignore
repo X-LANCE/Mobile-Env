@@ -37,4 +37,5 @@ backup-configs/
 
 sphinx/
 #tests
-test_branches
+/test_branches
+/docker_tests
