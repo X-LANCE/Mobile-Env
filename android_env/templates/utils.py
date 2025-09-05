@@ -14,29 +14,165 @@
 # 
 # Created by Danyang Zhang @X-Lance
 
-from typing import Union, Callable, Literal
-from typing import Dict, List
+from typing import Union, Callable, Literal, Any
+from typing import Dict, List, Tuple
 import numpy as np
 from lxml.etree import _Element
 from lxml.html import HtmlElement
 import lxml.html
 import lxml.etree
 from android_env.wrappers.vh_io_wrapper import filter_elements
+from android_env.wrappers import VhIoWrapper, TapActionWrapper
+from enum import IntEnum
+import ast
 
+import logging
+
+logger = logging.getLogger("mobile_env.agents.utils")
+
+_vh_env_action_mapping = { "INPUT": (VhIoWrapper.ActionType.INPUT, "element_id", "text")
+                         , "CLICK": (VhIoWrapper.ActionType.CLICK, "element_id")
+                         , "LONGCLICK": (VhIoWrapper.ActionType.LONGCLICK, "element_id")
+                         , "LONG_CLICK": (VhIoWrapper.ActionType.LONGCLICK, "element_id")
+                         , "SCROLL": (VhIoWrapper.ActionType.SCROLL, ("direction", VhIoWrapper.ScrollDirection.__getitem__))
+                         , "ANSWER": (VhIoWrapper.ActionType.NOTHING, "response")
+                         , "GOBACK": (VhIoWrapper.ActionType.GOBACK,)
+                         , "DO_NOTHING": (VhIoWrapper.ActionType.NOTHING,)
+                         , "NOTHING": (VhIoWrapper.ActionType.NOTHING,)
+                         }
+_tap_env_action_mapping = { "TYPE": (TapActionWrapper.ActionType.TYPE, "text")
+                          , "CLICK": (TapActionWrapper.ActionType.TAP, "touch_position") # touch_position is a tuple of two floats in [0, 1]
+                          , "LONGCLICK": (TapActionWrapper.ActionType.LONGTAP, "touch_position")
+                          , "LONG_CLICK": (TapActionWrapper.ActionType.LONGTAP, "touch_position")
+                          , "TAP": (TapActionWrapper.ActionType.TAP, "touch_position")
+                          , "LONGTAP": (TapActionWrapper.ActionType.LONGTAP, "touch_position")
+                          , "LONG_TAP": (TapActionWrapper.ActionType.LONGTAP, "touch_position")
+                          , "SLIDE": (TapActionWrapper.ActionType.SCROLL, "start_position", "end_position")
+                          , "ANSWER": (TapActionWrapper.ActionType.NOTHING, "response")
+                          , "GOBACK": (TapActionWrapper.ActionType.GOBACK,)
+                          , "DO_NOTHING": (TapActionWrapper.ActionType.NOTHING,)
+                          , "NOTHING": (TapActionWrapper.ActionType.NOTHING,)
+                          }
 def parse_vh_vlm_action_from_action_markup( response: str
                                           , parse_for: Literal["text", "vh_env", "tap_env"] = "text"
                                           ) -> Union[str, Dict[str, np.ndarray]]:
     #  function parse_vh_vlm_action_from_action_markup {{{ # 
-    # NOTE: add a special field in actions with element ids for element
-    # representations
-    # TODO
-    pass
+    """
+    This function extracts action representation from "<action>...</action>"
+    structure. If `parse_for` is "vh_env" or "tap_env", this function will
+    further parse the extracted action str into the dict format used for
+    `VhIoWrapper` and `TapActionWrapper`. The action to parse is expected to
+    have the format of Python function call. Supported function names and
+    parameters are configured through `_vh_env_action_mapping` and
+    `_tap_env_action_mapping`.
+
+    Args:
+        response (str): raw response str
+        parse_for (str): "text" | "vh_env" | "tap_env". "text" will return the
+          raw extracted action str. "vh_env" will further parse the action str
+          into the dict format for VhIoWrapper. "tap_env" will parse the action
+          str into the dict format of TapActionWrapper.
+
+    Returns:
+        Union[str, Dict[str, np.ndarray]]: the extracted or parsed action
+    """
+
+    try:
+        action_beginning: int = response.index("<action>")+8
+        action_end: int = response.find("</action>", action_beginning)
+        if action_end==-1:
+            action_end = None
+        action_str: str = response[action_beginning:action_end].strip()
+    except ValueError:
+        logger.exception("Cannot find action markups in the given response: %s", response)
+        action_str = "DO_NOTHING()"
+
+    if parse_for=="text":
+        return action_str
+
+    mapping_dict: Dict[str, Tuple[IntEnum, Union[str, Tuple[str, Callable[[Any], Any]]], ...]]
+    if parse_for=="vh_env":
+        mapping_dict = _vh_env_action_mapping
+    elif parse_for=="tap_env":
+        mapping_dict =_tap_env_action_mapping
+    else:
+        raise NotImplementedError("Not Implemented Action Parsing Mode: {:}".format(parse_for))
+
+    try:
+        action_call: ast.Call = ast.parse(action_str, mode="eval").body
+        function_name: str = action_call.func.id
+    except (SyntaxError, AttributeError):
+        logger.exception("Action parsing error `%s`", action_str)
+        return {"action_type": np.array(mapping_dict["NOTHING"][0])}
+    if function_name not in mapping_dict:
+        logger.error("Unknown action str: %s", action_str)
+        return {"action_type": np.array(mapping_dict["NOTHING"][0])}
+    mapping_tuple: Tuple[IntEnum, Union[str, Tuple[str, Callable[[Any], Any]]], ...]\
+            = mapping_dict[function_name]
+    action_object: Dict[str, np.ndarray] = {"action_type": np.array(mapping_tuple[0])}
+    try:
+        for i in range(1, len(mapping_tuple)):
+            if isinstance(mapping_tuple[i], str):
+                item_name: str = mapping_tuple[i]
+                item_cast: Callable[[Any], Any] = lambda x: x
+            else:
+                item_name: str = mapping_tuple[i][0]
+                item_cast: Callable[[Any], Any] = mapping_tuple[i][1]
+            action_object[item_name] = np.array(item_cast(action_call.args[i].value))
+    except IndexError:
+        logger.exception("Action arguments parsing error: %s", action_str)
+        return {"action_type": np.array(mapping_dict["NOTHING"][0])}
+    return action_object
     #  }}} function parse_vh_vlm_action_from_action_markup # 
 
-def convert_action_object_to_history(action_object: Dict[str, np.ndarray]) -> str:
+_vh_action_serialization_mapping =\
+        { VhIoWrapper.ActionType.INPUT: ("INPUT", "element_id", "text")
+        , VhIoWrapper.ActionType.CLICK: ("CLICK", "element_id")
+        , VhIoWrapper.ActionType.LONGCLICK: ("LONG_CLICK", "element_id")
+        , VhIoWrapper.ActionType.SCROLL: ("SCROLL", ("direction", lambda drct: repr(VhIoWrapper.ScrollDirection(drct).name)))
+        , VhIoWrapper.ActionType.NOTHING: ("ANSWER", "response")
+        , VhIoWrapper.ActionType.GOBACK: ("GOBACK",)
+        , VhIoWrapper.ActionType.NOTHING: ("DO_NOTHING",)
+        }
+_tap_action_serilization_mapping = \
+        { TapActionWrapper.ActionType.TYPE: ("TYPE", "text")
+        , TapActionWrapper.ActionType.TAP: ("TAP", "touch_position")
+        , TapActionWrapper.ActionType.LONGTAP: ("LONG_TAP", "touch_position")
+        , TapActionWrapper.ActionType.SCROLL: ("SLIDE", "start_position", "end_position")
+        , TapActionWrapper.ActionType.NOTHING: ("ANSWER", "response")
+        , TapActionWrapper.ActionType.GOBACK: ("GOBACK",)
+        , TapActionWrapper.ActionType.NOTHING: ("DO_NOTHING",)
+        }
+def convert_action_object_to_history(action_object: Dict[str, np.ndarray], action_for: Literal["vh_env", "tap_env"]) -> str:
     #  function convert_action_object_to_history {{{ # 
-    # TODO
-    pass
+    mapping_dict: Dict[int, Tuple[str, Union[str, Tuple[str, Dict[[Any], str]]], ...]]
+    if action_for=="vh_env":
+        mapping_dict = _vh_action_serialization_mapping
+    elif action_for=="tap_env":
+        mapping_dict = _tap_action_serilization_mapping
+    else:
+        raise NotImplementedError("Not Implemented Action Type: {:}".format(action_for))
+
+    action_type: int = action_object["action_type"].item()
+    if action_type not in mapping_dict:
+        logger.error("Unknown action type: %d for %s", action_type, action_for)
+        return "DO_NOTHING()"
+    mapping_tuple: Tuple[str, Union[str, Tuple[str, Dict[[Any], str]]], ...] = mapping_dict[action_type]
+    function_name: str = mapping_tuple[0]
+    arguments: List[str] = []
+    try:
+        for i in range(1, len(mapping_tuple)):
+            if isinstance(mapping_tuple[i], str):
+                item_name: str = mapping_tuple[i]
+                item_cast: Callable[[Any], str] = repr
+            else:
+                item_name: str = mapping_tuple[i][0]
+                item_cast: Callable[[Any], str] = mapping_tuple[i][1]
+            arguments.append(item_cast(action_object[item_name].item()))
+    except KeyError:
+        logger.exception("Action arguments parsing error: %s for %s", item_name, str(action_for))
+        return "DO_NOTHING()"
+    return "{:}({:})".format(function_name, ", ".join(arguments))
     #  }}} function convert_action_object_to_history # 
 
 def convert_vh_node_to_html(node: _Element) -> HtmlElement:
@@ -142,9 +278,3 @@ def convert_vh_to_html_list(node: _Element) -> str:
 
     return "\n".join(result_list)
     #  }}} function convert_vh_to_html_list # 
-
-def convert_raw_img_to_jpeg_base64(image: np.ndarray) -> str:
-    #  function convert_raw_img_to_jpeg_base64 {{{ # 
-    # TODO
-    pass
-    #  }}} function convert_raw_img_to_jpeg_base64 # 

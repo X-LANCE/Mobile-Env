@@ -26,9 +26,8 @@ import numpy as np
 
 from android_env.wrappers import VhIoWrapper, TapActionWrapper
 #from copy import deepcopy
-from android_env.templates.utils import ( convert_vh_to_html_list
-                                        , convert_raw_img_to_jpeg_base64
-                                        )
+from android_env.templates.utils import convert_vh_to_html_list
+from PIL import Image
 
 import logging
 
@@ -226,6 +225,7 @@ class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarra
     def __init__( self
                 , prompt_template: TemplateGroup
                 , action_parser: Callable[[str], Dict[str, np.ndarray]]
+                , serialize_action: Callable[[Dict[str, np.ndarrray]], str]
                 , llm_caller_function: Optional[Callable[[PromptGroupT, int, float], str]] = None
                 , model_name: Optional[str] = None
                 , api_key: Optional[str] = None
@@ -245,6 +245,9 @@ class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarra
               * action_history: '\n'-joined history action list
             action_parser (Callable[[str], Dict[str, np.ndarray]]): function to
               parse action from the llm response
+            serialize_action (Callable[[Dict[str, np.ndarrray]], str]):
+              function to serialize action to str so that it can be inserted
+              into the prompt
 
             llm_caller_function (Optional[Callable[[PromptGroupT, int, float], str]]):
               function to invoke the LLM. the parameters are
@@ -271,6 +274,7 @@ class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarra
 
         self._prompt_template: TemplateGroup = prompt_template
         self._parse_action: Callable[[str], Dict[str, np.ndarray]] = action_parser
+        self._serialize_action: Callable[[Dict[str, np.ndarray]], str] = serialize_action
 
         if llm_caller_function is not None:
             self._llm_caller: Callable[[PromptGroupT, int, float], str] = llm_caller_function
@@ -306,7 +310,7 @@ class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarra
                                      , "current_instruction":
                                         self._instruction_history[-1] if len(self._instruction_history)>0 else ""
                                      , "screen": screen_representation
-                                     , "action_history": "\n".join(self._action_history)
+                                     , "action_history": "\n".join(map(self._serialize_action, self._action_history))
                                      }
                       )
         try:
@@ -432,7 +436,7 @@ class NaiveVLMAgent(WikiHowAgent[np.ndarray, str, None]):
                                         self._instruction_history[-1] if len(self._instruction_history)>0 else ""
                                      , "action_history": "\n".join(self._action_history)
                                      }
-                      , img_mapping={"screen": convert_raw_img_to_jpeg_base64(observation)}
+                      , img_mapping={"screen": Image.fromarray(observation)}
                       )
         try:
             response: str = self._llm_caller(message, self._max_tokens, self._temperature)
@@ -458,6 +462,7 @@ class SimpleVLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], 
     def __init__( self
                 , prompt_template: TemplateGroup
                 , action_parser: Callable[[str], Dict[str, np.ndarray]]
+                , serialize_action: Callable[[Dict[str, np.ndarrray]], str]
                 , llm_caller_function: Optional[Callable[[PromptGroupT, int, float], str]] = None
                 , model_name: Optional[str] = None
                 , api_key: Optional[str] = None
@@ -478,6 +483,9 @@ class SimpleVLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], 
               * screen: screen representation
             action_parser (Callable[[str], Dict[str, np.ndarray]]): function to
               parse action from the llm response
+            serialize_action (Callable[[Dict[str, np.ndarrray]], str]):
+              function to serialize action to str so that it can be inserted
+              into the prompt
 
             llm_caller_function (Optional[Callable[[PromptGroupT, int, float], str]]):
               function to invoke the LLM. the parameters are
@@ -504,6 +512,7 @@ class SimpleVLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], 
 
         self._prompt_template: TemplateGroup = prompt_template
         self._parse_action: Callable[[str], Dict[str, np.ndarray]] = action_parser
+        self._serialize_action: Callable[[Dict[str, np.ndarray]], str] = serialize_action
 
         if llm_caller_function is not None:
             self._llm_caller: Callable[[PromptGroupT, int, float], str] = llm_caller_function
@@ -536,9 +545,9 @@ class SimpleVLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], 
                                         "\n".join(self._instruction_history[:-1])
                                      , "current_instruction":
                                         self._instruction_history[-1] if len(self._instruction_history)>0 else ""
-                                     , "action_history": "\n".join(self._action_history)
+                                     , "action_history": "\n".join(map(self._serialize_action, self._action_history))
                                      }
-                      , img_mapping={"screen": convert_raw_img_to_jpeg_base64(observation["pixels"])}
+                      , img_mapping={"screen": Image.fromarray(observation["pixels"])}
                       )
         try:
             response: str = self._llm_caller(message, self._max_tokens, self._temperature)

@@ -282,7 +282,8 @@ class VhIoWrapper(base_wrapper.BaseWrapper):
         actions: List[Dict[str, np.ndarray]] = []
 
         if "element_id" in action:
-            bbox: List[int] = self._bbox_list[action["element_id"]]
+            element_id: np.int64 = np.clip(action["element_id"], 0, len(self._bbox_list)-1)
+            bbox: List[int] = self._bbox_list[element_id]
             x = (bbox[0]+bbox[2])/2./self._env.observation_spec()["pixels"].shape[1]
             y = (bbox[1]+bbox[3])/2./self._env.observation_spec()["pixels"].shape[0]
 
