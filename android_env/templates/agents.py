@@ -37,8 +37,8 @@ Obs = TypeVar("Observation")
 Act = TypeVar("Action")
 Reset = TypeVar("Optional information returned after agent resetting")
 
-class WikiHowAgent(abc.ABC, Generic[Obs, Act, Reset]):
-    #  class WikiHowAgent {{{ # 
+class MobileEnvAgent(abc.ABC, Generic[Obs, Act, Reset]):
+    #  class MobileEnvAgent {{{ # 
     def __init__(self):
         #  method __init__ {{{ # 
         self._instruction_history: List[str] = []
@@ -102,9 +102,9 @@ class WikiHowAgent(abc.ABC, Generic[Obs, Act, Reset]):
 
         self.reset()
         #  }}} method clear # 
-    #  }}} class WikiHowAgent # 
+    #  }}} class MobileEnvAgent # 
 
-class NaiveTextLLMAgent(WikiHowAgent[str, str, None]):
+class NaiveTextLLMAgent(MobileEnvAgent[str, str, None]):
     #  NaiveTextLLMAgent {{{ # 
     """
     Naive Text-LLM-based agent directly accepting observation in str and
@@ -216,7 +216,7 @@ class NaiveTextLLMAgent(WikiHowAgent[str, str, None]):
         #  }}} method _get_action # 
     #  }}} NaiveTextLLMAgent # 
 
-class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], None]):
+class SimpleTextLLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], None]):
     #  class SimpleTextLLMAgent {{{ # 
     """
     Simple Text-LLM-based agent working with `android_env.wrappers.VhIoWrapper`
@@ -329,7 +329,7 @@ class SimpleTextLLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarra
         #  }}} method _get_action # 
     #  }}} class SimpleTextLLMAgent # 
 
-class NaiveVLMAgent(WikiHowAgent[np.ndarray, str, None]):
+class NaiveVLMAgent(MobileEnvAgent[np.ndarray, str, None]):
     #  class NaiveVLMAgent {{{ # 
     """
     Naive VLM-based agent accepting screen observation in image and returning
@@ -427,7 +427,7 @@ class NaiveVLMAgent(WikiHowAgent[np.ndarray, str, None]):
 
         if observation is None:
             return None
-        
+
         message: PromptGroupT =\
                 self._prompt_template.safe_substitute(
                         text_mapping={ "history_instructions":
@@ -453,7 +453,7 @@ class NaiveVLMAgent(WikiHowAgent[np.ndarray, str, None]):
         #  }}} method _get_action # 
     #  }}} class NaiveVLMAgent # 
 
-class SimpleVLMAgent(WikiHowAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], None]):
+class SimpleVLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndarray], None]):
     #  class SimpleVLMAgent {{{ # 
     """
     Simple VLM-based agent working with `android_env.wrappers.TapActionWrapper`
