@@ -129,3 +129,8 @@
 * (Action Batch Function): Action batch function for remote simulator.
 * (`gap_sec` parameter for remote simulator): `gap_sec` parameter for remote
   simulator daemon.
+* (Usage of new assets): Some new assets are added, including
+  * Agent and evaluation templates
+  * New docker image (needed volumes and devices, distrobox, *etc*.)
+* (Quick start guideline): Add a quick start guideline. Maybe duplicate with
+  usage of agent and evaluation templates.

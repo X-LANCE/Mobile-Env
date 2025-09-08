@@ -15,43 +15,22 @@
 
 # Created by Danyang Zhang @X-Lance.
 
-.PHONY: base syscert frida rmiB rmiS rmiF
+.PHONY: mobile-env docker-test-dir
 
 docker_dir := build-docker
 
-itag_base := zdy023/mobile-env-rl:v2.1.a30_ga.base
-itag_syscert := zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0.part
-itag_syscert_full := zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0
-itag_frida := zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2.part
-itag_frida_full := zdy023/mobile-env-rl:v2.1.a30_ga.frida.f14.2.2
+mobile_env_path := $(docker_dir)/android_env
+mobile_env_commit_dig := $(shell cd $(mobile_env_path) && git log --oneline HEAD^..HEAD |cut -d' ' -f 1)
+mobenv_tag := zdy023/mobile-env:$(mobile_env_commit_dig)-ubuntu20.04-cu121-android30-torch241
 
-base:
+mobile-env: $(docker_dir)/real.dockerfile
 	rsync -ruvth --delete --exclude=__pycache__ android_env setup.py pyproject.toml LICENSE $(docker_dir)/android_env/
-	docker build --tag $(itag_base) --file $(docker_dir)/base.dockerfile $(docker_dir)/
-	
-syscert:
-	rsync -ruvth --delete tools/syscert_setup.exp $(docker_dir)/
-	docker build --tag $(itag_syscert) --file $(docker_dir)/syscert.dockerfile $(docker_dir)/
+	docker buildx build -f $< --target $@ -t $(mobenv_tag) $(docker_dir)/
 
-frida:
-	rsync -ruvth --delete tools/frida_setup.sh $(docker_dir)/
-	docker build --tag $(itag_frida) --file $(docker_dir)/frida.dockerfile $(docker_dir)/
+$(docker_dir)/real.dockerfile: $(docker_dir)/Dockerfile $(docker_dir)/proxy.dockerfile
+	zpp -m C $< -o $@
 
-rmiB:
-	docker ps -a --filter "ancestor=$(itag_base)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
-	docker rmi $(itag_base)
-	docker images
-
-rmiS:
-	docker ps -a --filter "ancestor=$(itag_syscert)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
-	docker rmi $(itag_syscert)
-	docker ps -a --filter "ancestor=$(itag_syscert_full)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
-	docker rmi $(itag_syscert_full)
-	docker images
-
-rmiF:
-	docker ps -a --filter "ancestor=$(itag_frida)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
-	docker rmi $(itag_frida)
-	docker ps -a --filter "ancestor=$(itag_frida_full)" |awk '{if(NR>=2) {system("docker rm "$$1);}}'
-	docker rmi $(itag_frida_full)
-	docker images
+docker-test-dir:
+	mkdir -p docker_tests
+	rsync -ruvth --delete --exclude=__pycache__ android_env setup.py pyproject.toml LICENSE docker_tests/mobile-env/
+	mkdir -p docker_tests/android_avds

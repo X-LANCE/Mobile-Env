@@ -4,6 +4,17 @@
 
 ## 最近更新
 
+* （2025-09-02 v4.2）
+  * 变更了`android_env.interfaces.env.Environment`的部分接口
+  * 添加了对缓存的`TaskManager`的清理机制，以控制运行时开销
+  * 支持了在环境重置时自主重启模拟器
+  * 修复了部分漏洞
+  * 正在构建新的Docker镜像
+
+详情请查看[更新日志](Changelog)。
+
+* （2024-12-18 v4.1）修复了一些重要的漏洞。详情见于[更新日志](Changelog)。
+
 * （2024-07-14 v4.0）
   * 新增了ADB动作和观测类型
   * 现已支持在`TEXT`动作中输入一般UTF-8字符串
@@ -77,13 +88,13 @@ Mobile-Env基于[AndroidEnv](https://github.com/deepmind/android_env)开发。�
 
 ### 安装
 
-从PyPI安装：
+~~从PyPI安装：~~
 
 ```sh
-pip install mobile-env-rl
+#pip install mobile-env-rl
 ```
 
-或克隆本仓库并在本地构建：
+~~或克隆本仓库并在本地构建：~~克隆本仓库并构建（proto文件需要在本地编译）：
 
 ```sh
 git clone https://github.com/X-LANCE/Mobile-Env
@@ -91,7 +102,7 @@ cd Mobile-Env
 pip install .
 ```
 
-此外，也提供了部分带有已配置好的安卓镜像的[Docker镜像](https://hub.docker.com/r/zdy023/mobile-env-rl)。
+~~此外，也提供了部分带有已配置好的安卓镜像的[Docker镜像](https://hub.docker.com/r/zdy023/mobile-env-rl)。~~
 
 ### 加载、运行Mobile-Env以评测或训练
 

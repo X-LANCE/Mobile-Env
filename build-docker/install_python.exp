@@ -1,4 +1,5 @@
-# Copyright 2023 SJTU X-Lance Lab
+#!/usr/bin/expect -f
+# Copyright 2025 SJTU X-Lance Lab
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +15,18 @@
 
 # Created by Danyang Zhang @X-Lance.
 
-# zdy023/mobile-env-rl:v2.1.a30_ga.syscert.m8.0.0.part
-
-FROM zdy023/mobile-env-rl:v2.1.a30_ga.base
-
-WORKDIR /root
-
-COPY ./syscert_setup.exp ./setup_image.sh ./
-
-RUN pip install mitmproxy==8.0.0 Werkzeug==2.2.2 &&\
-	pip install --upgrade protobuf
-
-# /root/mitmscripts/replay.py will be used as replay script
-#VOLUME /root/mitmscripts
+set timeout 300
+spawn apt install -y python3 python3-pip python-is-python3
+set install_process $spawn_id
+expect {
+	"Geographic area:" {
+		send "6\r"
+		exp_continue
+	}
+	"Time zone:" {
+		send "70\r"
+		exp_continue
+	}
+	timeout exp_continue
+}
+wait -i $install_process

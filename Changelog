@@ -1,3 +1,18 @@
+2025-09-02 Danyang Zhang <zdy004007@126.com>
+
+	v4.2
+
+	Added option to support manual simulator restart at environment reset.
+
+	* android_env/environment.py
+	* android_env/components/coordinator.py
+	* android_env/interfaces/env.py
+
+	New Docker image
+
+	* build-docker/Dockerfile
+	* Makefile
+
 2025-05-07 Danyang Zhang <zdy004007@126.com>
 
 	Interface updates

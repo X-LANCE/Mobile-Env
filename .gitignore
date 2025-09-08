@@ -35,7 +35,7 @@ tools/frida-script.js
 tools-backup/
 backup-configs/
 
-sphinx/
+/sphinx/
 #tests
 /test_branches
 /docker_tests

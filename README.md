@@ -3,6 +3,18 @@
 
 ## NEWS!!
 
+* (2025-09-02 v4.2)
+  * Updated some interfaces for `android_env.interfaces.env.Environment`
+  * Added cleaning mechanism for cached `TaskManager`s to save runtime resources
+  * Added support of manual simulator restart at environment reset
+  * Fixed other bugs
+  * Building new Docker image
+
+See our [Change log](Changelog) for details.
+
+* (2024-12-18 v4.1) Some essential bugs are fixed. See [Change log](Changelog)
+  for details.
+
 * (2024-07-14 v4.0)
   * Added new action and observation type of ADB
   * Enabled input of common UTF-8 strings for `TEXT` action
@@ -128,13 +140,14 @@ interaction with the following features:
 
 ### Installation
 
-Install from PyPI:
+~~Install from PyPI:~~
 
 ```sh
-pip insall mobile-env-rl
+#pip insall mobile-env-rl
 ```
 
-or clone the repository and build locally.
+~~or clone the repository and build locally.~~ Clone the repository and build
+locally (the proto files need to be compiled locally):
 
 ```sh
 git clone https://github.com/X-LANCE/Mobile-Env
@@ -142,8 +155,8 @@ cd Mobile-Env
 pip install .
 ```
 
-Several [Docker images](https://hub.docker.com/r/zdy023/mobile-env-rl) with
-well-configured Android AVD are also available.
+~~Several [Docker images](https://hub.docker.com/r/zdy023/mobile-env-rl) with
+well-configured Android AVD are also available.~~
 
 ### Load and Run Mobile-Env for Evaluation or Training
 
