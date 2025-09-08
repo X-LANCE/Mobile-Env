@@ -24,17 +24,30 @@ from android_env.templates.utils import ( parse_vh_vlm_action_from_action_markup
                                         )
 from android_env.components.tools.easyocr_wrapper import EasyOCRWrapper
 from android_env.components.coordinator import EventCheckControl
+from android_env.wrappers import VhIoWrapper, TapActionWrapper, ImageRescaleWrapper
 import android_env
 from typing import TypedDict, List, Tuple, Dict
-from typing import Optional, Any, Literal
+from typing import Optional, Any, Literal, Callable
 from numbers import Number
 from pathlib import Path
 from os import PathLike
 import os
 import functools
+from transformers import AutoTokenizer
+import numpy as np
 
 import gzip
 import pickle as pkl
+
+import logging
+import io
+import traceback
+
+import multiprocessing
+from multiprocessing.pool import AsyncResult
+from mpi4py import MPI
+
+logger = logging.getLogger("mobile_env.evaluator")
 
 class Metrics(TypedDict):
     #  class Metrics {{{ # 
@@ -52,6 +65,12 @@ class StepRecord(TypedDict):
     #  }}} class TypedDict # 
 
 EvalFlow = List[str]
+
+class Diagnosis(TypedDict):
+    #  class Diagnosis {{{ # 
+    error_occurs: bool
+    error_string: Optional[str]
+    #  }}} class Diagnosis # 
 
 def evaluate_task( env: Environment, task_index: int
                  , agent: MobileEnvAgent[Obs, Act, Reset]
@@ -120,24 +139,29 @@ def evaluate_task( env: Environment, task_index: int
     return metrics, eval_flow
     #  }}} evaluate_task # 
 
-def evaluate_llm_agent( task_path: PathLike, avd_name: str, save_traj_to: Optional[PathLike]
-                      , input_tokenizer: PathLike = None
+def evaluate_llm_agent( *
+                      , task_path: PathLike, avd_name: str, save_traj_to: Optional[PathLike]
+                      , input_tokenizer: PathLike
                       , llm_type: Literal["text", "vlm"], prompt_template_path: PathLike
                       , model_name: str, api_key: str, base_url: Optional[str] = None
                       , max_tokens: int = 100, temperature: float = .1
                       , prompt_flag_macros: Optional[List[str]] = None
                       , prompt_value_macros: Optional[Dict[str, str]] = None
-                      , starts_from: int = 0, ends_at: Optional[int] = None
+                      , starts_from: int = 0, ends_at: Optional[int] = None, max_steps: int = 15
                       , mitm_config: Optional[Dict[str, str]] = None
                       , ocr_langs: List[str] = ["en", "ch_sim"]
-                      , print_results: bool = True
+                      , restart_simulator_at_reset: bool = False
+                      , screenshot_zoom_factors: Tuple[float, float] = (1., 1.)
+                      , print_results: bool = True, save_eval_flow: bool = True
                       , android_avd_home: PathLike = Path("~/.android_env/avd").expanduser()
                       , android_sdk_root: PathLike = Path("~/Android/Sdk").expanduser()
                       , env_load_kwargs: Dict[str, Any] = {}
-                      ) -> Tuple[Metrics, EvalFlow]:
+                      , text_vlm_env_wrapper_kwargs: Dict[str, Any] = {}
+                      , custom_wrappers: List[Callable[[Environment], Environment]] = []
+                      ) -> Tuple[Metrics, Metrics, EvalFlow, Diagnosis]:
     #  function evaluate_llm_agent {{{ # 
     """
-    Inits a `SimpleTextLLMAgent` or `SimpleVLMAgent` and evaluate it on the
+    Inits a `SimpleTextLLMAgent` or `SimpleVLMAgent` and evaluates it on the
     task set constructed from `task_path`.
 
     Args:
@@ -164,30 +188,44 @@ def evaluate_llm_agent( task_path: PathLike, avd_name: str, save_traj_to: Option
 
         starts_from (int): evaluation will only be conducted on tasks from the
           `starts_from` to `ends_at`
-        ends_at (int): evaluation will only be conducted on tasks from the
-          `starts_from` to `ends_at`
+        ends_at (Optional[int]): evaluation will only be conducted on tasks
+          from the `starts_from` to `ends_at`
+        max_steps (int): max steps of episodes
 
         mitm_config (Optional[Dict[str, str]]): mitm config for Mobile-Env
         ocr_langs (List[str]): enabled languages for OCR model
+        restart_simulator_at_reset (boo): whether the simulator needs to be
+          restarted during environment reset
+        screenshot_zoom_factors (Tuple[float, float]): zoom factors for
+          screenshot. zoom factors are given for height and width sequentially
 
         print_results (bool): if the results should be printed to console
+        save_eval_flow (bool): if the eval flow should be dumped to hard disk
 
         android_avd_home (PathLike): the home directory of AVDs
         android_sdk_root (PathLike): the root directory of Android SDKs
 
-        env_load_kwargs (Dict[str, Any]): other keyword arguments for
+        env_load_kwargs (Dict[str, Any]): extra keyword arguments for
           `android_env.load` function
+        text_vlm_env_wrapper_kwargs (Dict[str, Any]): extra keyword arguments
+          for `VhIoWrapper` or `TapActionWrapper`
+        custom_wrappers (List[Callable[[Environment], Environment]]):
+          additional wrappers to apply upon `VhIoWrapper` and
+          `TapActionWrapper`, applied in order. e.g.,
+          `InstructionRewritingWrapper` for WikiHow task set.
 
     Returns:
-        Metrics: result metrics
+        Metrics: average result metrics
+        Metrics: verbose result metrics
         EvalFlow: the evaluation trajectory (without observations)
+        Diagnosis: error messages
     """
 
-    # 1. build agent
+    #  1. Build Agent {{{ # 
     prompt_template: TemplateGroup =  TemplateGroup.parse(
                                         os.fspath(prompt_template_path)
                                       , flag_macros=prompt_flag_macros
-                                      , value_macros==prompt_value_macros
+                                      , value_macros=prompt_value_macros
                                       )
     agent: MobileEnvAgent
     if llm_type=="text":
@@ -220,35 +258,296 @@ def evaluate_llm_agent( task_path: PathLike, avd_name: str, save_traj_to: Option
                               )
     else:
         raise NotImplementedError("Unsupported LLM type: {:}".format(llm_type))
+    logger.info("Agent Ready")
+    #  }}} 1. Build Agent # 
 
-    # 2. build environment
+    #  2. Build Environment {{{ # 
     obs_with_view_hierarchy: bool = llm_type=="text"
+    other_coordinator_args: Dict[str, Any] = env_load_kwargs.pop("coordinator_args", {})
     env: Environment = android_env.load( os.fspath(task_path), avd_name
                                        , android_avd_home=os.fspath(android_avd_home)
-                                        , android_sdk_root=os.fspath(android_sdk_root)
-                                        , emulator_path=os.path.join(android_sdk_root, "emulator/emulator")
-                                        , adb_path=os.path.join(android_sdk_root, "platform-tools/adb")
-                                        , run_headless=True
-                                        , mitm_config=mitm_config
-                                        , unify_vocabulary=os.path.join(input_tokenizer, "vocab.txt")
-                                        , text_model=EasyOCRWrapper(lang_list=ocr_langs)
-                                        , with_view_hierarchy=obs_with_view_hierarchy
-                                        , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
-                                                            , "screen_check_control_method": EventCheckControl.LIFT
-                                                            , "step_timeout_sec": 60.
-                                                            , "max_cached_task_managers": 1
-                                                            , "periodic_restart_time_min": 600
+                                       , android_sdk_root=os.fspath(android_sdk_root)
+                                       , emulator_path=os.path.join(android_sdk_root, "emulator/emulator")
+                                       , adb_path=os.path.join(android_sdk_root, "platform-tools/adb")
+                                       , run_headless=True
+                                       , mitm_config=mitm_config
+                                       , unify_vocabulary=os.path.join(input_tokenizer, "vocab.txt")
+                                       , text_model=EasyOCRWrapper(lang_list=ocr_langs)
+                                       , with_view_hierarchy=obs_with_view_hierarchy
+                                       , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
+                                                          , "screen_check_control_method": EventCheckControl.LIFT
+                                                          , "step_timeout_sec": 60.
+                                                          , "max_cached_task_managers": 1
+                                                          , "periodic_restart_time_min": 600
+                                                          , "restart_simulator_at_reset": restart_simulator_at_reset
+                                                          , **other_coordinator_args
+                                                          }
+                                       , **env_load_kwargs
+                                       )
+    if llm_type=="text":
+        env = VhIoWrapper( env, AutoTokenizer.from_pretrained(input_tokenizer)
+                         , wait_sec=1., retry_for_empty_view_hierarchy=3, action_batch=True
+                         , **text_vlm_env_wrapper_kwargs
+                         )
+    elif llm_type=="vlm":
+        env = ImageRescaleWrapper(env, zoom_factors=screenshot_zoom_factors)
+        env = TapActionWrapper( env, AutoTokenizer.from_pretrained(input_tokenizer)
+                              , wait_sec=1.5, action_batch=True
+                              , **text_vlm_env_wrapper_kwargs
+                              )
+    for wrpp in custom_wrappers:
+        env = wrpp(env)
+    logger.info("Environment Ready")
+    #  }}} 2. Build Environment # 
 
+    if save_traj_to is not None:
+        save_traj_to: Path = Path(save_traj_to)
+        get_save_path: Callable[[int], Optional[Path]] = lambda i: save_traj_to/"{:d}.pkl.gz".format(i)
+    else:
+        get_save_path: Callable[[int], Optional[Path]] = lambda _: None
+    if ends_at is None:
+        ends_at: int = env.nb_tasks
+    total_metrics: Metrics = {"step": [], "reward": [], "success": []}
+    total_eval_flow: EvalFlow = []
+    diagnosis: Diagnosis = {"error_occurs": False, "error_string": None}
+    try:
+        for i in range(starts_from, ends_at):
+            task_metrics: Metrics
+            task_eval_flow: EvalFlow
+            task_metrics, task_eval_flow = evaluate_task( env, i, agent
+                                                        , max_steps=max_steps
+                                                        , save_to=get_save_path(i)
+                                                        )
+            for mtr in task_metrics:
+                total_metrics.setdefault(mtr, []).extend(task_metrics[mtr])
+            total_eval_flow += task_eval_flow
+    except:
+        diagnosis["error_occurs"] = True
+        logger.exception("Eval Error!")
+        with io.StringIO() as f:
+            traceback.print_exc(file=f)
+            diagnosis["error_string"]: str = f.getvalue()
+    finally:
+        average_metrics: Metrics = {}
+        for mtr in total_metrics:
+            average_metrics[mtr] = [np.mean(total_metrics[mtr]).item()]
+
+    if save_eval_flow and save_traj_to is not None:
+        (save_traj_to/"eval_flow.txt").write_text("\n".join(total_eval_flow))
+    if print_results:
+        print( "\x1b[42mCOMPLETEION with %s!\x1b[0m Avg #Steps: %.2f, Avg Reward: %.3f, SR: %.4f"\
+             % ( "{:d}:{:d}".format(starts_from, ends_at)
+               , average_metrics["step"][0], average_metrics["reward"][0], average_metrics["success"][0]
+               )
+             )
+
+    return average_metrics, total_metrics, total_eval_flow, diagnosis
     #  }}} function evaluate_llm_agent # 
 
-def evaluate_llm_agent_mp():
+def evaluate_llm_agent_mp( nb_workers: int, starts_from: int, ends_at: int
+                         , print_results: bool = True, save_eval_flow: bool = True
+                         , **evaluation_arguments
+                         ) -> Tuple[Metrics, Metrics, EvalFlow, Diagnosis]:
     #  function evaluate_llm_agent_mp {{{ # 
-    # TODO: implement with Python multiprocessing
-    pass
+    """
+    Inits `SimpleTextLLMAgent` or `SimpleVLMAgent` and evaluates it on the task
+    set constructed from `task_path` with Python-based multiprocessing.
+
+    Args:
+        nb_workers (int): number of worker processes
+        starts_from (int): evaluation will only be conducted on tasks from the
+          `starts_from` to `ends_at`
+        ends_at (int): evaluation will only be conducted on tasks from the
+          `starts_from` to `ends_at`. NOTE THAT A POSITIVE INTEGER is required
+          to dispense the tasks to workers.
+
+        print_results (bool): if the results should be printed to console
+        save_eval_flow (bool): if the eval flow should be dumped to hard disk
+
+        evaluation_arguments (Dict[str, Any]): the arguments for
+          `evaluate_llm_agent` function
+
+    Returns:
+        Metrics: average result metrics
+        Metrics: verbose result metrics
+        EvalFlow: the evaluation trajectory (without observations)
+        Diagnosis: error messages
+    """
+
+    nb_tasks: int = ends_at-starts_from
+    nb_tasks_per_rank: int
+    remaining: int
+    nb_tasks_per_rank, remaining = divmod(nb_tasks, nb_workers)
+    split_points: np.ndarray = np.arange(nb_workers+1)
+    split_points[:remaining+1] *= nb_tasks_per_rank+1
+    split_points[remaining+1:] = split_points[remaining] + (split_points[remaining+1:]-remaining)*nb_tasks_per_rank
+    split_points += starts_from
+
+    eval_pool = multiprocessing.Pool(nb_workers)
+    futures: List[AsyncResult] = []
+    for i in range(nb_workers):
+        future: AsyncResult = eval_pool.apply_async(
+                                evaluate_llm_agent
+                              , ()
+                              , { **evaluation_arguments
+                                , "starts_from": split_points[i]
+                                , "ends_at": split_points[i+1]
+                                , "print_results": False
+                                , "save_eval_flow": False
+                                }
+                              )
+        futures.append(future)
+
+    total_metrics: Metrics = {"step": [], "reward": [], "success": []}
+    total_eval_flow: EvalFlow = []
+    total_diagnosis: Diagnosis = {"error_occurs": False, "error_string": []}
+    ranges: List[str] = []
+    for i, ftr in enumerate(futures):
+        worker_metrics: Metrics
+        worker_eval_flow: EvalFlow
+        worker_diagnosis: Diagnosis
+        _, worker_metrics, worker_eval_flow, worker_diagnosis = ftr.get()
+        for mtr in worker_metrics:
+            total_metrics.setdefault(mtr, []).extend(worker_metrics[mtr])
+        total_eval_flow += worker_eval_flow
+        if worker_diagnosis["error_occurs"]:
+            total_diagnosis["error_occurs"] = True
+            error_str: str = "Error in worker {:d}:\n{:}".format(i, worker_diagnosis["error_string"])
+            logger.error(error_str)
+            total_diagnosis["error_string"].append(error_str)
+        ranges.append("{:d}:{:d}".format(split_points[i], split_points[i]+len(worker_metrics["success"])))
+    average_metrics: Metrics = {}
+    for mtr in total_metrics:
+        average_metrics[mtr] = [np.mean(total_metrics[mtr]).item()]
+    total_diagnosis["error_string"] = "\n\n---\n\n".join(total_diagnosis["error_string"])
+
+    if save_eval_flow and evaluation_arguments["save_traj_to"] is not None:
+        with open(os.path.join(evaluation_arguments["save_traj_to"], "eval_flow.txt"), "w") as f:
+            f.write("\n".join(total_eval_flow))
+    if print_results:
+        print( "\x1b[42mCOMPLETEION with %s!\x1b[0m Avg #Steps: %.2f, Avg Reward: %.3f, SR: %.4f"\
+             % ( ", ".join(ranges)
+               , average_metrics["step"][0], average_metrics["reward"][0], average_metrics["success"][0]
+               )
+             )
+
+    return average_metrics, total_metrics, total_eval_flow, total_diagnosis
     #  }}} function evaluate_llm_agent_mp # 
 
-def evaluate_llm_agent_mpi():
+def evaluate_llm_agent_mpi( starts_from: int, ends_at: int
+                          , print_results: bool = True, save_eval_flow: bool = True
+                          , **evaluation_arguments
+                          ) -> Tuple[ Tuple[Metrics, Metrics, EvalFlow, Diagnosis]
+                                    , Tuple[Metrics, Metrics, EvalFlow, Diagnosis]
+                                    ]:
     #  function evaluate_llm_agent_mpi {{{ # 
-    # TODO: implement with MPI
-    pass
+    """
+    Inits `SimpleTextLLMAgent` or `SimpleVLMAgent` and evaluates it on the task
+    set constructed from `task_path` with MPI.
+
+    Args:
+        starts_from (int): evaluation will only be conducted on tasks from the
+          `starts_from` to `ends_at`
+        ends_at (int): evaluation will only be conducted on tasks from the
+          `starts_from` to `ends_at`. NOTE THAT A POSITIVE INTEGER is required
+          to dispense the tasks to workers.
+
+        print_results (bool): if the results should be printed to console
+        save_eval_flow (bool): if the eval flow should be dumped to hard disk
+
+        evaluation_arguments (Dict[str, Any]): the arguments for
+          `evaluate_llm_agent` function
+
+    Returns:
+        - Metrics: average result metrics of the current rank
+          Metrics: verbose result metrics of the current rank
+          EvalFlow: the evaluation trajectory (without observations) of the
+            current rank
+          Diagnosis: error messages of the current rank
+        - Metrics: reduced average result metrics across all ranks
+          Metrics: reduced verbose result metrics across all ranks
+          EvalFlow: reduced the evaluation trajectory (without observations)
+            across all ranks
+          Diagnosis: reduced error messages across all ranks
+    """
+
+    world = MPI.COMM_WORLD
+    world_size = world.Get_size()
+    world_rank = world.Get_rank()
+    logger.debug("MPI world_size: %d, world_rank: %d, PID: %d", world_size, world_rank, os.getpid())
+
+    nb_tasks: int = ends_at-starts_from
+    nb_tasks_per_rank: int
+    remaining: int
+    nb_tasks_per_rank, remaining = divmod(nb_tasks, world_size)
+    if world_rank<remaining:
+        rank_starts_from: int = starts_from + world_rank*(nb_tasks_per_rank+1)
+        rank_ends_at: int = starts_from + (world_rank+1)*(nb_tasks_per_rank+1)
+    else:
+        rank_starts_from: int = starts_from + remaining*(nb_tasks_per_rank+1) + (world_rank-remaining)*nb_tasks_per_rank
+        rank_ends_at: int = starts_from + remaining*(nb_tasks_per_rank+1) + (world_rank-remaining+1)*nb_tasks_per_rank
+
+    evaluation_arguments.pop("starts_from")
+    evaluation_arguments.pop("ends_at")
+    evaluation_arguments.pop("print_results")
+    evaluation_arguments.pop("save_eval_flow")
+    worker_avg_metrics: Metrics
+    worker_metrics: Metrics
+    worker_eval_flow: EvalFlow
+    worker_diagnosis: Diagnosis
+    worker_avg_metrics, worker_metrics, worker_eval_flow, worker_diagnosis =\
+            evaluate_llm_agent( starts_from=rank_starts_from, ends_at=rank_ends_at
+                              , print_results=False, save_eval_flow=False
+                              , **evaluation_arguments
+                              )
+    world.Barrier()
+
+    all_metrics: List[Metrics] = world.gather(worker_metrics, root=0)
+    all_eval_flow: List[EvalFlow] = world.gather(worker_eval_flow, root=0)
+    all_diagnosis: List[Diagnosis] = world.gather(worker_diagnosis, root=0)
+
+    if world_rank==0:
+        total_metrics: Metrics = {"step": [], "reward": [], "success": []}
+        total_eval_flow: EvalFlow = []
+        total_diagnosis: Diagnosis = {"error_occurs": False, "error_string": []}
+        ranges: List[str] = []
+
+        for mtrs, evfl, dgns in zip(all_metrics, all_eval_flow, all_diagnosis):
+            for mtr in mtrs:
+                total_metrics.setdefault(mtr, []).extend(mtrs[mtr])
+            total_metrics += evfl
+            if dgns["error_occurs"]:
+                total_diagnosis["error_occurs"] = True
+                error_str: str = "Error in process {:d}:\n{:}".format(world_rank, dgns["error_string"])
+                logger.error(error_str)
+            ranges.append("{:d}:{:d}".format(rank_starts_from, len(mtrs["success"])))
+        average_metrics: Metrics = {}
+        for mtr in total_metrics:
+            average_metrics[mtr] = [np.mean(total_metrics[mtr]).item()]
+        total_diagnosis["error_string"] = "\n\n---\n\n".join(total_diagnosis["error_string"])
+
+        if save_eval_flow and evaluation_arguments["save_traj_to"] is not None:
+            with open(os.path.join(evaluation_arguments["save_traj_to"], "eval_flow.txt"), "w") as f:
+                f.write("\n".join(total_eval_flow))
+        if print_results:
+            print( "\x1b[42mCOMPLETEION with %s!\x1b[0m Avg #Steps: %.2f, Avg Reward: %.3f, SR: %.4f"\
+                 % ( ", ".join(ranges)
+                   , average_metrics["step"][0], average_metrics["reward"][0], average_metrics["success"][0]
+                   )
+                 )
+    else:
+        total_metrics = None
+        total_eval_flow = None
+        total_diagnosis = None
+        average_metrics = None
+    world.Barrier()
+
+    total_avg_metrics: Metrics = world.bcast(average_metrics, root=0)
+    total_metrics: Metrics = world.bcast(total_metrics, root=0)
+    total_eval_flow: EvalFlow = world.bcast(total_eval_flow, root=0)
+    total_diagnosis: Diagnosis = world.bcast(total_diagnosis, root=0)
+    world.Barrier()
+
+    return (worker_avg_metrics, worker_metrics, worker_eval_flow, worker_diagnosis)\
+         , (total_avg_metrics, total_metrics, total_eval_flow, total_diagnosis)
     #  }}} function evaluate_llm_agent_mpi # 
