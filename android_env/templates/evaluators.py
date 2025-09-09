@@ -27,7 +27,7 @@ from android_env.components.coordinator import EventCheckControl
 from android_env.wrappers import VhIoWrapper, TapActionWrapper, ImageRescaleWrapper
 import android_env
 from typing import TypedDict, List, Tuple, Dict
-from typing import Optional, Any, Literal, Callable
+from typing import Optional, Any, Literal, Callable, Union
 from numbers import Number
 from pathlib import Path
 from os import PathLike
@@ -38,6 +38,7 @@ import numpy as np
 
 import gzip
 import pickle as pkl
+import lxml.etree
 
 import logging
 import io
@@ -95,8 +96,11 @@ def evaluate_task( env: Environment, task_index: int
         action: Act = agent(instruction, step.observation, step.reward)
         eval_flow.append("> {:d}: {:}".format(nb_steps, str(action)))
 
+        observation: Dict[str, Union[np.ndarray, str]] = step.observation.copy()
+        if "view_hierarchy" in observation and observation["view_hierarchy"] is not None:
+            observation["view_hierarchy"] = lxml.etree.tostring(observation["view_hierarchy"], encoding="unicode")
         step_record: StepRecord = { "instruction": instruction
-                                  , "observation": step.observation
+                                  , "observation": observation
                                   , "reward": step.reward
                                   , "action": action
                                   }
@@ -115,8 +119,11 @@ def evaluate_task( env: Environment, task_index: int
         if nb_steps>=max_steps:
             break
 
+    observation: Dict[str, Union[np.ndarray, str]] = step.observation.copy()
+    if "view_hierarchy" in observation and observation["view_hierarchy"] is not None:
+        observation["view_hierarchy"] = lxml.etree.tostring(observation["view_hierarchy"], encoding="unicode")
     step_record = { "instruction": instruction
-                  , "observation": step.observation
+                  , "observation": observation
                   , "reward": step.reward
                   , "action": action
                   }
@@ -132,9 +139,9 @@ def evaluate_task( env: Environment, task_index: int
             pkl.dump(trajectory_dict, f)
 
     eval_flow.append("END: {:}".format(str(step.is_success())))
-    metrics: Metrics = { "step": nb_steps
-                       , "reward": reward
-                       , "success": step.is_success()
+    metrics: Metrics = { "step": [nb_steps]
+                       , "reward": [reward]
+                       , "success": [step.is_success()]
                        }
     return metrics, eval_flow
     #  }}} evaluate_task # 
@@ -152,7 +159,7 @@ def evaluate_llm_agent( *
                       , ocr_langs: List[str] = ["en", "ch_sim"]
                       , restart_simulator_at_reset: bool = False
                       , screenshot_zoom_factors: Tuple[float, float] = (1., 1.)
-                      , print_results: bool = True, save_eval_flow: bool = True
+                      , print_results: bool = True, print_per_task: bool = True, save_eval_flow: bool = True
                       , android_avd_home: PathLike = Path("~/.android_env/avd").expanduser()
                       , android_sdk_root: PathLike = Path("~/Android/Sdk").expanduser()
                       , env_load_kwargs: Dict[str, Any] = {}
@@ -199,7 +206,9 @@ def evaluate_llm_agent( *
         screenshot_zoom_factors (Tuple[float, float]): zoom factors for
           screenshot. zoom factors are given for height and width sequentially
 
-        print_results (bool): if the results should be printed to console
+        print_results (bool): if the final results should be printed to console
+        print_per_task (bool): if the result of each task should be printed to
+          console
         save_eval_flow (bool): if the eval flow should be dumped to hard disk
 
         android_avd_home (PathLike): the home directory of AVDs
@@ -264,16 +273,16 @@ def evaluate_llm_agent( *
     #  2. Build Environment {{{ # 
     obs_with_view_hierarchy: bool = llm_type=="text"
     other_coordinator_args: Dict[str, Any] = env_load_kwargs.pop("coordinator_args", {})
+    env_load_kwargs.setdefault("android_avd_home", os.fspath(android_avd_home))
+    env_load_kwargs.setdefault("android_sdk_root", os.fspath(android_sdk_root))
+    env_load_kwargs.setdefault("emulator_path", os.path.join(android_sdk_root, "emulator/emulator"))
+    env_load_kwargs.setdefault("adb_path", os.path.join(android_sdk_root, "platform-tools/adb"))
+    env_load_kwargs.setdefault("run_headless", True)
+    env_load_kwargs.setdefault("with_view_hierarchy", obs_with_view_hierarchy)
+    env_load_kwargs.setdefault("unify_vocabulary", os.path.join(input_tokenizer, "vocab.txt"))
+    env_load_kwargs.setdefault("text_model", EasyOCRWrapper(lang_list=ocr_langs))
     env: Environment = android_env.load( os.fspath(task_path), avd_name
-                                       , android_avd_home=os.fspath(android_avd_home)
-                                       , android_sdk_root=os.fspath(android_sdk_root)
-                                       , emulator_path=os.path.join(android_sdk_root, "emulator/emulator")
-                                       , adb_path=os.path.join(android_sdk_root, "platform-tools/adb")
-                                       , run_headless=True
                                        , mitm_config=mitm_config
-                                       , unify_vocabulary=os.path.join(input_tokenizer, "vocab.txt")
-                                       , text_model=EasyOCRWrapper(lang_list=ocr_langs)
-                                       , with_view_hierarchy=obs_with_view_hierarchy
                                        , coordinator_args={ "vh_check_control_method": EventCheckControl.LIFT
                                                           , "screen_check_control_method": EventCheckControl.LIFT
                                                           , "step_timeout_sec": 60.
@@ -305,6 +314,13 @@ def evaluate_llm_agent( *
         get_save_path: Callable[[int], Optional[Path]] = lambda i: save_traj_to/"{:d}.pkl.gz".format(i)
     else:
         get_save_path: Callable[[int], Optional[Path]] = lambda _: None
+    if print_per_task:
+        print_task_results: Callable[[int, str, Metrics], None] =\
+                lambda i, t, m: print( "\x1b[42mEND!\x1b[0m Index: %d, Taskid: %s, #Steps: %d, Reward: %.2f, Succeds: %s"\
+                                     % (i, t, m["step"][0], m["reward"][0], str(m["success"][0]))
+                                     )
+    else:
+        print_task_results: Callable[[int, str, Metrics], None] = lambda _1, _2, _3: None
     if ends_at is None:
         ends_at: int = env.nb_tasks
     total_metrics: Metrics = {"step": [], "reward": [], "success": []}
@@ -318,6 +334,7 @@ def evaluate_llm_agent( *
                                                         , max_steps=max_steps
                                                         , save_to=get_save_path(i)
                                                         )
+            print_task_results(i, env.task_id, task_metrics)
             for mtr in task_metrics:
                 total_metrics.setdefault(mtr, []).extend(task_metrics[mtr])
             total_eval_flow += task_eval_flow
@@ -336,7 +353,7 @@ def evaluate_llm_agent( *
         (save_traj_to/"eval_flow.txt").write_text("\n".join(total_eval_flow))
     if print_results:
         print( "\x1b[42mCOMPLETEION with %s!\x1b[0m Avg #Steps: %.2f, Avg Reward: %.3f, SR: %.4f"\
-             % ( "{:d}:{:d}".format(starts_from, ends_at)
+             % ( "{:d}:{:d}".format(starts_from, starts_from + len(total_metrics["success"]))
                , average_metrics["step"][0], average_metrics["reward"][0], average_metrics["success"][0]
                )
              )
@@ -487,10 +504,10 @@ def evaluate_llm_agent_mpi( starts_from: int, ends_at: int
         rank_starts_from: int = starts_from + remaining*(nb_tasks_per_rank+1) + (world_rank-remaining)*nb_tasks_per_rank
         rank_ends_at: int = starts_from + remaining*(nb_tasks_per_rank+1) + (world_rank-remaining+1)*nb_tasks_per_rank
 
-    evaluation_arguments.pop("starts_from")
-    evaluation_arguments.pop("ends_at")
-    evaluation_arguments.pop("print_results")
-    evaluation_arguments.pop("save_eval_flow")
+    evaluation_arguments.pop("starts_from", None)
+    evaluation_arguments.pop("ends_at", None)
+    evaluation_arguments.pop("print_results", None)
+    evaluation_arguments.pop("save_eval_flow", None)
     worker_avg_metrics: Metrics
     worker_metrics: Metrics
     worker_eval_flow: EvalFlow
@@ -515,7 +532,7 @@ def evaluate_llm_agent_mpi( starts_from: int, ends_at: int
         for mtrs, evfl, dgns in zip(all_metrics, all_eval_flow, all_diagnosis):
             for mtr in mtrs:
                 total_metrics.setdefault(mtr, []).extend(mtrs[mtr])
-            total_metrics += evfl
+            total_eval_flow += evfl
             if dgns["error_occurs"]:
                 total_diagnosis["error_occurs"] = True
                 error_str: str = "Error in process {:d}:\n{:}".format(world_rank, dgns["error_string"])

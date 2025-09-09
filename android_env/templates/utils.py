@@ -118,8 +118,8 @@ def parse_vh_vlm_action_from_action_markup( response: str
             else:
                 item_name: str = mapping_tuple[i][0]
                 item_cast: Callable[[Any], Any] = mapping_tuple[i][1]
-            action_object[item_name] = np.array(item_cast(action_call.args[i].value))
-    except IndexError:
+            action_object[item_name] = np.array(item_cast(action_call.args[i-1].value))
+    except (IndexError, AttributeError):
         logger.exception("Action arguments parsing error: %s", action_str)
         return {"action_type": np.array(mapping_dict["NOTHING"][0])}
     return action_object

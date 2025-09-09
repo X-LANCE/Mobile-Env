@@ -3,6 +3,14 @@
 
 ## NEWS!!
 
+* (2025-09-09 v4.3)
+  * Added templates for Mobile-Env agents and evaluators. See our [Change
+    log](Changelog) for details.
+  * New [Docker image](https://hub.docker.com/r/zdy023/mobile-env). You can
+    check the repo of [WikiHow task
+    set](https://huggingface.co/datasets/X-LANCE/WikiHow-taskset) for usage of
+    this image.
+
 * (2025-09-02 v4.2)
   * Updated some interfaces for `android_env.interfaces.env.Environment`
   * Added cleaning mechanism for cached `TaskManager`s to save runtime resources

@@ -1,0 +1,223 @@
+id: "search_change_a_lightbulb_in_a_recessed_light-article_change a lightbulb in a recessed light"
+name: "WikiHow Search Task Primitive - Search change_a_lightbulb_in_a_recessed_light, Access How to Change a Lightbulb in a Recessed Light"
+description: "A demo task primitive requiring to search WikiHow for a specific article.\nA demo task primitive requiring to access a specific article."
+setup_steps: {
+  adb_call: {
+    install_apk: {
+      filesystem: {
+        path: "../wikiHow：万事指南_2.9.6_apkcombo.com.apk"
+      }
+    }
+  }
+}
+setup_steps: {
+  adb_call: {
+    rotate: {
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    force_stop: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    clear_cache: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  success_condition: {
+    num_retries: 10
+    wait_for_app_screen: {
+      app_screen: {
+        activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+      }
+      timeout_sec: 10.0
+    }
+  }
+  adb_call: {
+    start_activity: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    start_screen_pinning: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+expected_app_screen: {
+  activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+}
+max_num_steps: 500
+event_sources: {
+  text_recognize: {
+    expect: "\\b(change|lightbulb|recessed|light)\\b"
+    rect: {
+      x0: 0.2439
+      y0: 0.0354
+      x1: 0.9085
+      y1: 0.1171
+    }
+  }
+  id: 1
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "\\b(change|lightbulb|recessed|light)\\b"
+    }
+    properties: {
+      property_name: "clickable"
+      pattern: "true"
+    }
+    selector: "#$\"search_plate\">#$\"search_src_text\""
+  }
+  id: 2
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(change|lightbulb|recessed|light).*"
+  }
+  id: 3
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Change a Lightbulb in a Recessed Light"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 5
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Change-a-Lightbulb-in-a-Recessed-Light"
+  }
+  id: 6
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Change a Lightbulb in a Recessed Light"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 7
+}
+event_slots: {
+  score_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  reward_listener: {
+    type: OR
+    events: {
+      event: {
+        type: OR
+        id: 4
+        events: {
+          id: 1
+        }
+        events: {
+          id: 2
+        }
+        events: {
+          id: 3
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 8
+        events: {
+          id: 5
+        }
+        events: {
+          id: 6
+        }
+        events: {
+          id: 7
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+  }
+  episode_end_listener: {
+    events: {
+      id: 8
+    }
+    transformation: "y = True"
+  }
+  extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  json_extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  instruction_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 4
+        }
+        transformation: "y = [\'Access the article \"How to Change a Lightbulb in a Recessed Light\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+}
+command: "Search an article to learn how to change a lightbulb in a recessed light."
+vocabulary: "light"
+vocabulary: "how to"
+vocabulary: "recessed"
+vocabulary: "lightbulb"
+vocabulary: "change"

@@ -1,0 +1,306 @@
+id: "search_choose_a_foam_roller-article_choose a foam roller-category_page_personal fitness"
+name: "WikiHow Search Task Primitive - Search choose_a_foam_roller, Access How to Choose a Foam Roller, Access the page of category Personal Fitness"
+description: "A demo task primitive requiring to search WikiHow for a specific article.\nA demo task primitive requiring to access a specific article.\nA demo task asking to access the category page."
+setup_steps: {
+  adb_call: {
+    install_apk: {
+      filesystem: {
+        path: "../wikiHow：万事指南_2.9.6_apkcombo.com.apk"
+      }
+    }
+  }
+}
+setup_steps: {
+  adb_call: {
+    rotate: {
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    force_stop: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    clear_cache: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  success_condition: {
+    num_retries: 10
+    wait_for_app_screen: {
+      app_screen: {
+        activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+      }
+      timeout_sec: 10.0
+    }
+  }
+  adb_call: {
+    start_activity: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    start_screen_pinning: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+expected_app_screen: {
+  activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+}
+max_num_steps: 500
+event_sources: {
+  text_recognize: {
+    expect: "\\b(choose|foam|roller)\\b"
+    rect: {
+      x0: 0.2439
+      y0: 0.0354
+      x1: 0.9085
+      y1: 0.1171
+    }
+  }
+  id: 1
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "\\b(choose|foam|roller)\\b"
+    }
+    properties: {
+      property_name: "clickable"
+      pattern: "true"
+    }
+    selector: "#$\"search_plate\">#$\"search_src_text\""
+  }
+  id: 2
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(choose|foam|roller).*"
+  }
+  id: 3
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Choose a Foam Roller"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 5
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Choose-a-Foam-Roller"
+  }
+  id: 6
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Choose a Foam Roller"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 7
+}
+event_sources: {
+  text_detect: {
+    expect: "Personal Fitness"
+    rect: {
+      x0: 0.11
+      y0: 0.19
+      x1: 1.0
+      y1: 0.2
+    }
+  }
+  id: 9
+}
+event_sources: {
+  text_detect: {
+    expect: "Personal Fitness"
+    rect: {
+      y0: 0.165
+      x1: 1.0
+      y1: 0.568
+    }
+  }
+  id: 10
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Category:Personal-Fitness"
+  }
+  id: 11
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "Personal Fitness"
+    }
+    selector: ".$\"View\"#\"cat_navigation\">.\"android.view.View\""
+  }
+  id: 12
+}
+event_slots: {
+  score_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  reward_listener: {
+    type: OR
+    events: {
+      event: {
+        type: OR
+        id: 4
+        events: {
+          id: 1
+        }
+        events: {
+          id: 2
+        }
+        events: {
+          id: 3
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 8
+        events: {
+          id: 5
+        }
+        events: {
+          id: 6
+        }
+        events: {
+          id: 7
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 13
+        events: {
+          id: 9
+        }
+        events: {
+          id: 10
+        }
+        events: {
+          id: 11
+        }
+        events: {
+          id: 12
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+  }
+  episode_end_listener: {
+    events: {
+      id: 13
+    }
+    transformation: "y = True"
+  }
+  extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  json_extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  instruction_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 4
+        }
+        transformation: "y = [\'Access the article \"How to Choose a Foam Roller\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 8
+        }
+        transformation: "y = [\'Access the page of category Personal Fitness\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+}
+command: "Search an article to learn how to choose a foam roller."
+vocabulary: "foam"
+vocabulary: "how to"
+vocabulary: "roller"
+vocabulary: "choose"

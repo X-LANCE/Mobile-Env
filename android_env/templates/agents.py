@@ -225,7 +225,7 @@ class SimpleTextLLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndar
     def __init__( self
                 , prompt_template: TemplateGroup
                 , action_parser: Callable[[str], Dict[str, np.ndarray]]
-                , serialize_action: Callable[[Dict[str, np.ndarrray]], str]
+                , serialize_action: Callable[[Dict[str, np.ndarray]], str]
                 , llm_caller_function: Optional[Callable[[PromptGroupT, int, float], str]] = None
                 , model_name: Optional[str] = None
                 , api_key: Optional[str] = None
@@ -245,7 +245,7 @@ class SimpleTextLLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndar
               * action_history: '\n'-joined history action list
             action_parser (Callable[[str], Dict[str, np.ndarray]]): function to
               parse action from the llm response
-            serialize_action (Callable[[Dict[str, np.ndarrray]], str]):
+            serialize_action (Callable[[Dict[str, np.ndarray]], str]):
               function to serialize action to str so that it can be inserted
               into the prompt
 
@@ -290,7 +290,7 @@ class SimpleTextLLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndar
 
     @property
     def _default_empty_action(self) -> Dict[str, np.ndarray]:
-        return {"action_type": VhIoWrapper.ActionType.NOTHING}
+        return {"action_type": np.array(VhIoWrapper.ActionType.NOTHING)}
 
     def _get_action( self
                    , observation: Optional[Dict[str, np.ndarray]] = None
@@ -462,7 +462,7 @@ class SimpleVLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndarray]
     def __init__( self
                 , prompt_template: TemplateGroup
                 , action_parser: Callable[[str], Dict[str, np.ndarray]]
-                , serialize_action: Callable[[Dict[str, np.ndarrray]], str]
+                , serialize_action: Callable[[Dict[str, np.ndarray]], str]
                 , llm_caller_function: Optional[Callable[[PromptGroupT, int, float], str]] = None
                 , model_name: Optional[str] = None
                 , api_key: Optional[str] = None
@@ -483,7 +483,7 @@ class SimpleVLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndarray]
               * screen: screen representation
             action_parser (Callable[[str], Dict[str, np.ndarray]]): function to
               parse action from the llm response
-            serialize_action (Callable[[Dict[str, np.ndarrray]], str]):
+            serialize_action (Callable[[Dict[str, np.ndarray]], str]):
               function to serialize action to str so that it can be inserted
               into the prompt
 
@@ -528,7 +528,7 @@ class SimpleVLMAgent(MobileEnvAgent[Dict[str, np.ndarray], Dict[str, np.ndarray]
 
     @property
     def _default_empty_action(self) -> Dict[str, np.ndarray]:
-        return {"action_type": TapActionWrapper.ActionType.NOTHING}
+        return {"action_type": np.array(TapActionWrapper.ActionType.NOTHING)}
 
     def _get_action( self
                    , observation: Optional[Dict[str, np.ndarray]] = None

@@ -87,7 +87,7 @@
 * (Better Demo and Test Codes): Add better demo and test codes for quick try.
   * web interface
   * commandline interface
-* (Agent Template): Add agent template and demo agent classes
+* ✓ (Agent Template): Add agent template and demo agent classes
 
 ### Annotation Tool
 
@@ -111,7 +111,7 @@
 * (Implementation Details): Notes implementation details. Will help future
   maintenance and possible contribution.
   * Structure of `event_listeners` module
-  * A figure explaining `cache_until` mechanism
+  * A figure explaining `cache_until` mechanism and a demo task definition
   * Implementation of remote assets
   * Logging system
 * (Frequently-used components): API docs for FUCs.

@@ -1,0 +1,360 @@
+id: "search_clean_a_nonstick_pan-article_clean a nonstick pan-author_page-article_clean a keurig with vinegar"
+name: "WikiHow Search Task Primitive - Search clean_a_nonstick_pan, Access How to Clean a Nonstick Pan, Access the Author Page, Access How to Clean a Keurig with Vinegar"
+description: "A demo task primitive requiring to search WikiHow for a specific article.\nA demo task primitive requiring to access a specific article.\nA demo task asking to access the author page\nA demo task primitive requiring to access a specific article."
+setup_steps: {
+  adb_call: {
+    install_apk: {
+      filesystem: {
+        path: "../wikiHow：万事指南_2.9.6_apkcombo.com.apk"
+      }
+    }
+  }
+}
+setup_steps: {
+  adb_call: {
+    rotate: {
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    force_stop: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    clear_cache: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  success_condition: {
+    num_retries: 10
+    wait_for_app_screen: {
+      app_screen: {
+        activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+      }
+      timeout_sec: 10.0
+    }
+  }
+  adb_call: {
+    start_activity: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    start_screen_pinning: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+expected_app_screen: {
+  activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+}
+max_num_steps: 500
+event_sources: {
+  text_recognize: {
+    expect: "\\b(clean|nonstick|pan)\\b"
+    rect: {
+      x0: 0.2439
+      y0: 0.0354
+      x1: 0.9085
+      y1: 0.1171
+    }
+  }
+  id: 1
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "\\b(clean|nonstick|pan)\\b"
+    }
+    properties: {
+      property_name: "clickable"
+      pattern: "true"
+    }
+    selector: "#$\"search_plate\">#$\"search_src_text\""
+  }
+  id: 2
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(clean|nonstick|pan).*"
+  }
+  id: 3
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Clean a Nonstick Pan"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 5
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Clean-a-Nonstick-Pan"
+  }
+  id: 6
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Clean a Nonstick Pan"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 7
+}
+event_sources: {
+  text_detect: {
+    expect: "James Sears"
+    rect: {
+      y0: 0.5
+      x1: 1.0
+      y1: 0.65
+    }
+  }
+  id: 9
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/James-Sears"
+  }
+  id: 10
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "James Sears"
+    }
+    selector: ".$\"View\"#\"authors_container\">.$\"Image\""
+  }
+  id: 11
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Clean a Keurig with Vinegar"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 13
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Clean-a-Keurig-with-Vinegar"
+  }
+  id: 14
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Clean a Keurig with Vinegar"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 15
+}
+event_slots: {
+  score_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  reward_listener: {
+    type: OR
+    events: {
+      event: {
+        type: OR
+        id: 4
+        events: {
+          id: 1
+        }
+        events: {
+          id: 2
+        }
+        events: {
+          id: 3
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 8
+        events: {
+          id: 5
+        }
+        events: {
+          id: 6
+        }
+        events: {
+          id: 7
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 12
+        events: {
+          id: 9
+        }
+        events: {
+          id: 10
+        }
+        events: {
+          id: 11
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 16
+        events: {
+          id: 13
+        }
+        events: {
+          id: 14
+        }
+        events: {
+          id: 15
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+  }
+  episode_end_listener: {
+    events: {
+      id: 16
+    }
+    transformation: "y = True"
+  }
+  extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  json_extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  instruction_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 4
+        }
+        transformation: "y = [\'Access the article \"How to Clean a Nonstick Pan\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 8
+        }
+        transformation: "y = [\'Check the author page of James Sears.\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 12
+        }
+        transformation: "y = [\'Access the article \"How to Clean a Keurig with Vinegar\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+}
+command: "Search an article to learn how to clean a nonstick pan."
+vocabulary: "pan"
+vocabulary: "how to"
+vocabulary: "nonstick"
+vocabulary: "clean"

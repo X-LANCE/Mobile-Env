@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-env-rl"
-version = "4.2"
+version = "4.3"
 authors = [{name = "Danyang Zhang @X-Lance", email = "zdy004007@126.com"}]
 license = {file = "LICENSE"}
 description = "A Universal Platform for Training and Evaluation of Mobile Interaction"
@@ -39,6 +39,11 @@ easyocr = ["easyocr"]
 pygame = ["pygame"]
 gym = ["gymnasium"]
 dmenv = ["dm-env"]
+template = [
+	"mpi4py>=4.0.0",
+	"openai>=1.13.3",
+	"pillow"
+]
 testing = [
 	"attrs==20.3.0",
     "pillow",

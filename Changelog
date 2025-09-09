@@ -1,3 +1,24 @@
+2025-09-09 Danyang Zhang <zdy004007@126.com>
+
+	v4.3
+
+	Added code templates for Mobile-Env agents and evaluators.
+
+	* (android_env/templates/agents.py): Agent templates
+	  * MobileEnvAgent: Base class
+	  * NaiveTextLLMAgent: A naive agent operating purely by text
+	  * NaiveVLMAgent: A naive agent operating purely by image and text
+	  * SimpleTextLLMAgent: A simple agent working with VhIoWrapper
+	  * SimpleVLMAgent: A simple agent working with TapActionWrapper
+	* (android_env/templates/evaluators.py): Evaluator templates
+	  * evaluate_task: function to evaluate agent on a task and return results
+	  * evaluate_llm_agent: function to evaluate a simple LLM/VLM agent on a
+	  task set and save and report the evaluation results
+	  * evaluate_llm_agent_mp: a function to evaluate on a task set in
+	  parallel through Python multiprocessing
+	  * evaluate_llm_agent_mpi: a function to evaluate on a task set within
+	  MPI environment
+
 2025-09-02 Danyang Zhang <zdy004007@126.com>
 
 	v4.2

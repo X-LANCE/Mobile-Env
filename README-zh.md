@@ -4,6 +4,10 @@
 
 ## 最近更新
 
+* （2025-09-09 v4.3）
+  * 添加了针对Mobile-Env的智能体及评测代码的模板，详情可查看[更新日志](Changelog)。
+  * 构建了新[Docker镜像](https://hub.docker.com/r/zdy023/mobile-env)。使用方式参见[WikiHow任务集仓库](https://huggingface.co/datasets/X-LANCE/WikiHow-taskset)。
+
 * （2025-09-02 v4.2）
   * 变更了`android_env.interfaces.env.Environment`的部分接口
   * 添加了对缓存的`TaskManager`的清理机制，以控制运行时开销

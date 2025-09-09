@@ -1,0 +1,360 @@
+id: "search_be_a_good_friend_to_a_guy-article_be a good friend to a guy-author_page-article_overcome fear"
+name: "WikiHow Search Task Primitive - Search be_a_good_friend_to_a_guy, Access How to Be a Good Friend to a Guy, Access the Author Page, Access How to Overcome Fear"
+description: "A demo task primitive requiring to search WikiHow for a specific article.\nA demo task primitive requiring to access a specific article.\nA demo task asking to access the author page\nA demo task primitive requiring to access a specific article."
+setup_steps: {
+  adb_call: {
+    install_apk: {
+      filesystem: {
+        path: "../wikiHow：万事指南_2.9.6_apkcombo.com.apk"
+      }
+    }
+  }
+}
+setup_steps: {
+  adb_call: {
+    rotate: {
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    force_stop: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    clear_cache: {
+      package_name: "com.wikihow.wikihowapp"
+    }
+  }
+}
+reset_steps: {
+  success_condition: {
+    num_retries: 10
+    wait_for_app_screen: {
+      app_screen: {
+        activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+      }
+      timeout_sec: 10.0
+    }
+  }
+  adb_call: {
+    start_activity: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+reset_steps: {
+  adb_call: {
+    start_screen_pinning: {
+      full_activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+    }
+  }
+}
+expected_app_screen: {
+  activity: "com.wikihow.wikihowapp/com.wikihow.wikihowapp.MainTabActivity"
+}
+max_num_steps: 500
+event_sources: {
+  text_recognize: {
+    expect: "\\b(good|friend|guy)\\b"
+    rect: {
+      x0: 0.2439
+      y0: 0.0354
+      x1: 0.9085
+      y1: 0.1171
+    }
+  }
+  id: 1
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "\\b(good|friend|guy)\\b"
+    }
+    properties: {
+      property_name: "clickable"
+      pattern: "true"
+    }
+    selector: "#$\"search_plate\">#$\"search_src_text\""
+  }
+  id: 2
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/wikiHowTo\\?search=.*(good|friend|guy).*"
+  }
+  id: 3
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Be a Good Friend to a Guy"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 5
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Be-a-Good-Friend-to-a-Guy"
+  }
+  id: 6
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Be a Good Friend to a Guy"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 7
+}
+event_sources: {
+  text_detect: {
+    expect: "Trudi Griffin, LPC, MS"
+    rect: {
+      y0: 0.5
+      x1: 1.0
+      y1: 0.65
+    }
+  }
+  id: 9
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Author/Trudi-Griffin-LPC-MS"
+  }
+  id: 10
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "Trudi Griffin, LPC, MS"
+    }
+    selector: ".$\"View\"#\"authors_container\">.$\"Image\""
+  }
+  id: 11
+}
+event_sources: {
+  text_detect: {
+    expect: "How to Overcome Fear"
+    rect: {
+      y0: 0.19
+      x1: 1.0
+      y1: 0.3
+    }
+  }
+  id: 13
+}
+event_sources: {
+  log_event: {
+    filters: "jd:D"
+    pattern: "\\bmUrl is: https://www\\.wikihow\\.com/Overcome-Fear"
+  }
+  id: 14
+}
+event_sources: {
+  view_hierarchy_event: {
+    properties: {
+      property_name: "text"
+      pattern: "How to Overcome Fear"
+    }
+    selector: ".\"android.view.View\"#\"section_0\" .$\"TextView\""
+  }
+  id: 15
+}
+event_slots: {
+  score_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  reward_listener: {
+    type: OR
+    events: {
+      event: {
+        type: OR
+        id: 4
+        events: {
+          id: 1
+        }
+        events: {
+          id: 2
+        }
+        events: {
+          id: 3
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 8
+        events: {
+          id: 5
+        }
+        events: {
+          id: 6
+        }
+        events: {
+          id: 7
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 12
+        events: {
+          id: 9
+        }
+        events: {
+          id: 10
+        }
+        events: {
+          id: 11
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+    events: {
+      event: {
+        type: OR
+        id: 16
+        events: {
+          id: 13
+        }
+        events: {
+          id: 14
+        }
+        events: {
+          id: 15
+        }
+        transformation: "y = 1"
+        repeatability: NONE
+      }
+    }
+  }
+  episode_end_listener: {
+    events: {
+      id: 16
+    }
+    transformation: "y = True"
+  }
+  extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  json_extra_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+  instruction_listener: {
+    type: OR
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 4
+        }
+        transformation: "y = [\'Access the article \"How to Be a Good Friend to a Guy\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 8
+        }
+        transformation: "y = [\'Check the author page of Trudi Griffin, LPC, MS.\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+    events: {
+      event: {
+        events: {
+          id: 12
+        }
+        transformation: "y = [\'Access the article \"How to Overcome Fear\"\']"
+      }
+    }
+    events: {
+      event: {
+      }
+    }
+  }
+}
+command: "Search an article to learn how to be a good friend to a guy."
+vocabulary: "how to"
+vocabulary: "guy"
+vocabulary: "good"
+vocabulary: "friend"

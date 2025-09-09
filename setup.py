@@ -112,7 +112,7 @@ class _BuildPy(build_py):
 
 setup(
     name='mobile-env-rl',
-    version='4.2',
+    version='4.3',
     description='Mobile-Env: A Universal Platform for Training and Evaluation of Mobile Interaction',
     long_description=description,
     author='Danyang Zhang @X-Lance',
@@ -148,6 +148,7 @@ setup(
         'pygame': ['pygame'],
         'gym': ['gymnasium'],
         'dmenv': ['dm-env'],
+        'template': ["mpi4py>=4.0.0", "openai>=1.13.3", "pillow"]
         'testing': testing_requirements,
     },
     cmdclass={
