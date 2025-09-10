@@ -19,6 +19,16 @@
 	  * evaluate_llm_agent_mpi: a function to evaluate on a task set within
 	  MPI environment
 
+	Updated the usage examples.
+
+	* Removed deprecated examples
+	  * examples/run_human_agent.py
+	  * examples/run_random_agent.py
+	  * examples/__init__.py
+	* Added examples for new template module
+	  * examples/template_module_example/main.py
+	  * examples/template_module_example/mobile-env-agent.prompt
+
 2025-09-02 Danyang Zhang <zdy004007@126.com>
 
 	v4.2
