@@ -76,7 +76,7 @@
   the gRPC interfaces of Android Emulator in current EmulatorSimulator to pure
   ADB implementations so as to form a simulator that can connect to real mobile
   devices.
-* (Task File Format): Maybe desert ProtoBuf and turn to use JSON or YAML.
+* ✗ (Task File Format): Maybe desert ProtoBuf and turn to use JSON or YAML.
 * (Emulator Metrics): In the future version, Android Emulator may require to
   explicitly specify the whether to collect usage metric data by
   `-metrics-collection` or `-no-metrics` flags.
@@ -86,7 +86,7 @@
   place simulator on a remote machine
 * (Better Demo and Test Codes): Add better demo and test codes for quick try.
   * web interface
-  * commandline interface
+  * ✓ commandline interface
 * ✓ (Agent Template): Add agent template and demo agent classes
 
 ### Annotation Tool
@@ -124,13 +124,13 @@
     `android_env.components.tools.sbert_holder.SBERTHolder`,
     `android_env.components.tools.types`
   * `android_env.components.coordinator.EventCheckControl`
-* (Default arguments of `coordinator_args`): The defaul values of parameters in
-  `coordinator_args`
+* (Default arguments of `coordinator_args`): The default values of parameters
+  in `coordinator_args`
 * (Action Batch Function): Action batch function for remote simulator.
 * (`gap_sec` parameter for remote simulator): `gap_sec` parameter for remote
   simulator daemon.
-* (Usage of new assets): Some new assets are added, including
-  * Agent and evaluation templates
-  * New docker image (needed volumes and devices, distrobox, *etc*.)
+* ✓ (Usage of new assets): Some new assets are added, including
+  * ✓ Agent and evaluation templates
+  * ✓ New docker image (needed volumes and devices, distrobox, *etc*.)
 * (Quick start guideline): Add a quick start guideline. Maybe duplicate with
   usage of agent and evaluation templates.
