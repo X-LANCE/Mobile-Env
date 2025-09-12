@@ -88,9 +88,9 @@ Mobile-Env基于[AndroidEnv](https://github.com/deepmind/android_env)开发。�
 * 新任务通过任务定义文件可以很容易地扩展。
 * Mobile-Env能够从多种操作系统反馈中解析任务事件，包括：屏幕文本、屏幕图标、视图框架、系统日志。因此Mobile-Env能够直接迁移到大多现实应用上，而不需要对应用定制修改。（屏幕文本和屏幕图标需要外部的文字、图标识别工具来支持。目前平台内置了一个对[EasyOCR](https://github.com/JaidedAI/EasyOCR)的包装，可以直接启用。内置的图标模型也在训练调试中，会在将来集成进去。）
 
-## 快捷指南
+## 安装使用
 
-### 安装
+### 本地安装
 
 ~~从PyPI安装：~~
 
@@ -106,11 +106,32 @@ cd Mobile-Env
 pip install .
 ```
 
+### 使用Docker
+
 ~~此外，也提供了部分带有已配置好的安卓镜像的[Docker镜像](https://hub.docker.com/r/zdy023/mobile-env-rl)。~~
+
+Mobile-Env现在提供通用的[Docker镜像](https://hub.docker.com/r/zdy023/mobile-env)。镜像中安装好了Mobile-Env所依赖的软件包、安卓命令行工具，只需要挂载Mobile-Env代码仓库及安卓虚拟机镜像目录即可使用。
+
+启动容器：
+
+```sh
+docker run -it --device /dev/kvm --gpus all -v $ANDROID_AVD_HOME:/root/.android -v $MOBILE_ENV_REPO_DIR:/root/mobile-env -v $TASK_SET_DIR:/root/task-set-dir zdy023/mobile-env:latest
+```
+
+进入容器运行：
+
+```sh
+# 运行该命令以在Docker环境中编译ProtoBuffer项目
+cd mobile-env && pip install -e .
+```
+
+## 功能概览
 
 ### 加载、运行Mobile-Env以评测或训练
 
-加载Mobile-Env的环境前，需要先创建一个[安卓模拟器](https://developer.android.com/about)虚拟设备。然后才能加载已有的任务定义并启动环境。详细的指南请参考[利用Mobile-Env验证、训练智能体](docs/env-usage-zh.md)。`examples`目录下提供了几个采用随机智能体，或由人类充当智能体的示例程序。
+加载Mobile-Env的环境前，需要先创建一个[安卓模拟器](https://developer.android.com/about)虚拟设备。然后才能加载已有的任务定义并启动环境。详细的指南请参考[利用Mobile-Env验证、训练智能体](docs/env-usage-zh.md)。
+
+[`android_env.templates`模块](android_env/templates)中提供了为Mobile-Env构建智能体并测试的模板代码。利用提供的模板评测函数可以一键式启动对智能体的评测。`examples/template_module_example`目录下提供了调用模板评测函数的示例。[`android_env.templates.agents`](android_env/templates/agents.py)中提供了部分基于`MobileEnvAgent`基类的智能体示例实现。
 
 ### 扩展新环境、新任务
 

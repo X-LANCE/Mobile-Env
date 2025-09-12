@@ -144,9 +144,9 @@ interaction with the following features:
   and can be enabled directly. An intergrated icon model will be embedded soon
   as well.)
 
-## Getting Started
+## Installation & Usage
 
-### Installation
+### Local Installation
 
 ~~Install from PyPI:~~
 
@@ -163,8 +163,31 @@ cd Mobile-Env
 pip install .
 ```
 
+### Usage with Docker
+
 ~~Several [Docker images](https://hub.docker.com/r/zdy023/mobile-env-rl) with
 well-configured Android AVD are also available.~~
+
+A common-use [Docker image](https://hub.docker.com/r/zdy023/mobile-env) is
+provided for convinience. The dependencies of Mobile-Env, Android commandline
+tools are already insalled in the image. It will be ready-to-use after binding
+the code repository of Mobile-Env and the directory of AVDs (Android Virtual
+Device).
+
+Launch the container:
+
+```sh
+docker run -it --device /dev/kvm --gpus all -v $ANDROID_AVD_HOME:/root/.android -v $MOBILE_ENV_REPO_DIR:/root/mobile-env -v $TASK_SET_DIR:/root/task-set-dir zdy023/mobile-env:latest
+```
+
+Run in the container:
+
+```sh
+# Run this command to compile the ProtoBuffer items in the Docker environment
+cd mobile-env && pip install -e .
+```
+
+## Feature Overview
 
 ### Load and Run Mobile-Env for Evaluation or Training
 
@@ -172,8 +195,15 @@ Before loading the Mobile-Env environment, you will need to set up an [Android
 Emulator](https://developer.android.com/about) device. Then you can load the
 environment with some existing task definitions and start your experiments. A
 detailed guidance is provided in [Evaluating and Traning Agents on
-Mobile-Env](docs/env-usage-en.md). Several examples with a random agent or a
-human agent is also provided under `examples`.
+Mobile-Env](docs/env-usage-en.md).
+
+Templates for agents and evaluators are now offered in [`android_env.templates`
+module](android_env/templates). The evaluation of agents can be launched with a
+simple invocation of the template evaluator functions. A usage example of the
+offered evalautor functions are provided under
+`examples/template_module_example` directory. Several examples of agent
+implementation based on the base class `MobileEnvAgent` are offered in
+[`android_env.templates.agents`](android_env/templates/agents.py).
 
 ### Extend a New Environment or a New Task
 
