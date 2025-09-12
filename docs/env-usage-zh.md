@@ -116,6 +116,8 @@ env = android_env.load( task_path
                                          , "vh_check_control_value": 3.
                                          , "screen_check_control_method": EventCheckControl.LIFT
                                          , "screen_check_control_value": 1.
+                                         , "max_cached_task_managers": 1
+                                         , "restart_simulator_at_reset": False
                                          }
                       )
 ```
@@ -146,10 +148,13 @@ env = android_env.load( task_path
 * `text_model` - 指定文本模型用于识别屏幕文本以支持从中检测步骤指令、回报、历程结束等历程信号；默认值不挂载任何有效模型。
 * `icon_model` - 指定图表模型用来识别屏幕图标以支持从中检测步骤指令、回报、历程结束等历程信号；默认值不挂载任何有效模型。
 * `with_view_hierarchy` - 是否在返回的观测中加入视图框架（View Hierarchy）项；由于通过ADB获取视图框架时延较长，因此该选项默认不开启
-* `coordinator_args` - 用于覆盖创建`Coordinator`时的默认参数，可用于传递管理对视图框架与屏幕图像的检查的参数。两组参数分别为
-  * `vh_check_control_method`、`vh_check_control_value`
-  * `screen_check_control_method`、`screen_check_control_value`
-  其中`_method`参数需提供`EventCheckControl`枚举标识（`enum.Flag`），有效值为：`LIFT`、`TEXT`、`TIME`、`STEP`，分别表示“在`LIFT`动作后”“在`TEXT`动作后”“间隔一定时间后”“间隔一定步数后”进行检查，不同控制方法可以组合使用，但当`TIME`和`STEP`同时指定时，`STEP`方案不会生效；`_value`参数用于指定`TIME`方法等待的秒数或`STEP`方法等待的步数
+* `coordinator_args` - 用于覆盖创建`Coordinator`时的其他默认参数。常用的设置项包括
+  * 管理对视图框架与屏幕图像的检查时机。包括两组参数，分别为
+    * `vh_check_control_method`、`vh_check_control_value`
+    * `screen_check_control_method`、`screen_check_control_value`
+    其中`_method`参数需提供`EventCheckControl`枚举标识（`enum.Flag`），有效值为：`LIFT`、`TEXT`、`TIME`、`STEP`，分别表示“在`LIFT`动作后”“在`TEXT`动作后”“间隔一定时间后”“间隔一定步数后”进行检查，不同控制方法可以组合使用，但当`TIME`和`STEP`同时指定时，`STEP`方案不会生效；`_value`参数用于指定`TIME`方法等待的秒数或`STEP`方法等待的步数
+  * 通过`max_cached_task_managers`控制运行时缓存的任务管理器数量。默认会缓存40个最近使用的任务管理器，方便快速切换。但一般在测试中，任务只需要按顺序遍历一次，因此缓存使用过的任务管理器并不会带来收益，此时可以将该值设为1，以节省运行时占用的资源
+  * 通过`restart_simulator_at_reset`控制任务重置时是否需要重启模拟器。部分任务可能要求通过重启模拟器来完成更彻底的环境重置。
 
 传入的文本模型需要实现两个接口：
 
@@ -305,6 +310,8 @@ env = android_env.load_remote( task_path
                                                 , "vh_check_control_value": 3.
                                                 , "screen_check_control_method": EventCheckControl.LIFT
                                                 , "screen_check_control_value": 1.
+                                                , "max_cached_task_managers": 1
+                                                , "restart_simulator_at_reset": False
                                                 }
                              )
 ```
@@ -324,7 +331,9 @@ env = android_env.load_remote( task_path
 创建环境后，便可以利用智能体与之交互：
 
 ```python
-step: dm_env.TimeStep = env.switch_task(0) # 切换到任务0
+from android_env.interfaces.timestep import TimeStep
+
+step: TimeStep = env.switch_task(0) # 切换到任务0
 task_description: str = "\n".join(env.command()) # 获取任务描述
 instruction: str = "\n".join(env.task_instructions()) # 获取单步指令
 
@@ -340,12 +349,19 @@ while not step.last():
     reward += step.reward
 ```
 
-`dm_env.TimeStep`定义于[dm_env](https://github.com/deepmind/dm_env)，有2个重要属性：
+`TimeStep`定义于[`android_env.interfaces`模块](android_env/interfaces/timestep.py)，有2个重要属性：
 
 1. `reward`，浮点数，记录回报值
 2. `observation`，记录当前观测
 
-此外还有三个返回逻辑值的方法：`first`、`mid`、`last`，可用来判断当前交互步处于交互历程中的什么位置。`first`意味着这是任务开始后的第一个步骤，`last`意味着该步骤是当前历程的最后一个步骤（即历程结束）。
+此外还有若干返回逻辑值的方法：
+
+* `first()`，判断当前步骤是否是任务开始后的第一个步骤
+* `mid()`，判断当前步骤是否中间过程的步骤
+* `last()`，判断当前步骤是否是当前历程的最后一个步骤，及历程到此结束
+* `is_success()`，判断当前任务是否执行成功
+* `is_failure()`，判断当前任务是否执行失败
+* `is_truncated()`，判断当前任务是否异常中断结束
 
 `observation`为一个`dict`对象，包含四项，其中前三项均以NumPy数组形式返回：
 
@@ -356,7 +372,7 @@ while not step.last():
 
 `task_instructions`方法返回字符串列表，存储当前步骤下的指令。
 
-Mobile-Env的环境接受的动作的形式为`dict`对象，其包含四项：
+Mobile-Env的环境接受的基本动作的形式为`dict`对象，其包含四项：
 
 + `action_type` - 是NumPy标量数组，数据类型为整数，对应4种动作类型
   - 0（`android_env.components.action_type.ActionType.TOUCH`） - 触击动作
@@ -377,14 +393,15 @@ Mobile-Env的环境接受的动作的形式为`dict`对象，其包含四项：
 |  `ImageRescaleWrapper`  | 缩放屏幕尺寸                                             |
 |  `GymInterfaceWrapper`  | 提供[Gymnasium](https://gymnasium.farama.org/)风格的接口 |
 |      `VhIoWrapper`      | 为基于文本的智能体提供基于视图框架的交互接口             |
+|    `TapActionWrapper`   | 为基于视觉语言模型的智能体提供恰当的交互接口             |
 
-若要自行定义新的包装器，可以继承`android_env.wrappers.BaseWrapper`，根据需要实现其中声明的挂钩方法即可。主要的挂钩方法有四个：
+若要自行定义新的包装器，可以继承`android_env.wrappers.BaseWrapper`，根据需要实现其中声明的钩子方法即可。主要的钩子方法有四个：
 
-|         挂钩        | 说明                                            |
-|:-------------------:|:------------------------------------------------|
-|    `_reset_state`   | 在重置环境，或切换任务目标前，会调用该方法      |
-| `_post_switch_task` | 在切换任务目标后，会调用该方法                  |
-| `_process_timestep` | 修改得到的`dm_env.TimeStep`，再将之返回给智能体 |
-|  `_process_action`  | 修改智能体输入的动作对象，再送入环境            |
+|         钩子        | 说明                                       |
+|:-------------------:|:-------------------------------------------|
+|    `_reset_state`   | 在重置环境，或切换任务目标前，会调用该方法 |
+| `_post_switch_task` | 在切换任务目标后，会调用该方法             |
+| `_process_timestep` | 修改得到的`TimeStep`，再将之返回给智能体   |
+|  `_process_action`  | 修改智能体输入的动作对象，再送入环境       |
 
 更多包装器及其用法，请参考`android_env.wrappers`模块。

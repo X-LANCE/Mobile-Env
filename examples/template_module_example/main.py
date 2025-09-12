@@ -42,7 +42,7 @@ def main():
                           , llm_type="text", prompt_template_path="mobile-env-agent.prompt", prompt_value_macros={"LLM_TYPE": "TEXT"}
                           , model_name=model_name, api_key=api_key, base_url=base_url
                           , env_load_kwargs={ "start_token_mark": "Ġ", "non_start_token_mark": ""
-                                            , "run_headless": False
+                                            , "special_token_pattern": r"<\|\w+\|>", "run_headless": False
                                             }
                           )
     elif args.action=="test_mp":
@@ -51,7 +51,7 @@ def main():
                              , mitm_config={"method": "syscert"}
                              , llm_type="text", prompt_template_path="mobile-env-agent.prompt", prompt_value_macros={"LLM_TYPE": "TEXT"}
                              , model_name=model_name, api_key=api_key, base_url=base_url
-                             , env_load_kwargs={"start_token_mark": "Ġ", "non_start_token_mark": ""}
+                             , env_load_kwargs={"start_token_mark": "Ġ", "non_start_token_mark": "", "special_token_pattern": r"<\|\w+\|>"}
                              )
     elif args.action=="test_mpi":
         evaluate_llm_agent_mpi( task_path=task_path, avd_name=avd_name, starts_from=0, ends_at=5
@@ -59,7 +59,7 @@ def main():
                               , mitm_config={"method": "syscert"}
                               , llm_type="text", prompt_template_path="mobile-env-agent.prompt", prompt_value_macros={"LLM_TYPE": "TEXT"}
                               , model_name=model_name, api_key=api_key, base_url=base_url
-                              , env_load_kwargs={"start_token_mark": "Ġ", "non_start_token_mark": ""}
+                              , env_load_kwargs={"start_token_mark": "Ġ", "non_start_token_mark": "", "special_token_pattern": r"<\|\w+\|>"}
                               )
 
 

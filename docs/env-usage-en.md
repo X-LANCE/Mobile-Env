@@ -159,6 +159,8 @@ env = android_env.load( task_path
                                          , "vh_check_control_value": 3.
                                          , "screen_check_control_method": EventCheckControl.LIFT
                                          , "screen_check_control_value": 1.
+                                         , "max_cached_task_managers": 1
+                                         , "restart_simulator_at_reset": False
                                          }
                       )
 ```
@@ -229,18 +231,27 @@ The parameters are
   observation. This option is disabled defaultly for the long latency of VH
   acquisition through ADB.
 * `coordinator_args` - Used to cover the default arguments to create a
-  `Coordinator`. It can be used to customize the arguments controlling the
-  check to VH and screenshot. The parameters are:
-  * `vh_check_control_method` & `vh_check_control_value`
-  * `screen_check_control_method` & `screen_check_control_value`
-  Here the `_method` parameters expect a `EventCheckControl` enum flag
-  (`enum.Flag`). The valid values are `LIFT`, `TEXT`, `TIME`, and `STEP`.
-  `LIFT` specifies to check "after `LIFT` action". `TEXT` specifies to check
-  "after `TEXT` action". `TIME` indicates to check `in a certain time`. `STEP`
-  indicates to check `in a certain step`. These control methods can be applied
-  combined, while `STEP` will not task effect if `TIME` is specified, too.
-  The `_value` parameters are used to specify the seconds to wait for `TIME` or
-  the steps to wait for `STEP`.
+  `Coordinator`. Some frequently-used options include
+  * the parameters controlling the check to VH and screenshot:
+    * `vh_check_control_method` & `vh_check_control_value`
+    * `screen_check_control_method` & `screen_check_control_value`
+    Here the `_method` parameters expect a `EventCheckControl` enum flag
+    (`enum.Flag`). The valid values are `LIFT`, `TEXT`, `TIME`, and `STEP`.
+    `LIFT` specifies to check "after `LIFT` action". `TEXT` specifies to check
+    "after `TEXT` action". `TIME` indicates to check `in a certain time`.
+    `STEP` indicates to check `in a certain step`. These control methods can be
+    applied combined, while `STEP` will not task effect if `TIME` is specified,
+    too.  The `_value` parameters are used to specify the seconds to wait for
+    `TIME` or the steps to wait for `STEP`.
+  * parameter `max_cached_task_managers` controlling the number of task
+    managers cached at runtime. By default, 40 task managers will be cached for
+    quick switch. However, in test stage, the tasks are usually traversed only
+    once in order, thus, no benefits can be obtained from the cache for used
+    task managers. In such cases, this value can be set to 1 to save consumed
+    runtime resources.
+  * parameter `restart_simulator_at_reset` controlling whether the simulator
+    needs to be restarted during task reset. Some tasks may require to restart
+    the simulator to conduct a more thorough reset.
 
 The text model is supposed to implement two interfaces:
 
@@ -405,6 +416,8 @@ env = android_env.load_remote( task_path
                                                 , "vh_check_control_value": 3.
                                                 , "screen_check_control_method": EventCheckControl.LIFT
                                                 , "screen_check_control_value": 1.
+                                                , "max_cached_task_managers": 1
+                                                , "restart_simulator_at_reset": False
                                                 }
                              )
 ```
@@ -431,7 +444,9 @@ After loading the environment, you can create an agent to interact with the
 environment.
 
 ```python
-step: dm_env.TimeStep = env.switch_task(0) # switch to task 0
+from android_env.interfaces.timestep import TimeStep
+
+step: TimeStep = env.switch_task(0) # switch to task 0
 task_description: str = "\n".join(env.command()) # fetch the task description
 instruction: str = "\n".join(env.task_instructions()) # fetch the current step instruction
 
@@ -447,17 +462,23 @@ while not step.last():
     reward += step.reward
 ```
 
-`dm_env.TimeStep` is defined in [dm_env](https://github.com/deepmind/dm_env).
-Commonly, there are 2 properties you will always access:
+`TimeStep` is defined in [`android_env.interface`
+module](android_env/interfaces/timestep.py).  Commonly, there are 2 properties
+you will always access:
 
 1. `reward`, a floating number, records the current reward.
 2. `observation`, records the current observation.
 
-In addition, `dm_env.TimeStep` is equipped with three methods returning a
-boolean: `first`, `mid`, and `last`. These methods tell what state of the
-episode the agent is in. `first` means that this is the first step after
-resetting the environment, while `last` indicates that this is the last step of
-the current episode (*i.e.*, the episode end).
+In addition, `TimeStep` is equipped with several methods returning a
+boolean:
+
+* `first()`, tells if the current step is the first step after reset
+* `mid()`, tells if the current step is an intermediate step
+* `last()`, tells if the current step is the last step of the current episode,
+  *i.e.*, the episode arrives at the end.
+* `is_success()`, tells if the task is successfully completed
+* `is_failure()`, tells if the task is not successfully completed
+* `is_truncated()`, tells if the task ends early abnormally
 
 `observation` is a `dict` object containing four items:
 
@@ -525,6 +546,7 @@ wrappers are listed below:
 |  `ImageRescaleWrapper`  | Resizes the raw screen pixels.                                             |
 |  `GymInterfaceWrapper`  | Provides [Gymnasium](https://gymnasium.farama.org/)-compatible interfaces. |
 |      `VhIoWrapper`      | Provides VH-based interfaces for text-based agents.                        |
+|    `TapActionWrapper`   | Provides appropriate interfaces for VLM-based agents.                      |
 
 If new wrappers are expected to be defined, you can inherit
 `android_env.wrappers.BaseWrapper` and implement the necessary hook methods
@@ -534,7 +556,7 @@ declared in it. There are four key hooks:
 |:-------------------:|:------------------------------------------------------------------|
 |    `_reset_state`   | Invoked before resetting the environment or switching task goals. |
 | `_post_switch_task` | Invoked after switching task goals.                               |
-| `_process_timestep` | Alters `dm_env.TimeStep` before returning it to agent.            |
+| `_process_timestep` | Alters `TimeStep` before returning it to agent.                   |
 |  `_process_action`  | Alters the action before sending it to Android OS.                |
 
 As regard more details about the wrappers and the usage, we refer you to
