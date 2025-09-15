@@ -88,6 +88,8 @@
   * web interface
   * ✓ commandline interface
 * ✓ (Agent Template): Add agent template and demo agent classes
+* (Direct Text Input): Current text input action requires a vocabulary. An
+  action supporting direct text input should be more convinient in LLM era.
 
 ### Annotation Tool
 
@@ -124,6 +126,7 @@
     `android_env.components.tools.sbert_holder.SBERTHolder`,
     `android_env.components.tools.types`
   * `android_env.components.coordinator.EventCheckControl`
+  * `android_env.templates.agents` & `android_env.templates.evaluators`
 * (Default arguments of `coordinator_args`): The default values of parameters
   in `coordinator_args`
 * (Action Batch Function): Action batch function for remote simulator.
