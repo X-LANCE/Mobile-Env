@@ -148,7 +148,7 @@ setup(
         'pygame': ['pygame'],
         'gym': ['gymnasium'],
         'dmenv': ['dm-env'],
-        'template': ["mpi4py>=4.0.0", "openai>=1.13.3", "pillow"]
+        'template': ["mpi4py>=4.0.0", "openai>=1.13.3", "pillow"],
         'testing': testing_requirements,
     },
     cmdclass={
